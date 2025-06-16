@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:latest          # Pulls the latest MySQL image
+    container_name: ds-mysql     # Name of the container
+    ports:
+      - "3306:3306"              # Expose MySQL on port 3306
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword  # Root user password
+      MYSQL_DATABASE: urbanflow project          # Name of the database to be created
+      MYSQL_USER: user                 # Application username
+      MYSQL_PASSWORD: password         # Application password
+    volumes:
+      - db_data:/var/lib/mysql    # Persist MySQL data
+    networks:
+      - backend
+
+  redis:
+    image: redis:latest          # Use the latest Redis image
+    container_name: redis        # Name of the container
+    ports:
+      - "6379:6379"              # Expose Redis on the default port
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  db_data:                        # Volume to persist database files
