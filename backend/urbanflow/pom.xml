@@ -11,8 +11,9 @@
 	<groupId>com.ucd</groupId>
 	<artifactId>urbanflow</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
+	<packaging>pom</packaging>
 	<name>urbanflow</name>
-	<description>UrbanFlow System for Spring Boot</description>
+	<description>UrbanFlow System</description>
 	<url/>
 	<licenses>
 		<license/>
@@ -20,6 +21,15 @@
 	<developers>
 		<developer/>
 	</developers>
+	<modules>
+		<module>user-authentication</module>
+		<module>signal-control</module>
+		<module>traffic-sensing</module>
+		<module>ai-intelligence</module>
+		<module>special-event-handling</module>
+		<module>logging-and-audit</module>
+		<module>status-sync</module>
+	</modules>
 	<scm>
 		<connection/>
 		<developerConnection/>
