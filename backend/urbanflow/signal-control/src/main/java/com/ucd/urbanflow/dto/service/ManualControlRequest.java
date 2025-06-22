@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 
 public class ManualControlRequest {
-    private String junction_id;
+    private String junctionId;
+    private Integer lightIndex;
     private Integer duration;
     private String state;
     private String source = "manual";
