@@ -1,0 +1,8 @@
+@mixin ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+//Indicates that a mixin named ellipssis is defined,
+// which contains a set of CSS styles that will make the text content of an element appear
+// as ellipsis when it exceeds the width.

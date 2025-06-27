@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucd.urbanflow.mapper.TlsJunctionMapper">
+
+    <select id="getAllTlsJunctions" resultType="com.ucd.urbanflow.model.TlsJunctionInfo">
+        SELECT
+            tls_id AS tlsId,
+            junction_id AS junctionId,
+            junction_x AS junctionX,
+            junction_y AS junctionY,
+            junction_shape AS junctionShape
+        FROM
+            trafficLogic
+    </select>
+
+</mapper>
