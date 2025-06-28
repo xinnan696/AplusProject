@@ -5,7 +5,6 @@ import LoginLogin from '@/views/login/LoginLogin.vue'
 import LoginReset from '@/views/login/LoginReset.vue'
 import LoginForget from '@/views/login/LoginForget.vue'
 
-
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
@@ -13,7 +12,6 @@ const routes: RouteRecordRaw[] = [
     component: LoginLogin
   },
   {
-
     path: '/forget',
     name: 'LoginForget',
     component: LoginForget
@@ -24,7 +22,6 @@ const routes: RouteRecordRaw[] = [
     component: LoginReset
   },
   {
-
     path: '/',
     redirect: '/control'
   },
