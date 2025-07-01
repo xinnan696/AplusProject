@@ -5,6 +5,7 @@
       <div class="system-title">URBANFLOW SYSTEM</div>
 
       <div class="input-group">
+
         <input
           v-model="loginForm.userId"
           type="text"
@@ -29,11 +30,24 @@
       </button>
 
       <div class="forgot" @click="goToForgot">Forgot password?</div>
+
+        <input type="text" placeholder="User ID" />
+      </div>
+
+      <div class="input-group">
+        <input type="password" placeholder="Password" />
+      </div>
+
+      <button class="login-button">LOGIN</button>
+
+      <div class="forgot">Forgot password?</div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
@@ -60,6 +74,11 @@ const goToForgot = () => {
 </script>
 
 <style scoped>
+/* 逻辑交互 */
+</script>
+
+<style scoped>
+/* 整个页面样式 */
 .login-page {
   width: 100vw;
   height: 100vh;
@@ -136,6 +155,9 @@ const goToForgot = () => {
 
 /* 鼠标悬浮在按钮的颜色变化 */
 .login-button:hover:not(:disabled) {
+
+/* 鼠标悬浮在按钮的颜色变化 */
+.login-button:hover {
   background-color: #00bcd4;
 }
 
@@ -146,4 +168,5 @@ const goToForgot = () => {
   color: #FFFFFF;
   cursor: pointer;
 }
+</style>
 </style>

@@ -25,6 +25,9 @@
                      (item === 'User Logs' && props.currentRoute === 'UserLog')
           }
         ]"
+
+        class="sub-menu-item"
+
         @click="$emit('sub-click', item)"
       >
         {{ item }}
@@ -34,20 +37,28 @@
 </template>
 
 <script setup lang="ts">
+
 import { ref, computed, watch } from 'vue'
+
+import { ref } from 'vue'
+
 
 const props = defineProps<{
   title: string
   items: string[]
+
   currentRoute?: string
 }>()
 
 defineEmits<{
   'sub-click': [item: string]
+
+
 }>()
 
 const expanded = ref(false)
 const itemsToShow = ref<string[]>([])
+
 
 // 检查是否有子菜单项处于激活状态
 const hasActiveItem = computed(() => {
@@ -68,6 +79,9 @@ function toggleMenu() {
     return // 不做任何操作，保持展开状态
   }
   
+
+function toggleMenu() {
+
   expanded.value = !expanded.value
 
   if (expanded.value) {
@@ -132,6 +146,8 @@ function toggleMenu() {
         color: #00E3FF;
       }
     }
+
+
   }
 
   .arrow-icon {
@@ -142,7 +158,10 @@ function toggleMenu() {
     top: 50%;
     transform: translateY(-50%);
     color: white;
+
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+
   }
 
   .sub-menu {
@@ -163,6 +182,7 @@ function toggleMenu() {
     cursor: pointer;
     margin-left: 0.14rem;
     border-radius: 0.04rem;
+
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -219,6 +239,12 @@ function toggleMenu() {
       opacity: 0.6;
       transform: translateY(-50%) scale(1.3);
     }
+
+
+    &:hover {
+    background-color: #2E2F41;
+  }
+
   }
 
   /* 进入动画 */
@@ -239,4 +265,8 @@ function toggleMenu() {
     transition: all 0.25s ease;
   }
 }
+
 </style>
+
+</style>
+
