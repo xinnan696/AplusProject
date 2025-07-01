@@ -139,6 +139,4 @@ function checkAuthStatus(): boolean {
   return !!token && token !== 'expired'
 }
 
-
-
 export default router
