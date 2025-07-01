@@ -5,6 +5,32 @@
       <div class="system-title">URBANFLOW SYSTEM</div>
 
       <div class="input-group">
+
+        <input
+          v-model="loginForm.userId"
+          type="text"
+          placeholder="User ID"
+        />
+      </div>
+
+      <div class="input-group">
+        <input
+          v-model="loginForm.password"
+          type="password"
+          placeholder="Password"
+        />
+      </div>
+
+      <button
+        class="login-button"
+        @click="handleLogin"
+        :disabled="!loginForm.userId || !loginForm.password"
+      >
+        LOGIN
+      </button>
+
+      <div class="forgot" @click="goToForgot">Forgot password?</div>
+
         <input type="text" placeholder="User ID" />
       </div>
 
@@ -15,11 +41,39 @@
       <button class="login-button">LOGIN</button>
 
       <div class="forgot">Forgot password?</div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const loginForm = ref({
+  userId: '',
+  password: ''
+})
+
+const handleLogin = () => {
+  if (loginForm.value.userId && loginForm.value.password) {
+    // 设置认证token
+    localStorage.setItem('authToken', 'valid-user-token')
+    
+    // 跳转到控制台
+    router.push({ name: 'Control' })
+  }
+}
+
+const goToForgot = () => {
+  router.push({ name: 'ForgetPassword' })
+}
+</script>
+
+<style scoped>
 /* 逻辑交互 */
 </script>
 
@@ -94,6 +148,14 @@
   font-size: 0.18rem;
 }
 
+.login-button:disabled {
+  background-color: #666;
+  cursor: not-allowed;
+}
+
+/* 鼠标悬浮在按钮的颜色变化 */
+.login-button:hover:not(:disabled) {
+
 /* 鼠标悬浮在按钮的颜色变化 */
 .login-button:hover {
   background-color: #00bcd4;
@@ -106,4 +168,5 @@
   color: #FFFFFF;
   cursor: pointer;
 }
+</style>
 </style>

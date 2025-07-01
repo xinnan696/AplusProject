@@ -11,6 +11,7 @@ import '@/style/index.scss'
 import CommonInput from './components/common/CommonInput.vue'
 import CommonSelect from './components/common/CommonSelect.vue'
 
+
 const app = createApp(App)
 
 app.component('CommonSelect', CommonSelect)

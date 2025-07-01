@@ -18,7 +18,16 @@
       <div
         v-for="item in itemsToShow"
         :key="item"
+        :class="[
+          'sub-menu-item',
+          {
+            'active': (item === 'User Management' && props.currentRoute === 'UserList') ||
+                     (item === 'User Logs' && props.currentRoute === 'UserLog')
+          }
+        ]"
+
         class="sub-menu-item"
+
         @click="$emit('sub-click', item)"
       >
         {{ item }}
@@ -28,17 +37,51 @@
 </template>
 
 <script setup lang="ts">
+
+import { ref, computed, watch } from 'vue'
+
 import { ref } from 'vue'
+
 
 const props = defineProps<{
   title: string
   items: string[]
+
+  currentRoute?: string
+}>()
+
+defineEmits<{
+  'sub-click': [item: string]
+
+
 }>()
 
 const expanded = ref(false)
 const itemsToShow = ref<string[]>([])
 
+
+// 检查是否有子菜单项处于激活状态
+const hasActiveItem = computed(() => {
+  return (props.currentRoute === 'UserList') || (props.currentRoute === 'UserLog')
+})
+
+// 监听路由变化，如果有激活的子菜单项，保持展开状态
+watch(hasActiveItem, (newValue) => {
+  if (newValue && !expanded.value) {
+    expanded.value = true
+    itemsToShow.value = [...props.items]
+  }
+}, { immediate: true })
+
 function toggleMenu() {
+  // 如果当前有激活的子菜单项，不允许收起
+  if (hasActiveItem.value && expanded.value) {
+    return // 不做任何操作，保持展开状态
+  }
+  
+
+function toggleMenu() {
+
   expanded.value = !expanded.value
 
   if (expanded.value) {
@@ -74,6 +117,37 @@ function toggleMenu() {
     position: relative;
     margin-left: 0.08rem;
     cursor: pointer;
+    border-radius: 0.04rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+      transition: left 0.4s ease;
+    }
+
+    &:hover {
+      background-color: #2E2F41;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+      
+      &::before {
+        left: 100%;
+      }
+      
+      .arrow-icon {
+        transform: translateY(-50%) scale(1.1);
+        color: #00E3FF;
+      }
+    }
+
+
   }
 
   .arrow-icon {
@@ -84,6 +158,10 @@ function toggleMenu() {
     top: 50%;
     transform: translateY(-50%);
     color: white;
+
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+
   }
 
   .sub-menu {
@@ -105,9 +183,68 @@ function toggleMenu() {
     margin-left: 0.14rem;
     border-radius: 0.04rem;
 
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+      transition: left 0.4s ease;
+    }
+
+    &:hover {
+      background-color: #2E2F41;
+      transform: translateY(-1px) translateX(2px);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      color: #fff;
+      
+      &::before {
+        left: 100%;
+      }
+    }
+
+    &.active {
+      background: linear-gradient(135deg, #00B4D8, #0096C7);
+      color: white;
+      box-shadow: 0 3px 8px rgba(0, 180, 216, 0.25);
+      border-left: 2px solid #00E3FF;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: 6px;
+        width: 3px;
+        height: 3px;
+        background-color: #00E3FF;
+        border-radius: 50%;
+        transform: translateY(-50%);
+        animation: pulse-small 2s infinite;
+      }
+    }
+  }
+
+  @keyframes pulse-small {
+    0%, 100% {
+      opacity: 1;
+      transform: translateY(-50%) scale(1);
+    }
+    50% {
+      opacity: 0.6;
+      transform: translateY(-50%) scale(1.3);
+    }
+
+
     &:hover {
     background-color: #2E2F41;
   }
+
   }
 
   /* 进入动画 */
@@ -128,4 +265,8 @@ function toggleMenu() {
     transition: all 0.25s ease;
   }
 }
+
 </style>
+
+</style>
+
