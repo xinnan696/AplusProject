@@ -8,6 +8,11 @@ import router from './router'
 import '@/style/iconfont.css'
 import '@/utils/rem.js'
 import '@/style/index.scss'
+
+
+const app = createApp(App)
+
+
 import CommonInput from './components/common/CommonInput.vue'
 import CommonSelect from './components/common/CommonSelect.vue'
 
