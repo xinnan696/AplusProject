@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.JunctionMapper">
+
+    <resultMap id="JunctionEdgeResultMap" type="com.ucd.urbanflow.domain.pojo.JunctionIncomingEdge">
+        <result property="junctionId" column="junction_id"/>
+        <result property="junctionName" column="junction_name"/>
+        <result property="incomingEdgeId" column="incoming_edge_id"/>
+        <result property="incomingEdgeName" column="incoming_edge_name"/>
+    </resultMap>
+
+    <select id="findAllJunctionEdges" resultMap="JunctionEdgeResultMap">
+        SELECT junction_id, junction_name, incoming_edge_id, incoming_edge_name FROM junction_incoming_edges
+    </select>
+
+</mapper>
