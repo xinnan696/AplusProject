@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="commit newFast.py">
-      <change beforePath="$PROJECT_DIR$/backend/traciModel/withRedis.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/traciModel/withRedis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,10 +52,14 @@
     "WebServerToolWindowFactoryState": "false",
     "last_opened_file_path": "E:/UCD/Summer/AplusProject",
     "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
     "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
     "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "ts.external.directory.path": "E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -73,7 +79,8 @@
       <workItem from="1751134138287" duration="19000" />
       <workItem from="1751371082587" duration="197000" />
       <workItem from="1751451069967" duration="10000" />
-      <workItem from="1751548276915" duration="1746000" />
+      <workItem from="1751548276915" duration="2298000" />
+      <workItem from="1751550758919" duration="626000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
