@@ -213,7 +213,6 @@ onMounted(async () => {
   try {
     const res = await axios.get('/api-status/junctions')
     const rawData = Object.values(res.data)
-    
     junctionOptions.value = rawData.map(j => ({
       label: j.junction_name || j.junction_id,
       value: j.junction_id
@@ -400,5 +399,3 @@ For more configuration options, please refer to [Vite Configuration Reference](h
 ---
 
 ## **Technical Support**
-
-For technical support or feature suggestions, please contact the development team through project Issues or relevant channels.

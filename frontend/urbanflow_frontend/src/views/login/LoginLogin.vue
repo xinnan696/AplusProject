@@ -44,12 +44,15 @@ const loginForm = ref({
   password: ''
 })
 
+
 const handleLogin = () => {
+
   if (loginForm.value.userId && loginForm.value.password) {
-    // 设置认证token
+
+
+
     localStorage.setItem('authToken', 'valid-user-token')
-    
-    // 跳转到控制台
+
     router.push({ name: 'Control' })
   }
 }
@@ -66,12 +69,12 @@ const goToForgot = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-image: url('@/assets/images/LoginBg.png');/* 背景图片，修改文件路径 */
+  background-image: url('@/assets/images/LoginBg.png');
   background-size: cover;
   background-repeat: no-repeat;
 }
 
-/* 登录窗口盒子样式 */
+
 .login-box {
   width: 4.99rem;
   height: 5.70rem;
@@ -83,13 +86,13 @@ const goToForgot = () => {
   text-align: center;
 }
 
-/* Logo，可以改成我们的图片 */
+
 .logo {
   font-size: 0.3rem;
   margin-bottom: 0.2rem;
 }
 
-/* 标题：UrbanFlow System */
+
 .system-title {
   font-size: 0.3rem;
   font-weight: bold;
@@ -97,14 +100,14 @@ const goToForgot = () => {
   margin-bottom: 0.4rem;
 }
 
-/* 输入框样式，用户名和密码样式统一管理 */
+
 .input-group {
   position: relative;
   margin-bottom: 0.3rem;
   border: 0.01rem solid #00e3ff;
 }
 
-/* 输入文字样式，用户名和密码样式统一管理 */
+
 .input-group input {
   width: 100%;
   padding: 0.12rem 0.1rem 0.12rem 0.35rem;
@@ -115,7 +118,7 @@ const goToForgot = () => {
   outline: none;
 }
 
-/* 登录按钮样式 */
+
 .login-button {
   width: 100%;
   padding: 0.14rem;
@@ -134,12 +137,12 @@ const goToForgot = () => {
   cursor: not-allowed;
 }
 
-/* 鼠标悬浮在按钮的颜色变化 */
+
 .login-button:hover:not(:disabled) {
   background-color: #00bcd4;
 }
 
-/* 忘记密码样式 */
+
 .forgot {
   margin-top: 0.2rem;
   font-size: 0.2rem;

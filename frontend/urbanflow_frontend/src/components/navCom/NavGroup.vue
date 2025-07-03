@@ -1,6 +1,5 @@
 <template>
   <div class="menu-group">
-    <!-- 菜单头 -->
     <div class="group-title" @click="toggleMenu">
       <span class="title-text">{{ title }}</span>
       <div class="iconfont arrow-icon">
@@ -8,7 +7,7 @@
       </div>
     </div>
 
-    <!-- 子菜单：逐项进入/退出动画 -->
+   
     <TransitionGroup
       v-if="itemsToShow.length"
       name="submenu"
@@ -49,12 +48,11 @@ defineEmits<{
 const expanded = ref(false)
 const itemsToShow = ref<string[]>([])
 
-// 检查是否有子菜单项处于激活状态
 const hasActiveItem = computed(() => {
   return (props.currentRoute === 'UserList') || (props.currentRoute === 'UserLog')
 })
 
-// 监听路由变化，如果有激活的子菜单项，保持展开状态
+
 watch(hasActiveItem, (newValue) => {
   if (newValue && !expanded.value) {
     expanded.value = true
@@ -63,9 +61,8 @@ watch(hasActiveItem, (newValue) => {
 }, { immediate: true })
 
 function toggleMenu() {
-  // 如果当前有激活的子菜单项，不允许收起
   if (hasActiveItem.value && expanded.value) {
-    return // 不做任何操作，保持展开状态
+    return 
   }
   
   expanded.value = !expanded.value
