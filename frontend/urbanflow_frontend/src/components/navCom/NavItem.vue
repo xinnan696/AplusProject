@@ -14,11 +14,9 @@ defineProps<{
   active?: boolean
 }>()
 
-
 defineEmits<{
   click: []
 }>()
-
 </script>
 
 <style scoped lang="scss">
@@ -88,19 +86,6 @@ defineEmits<{
   50% {
     opacity: 0.6;
     transform: translateY(-50%) scale(1.2);
-  }
-}
-</style>
-
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #2E2F41;
-  }
-
-  &.active {
-    background-color: #00B4D8;
-    color: white;
   }
 }
 </style>
