@@ -18,8 +18,15 @@ const props = defineProps<{
 }>()
 
 const chartOption = ref({
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  tooltip: { trigger: 'axis',
+    formatter: function (params) {
+      let point = params[0];
+      return `
+      ${point.axisValueLabel}<br/>
+      ${point.marker} ${point.seriesName}: <strong>${point.value}</strong> junctions
+    `;
+    }},
+  grid: { top: '20px', left: '3%', right: '5%', bottom: '3%', containLabel: true },
   xAxis: {
     type: 'category',
     boundaryGap: false,

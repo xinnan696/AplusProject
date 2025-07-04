@@ -175,6 +175,7 @@ onMounted(async () => {
 
 .card-full-width {
   height: 3.25rem; // Traffic Flow & Duration Ranking 高度
+  flex-shrink: 0;
 }
 
 .card-half-width {

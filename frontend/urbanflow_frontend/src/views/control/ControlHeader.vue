@@ -8,7 +8,8 @@
       >&#xe660;</div>
       <div class="logo_box">
         <div class="logo">
-          <img src="C:\Users\x2357\Desktop\urbanflow_frontend\src\assets\images\LOGO.png" alt="">
+<!--          <img src="C:\Users\x2357\Desktop\urbanflow_frontend\src\assets\images\LOGO.png" alt="">-->
+          <img src="@/assets/images/logo.png" alt="">
         </div>
       </div>
     </div>

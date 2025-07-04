@@ -25,19 +25,19 @@ defineProps<{
   color: #E0E0E0;
   display: flex;
   flex-direction: column;
-  padding: 0.15rem;
   box-sizing: border-box;
+  padding: 0.12rem 0.18rem;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0.01rem;
 }
 
 .card-title {
-  font-size: 0.18rem;
+  font-size: 0.20rem;
   font-weight: bold;
 }
 

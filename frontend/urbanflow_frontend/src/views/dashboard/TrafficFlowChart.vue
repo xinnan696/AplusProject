@@ -21,8 +21,20 @@ const props = defineProps<{
 }>()
 
 const chartOption = ref({
-  tooltip: { trigger: 'axis' },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
+  tooltip: { trigger: 'axis',
+    formatter: function (params) {
+      // params 是一个数组，我们通常取第一个点来获取X轴信息
+      let tooltipHtml = `${params[0].axisValueLabel}<br/>`;
+
+      // 遍历所有系列的数据点
+      params.forEach(item => {
+        // item.marker 是颜色小圆点, item.seriesName 是系列名, item.value 是值
+        tooltipHtml += `${item.marker} ${item.seriesName}: <strong>${item.value}</strong> cars<br/>`;
+      });
+
+      return tooltipHtml;
+    }},
+  grid: { top: '20px', left: '3%', right: '4%', bottom: '3%', containLabel: true },
   xAxis: {
     type: 'category',
     boundaryGap: false,
