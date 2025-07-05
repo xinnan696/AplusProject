@@ -11,6 +11,7 @@ import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/compone
 import VChart from 'vue-echarts'
 import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
+// import { getCongestionDurationRanking } from '@/service/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -65,6 +66,23 @@ async function fetchData() {
     chartOption.value.yAxis.data = [];
     chartOption.value.series[0].data = [];
   }
+
+  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
+  //   // 更新Y轴标签
+  //   chartOption.value.yAxis.data = response.x\yAxisLabels;
+  //
+  //   // 更新X轴配置
+  //   chartOption.value.xAxis.min = response.xAxisConfig.min;
+  //   chartOption.value.xAxis.max = response.xAxisConfig.max;
+  //   chartOption.value.xAxis.interval = response.xAxisConfig.interval;
+  //
+  //   // 更新图表数据
+  //   chartOption.value.series[0].data = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
+  // } else {
+  //   // 如果接口出错或返回数据不规范，清空图表
+  //   chartOption.value.xAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

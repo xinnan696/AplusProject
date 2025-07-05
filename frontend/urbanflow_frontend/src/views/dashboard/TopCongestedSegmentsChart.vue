@@ -10,6 +10,7 @@ import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 import { getTopCongestedSegments } from '@/mocks/mockDashboardData'
+// import { getTopCongestedSegments } from '@/service/dashboard_api'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -58,6 +59,23 @@ async function fetchData() {
     chartOption.value.xAxis.data = [];
     chartOption.value.series[0].data = [];
   }
+
+  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
+  //   // 更新X轴标签
+  //   chartOption.value.xAxis.data = response.xAxisLabels;
+  //
+  //   // 更新Y轴配置
+  //   chartOption.value.yAxis.min = response.yAxisConfig.min;
+  //   chartOption.value.yAxis.max = response.yAxisConfig.max;
+  //   chartOption.value.yAxis.interval = response.yAxisConfig.interval;
+  //
+  //   // 更新图表数据
+  //   chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
+  // } else {
+  //   // 如果接口出错或返回数据不规范，清空图表
+  //   chartOption.value.xAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

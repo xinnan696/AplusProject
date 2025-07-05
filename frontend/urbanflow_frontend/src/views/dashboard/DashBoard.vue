@@ -3,7 +3,7 @@
     <ControlHeader @toggle-nav="toggleNav" />
     <ControlNav :isVisible="isNavVisible" />
 
-    <div class="main-area">
+    <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
       <div class="dashboard-container">
         <DashboardCard title="Traffic Flow" class="card-full-width">
           <template #filters>
@@ -81,6 +81,7 @@ import CongestionDurationRankingChart from '@/views/dashboard/CongestionDuration
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
 import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+// import { getJunctions } from '@/service/dashboard_api'
 
 // Filters State
 const trafficFlowFilters = reactive({
@@ -135,7 +136,8 @@ onMounted(async () => {
 // 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
 // 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
-  position: fixed;
+  //position: fixed;
+  position: relative;
   top: 0;
   left: 0;
   right: 0;
@@ -150,16 +152,42 @@ onMounted(async () => {
 }
 
 .main-area {
-  height: calc(100% - 64px); // 假设Header高度为64px
-  display: flex;
+  //height: calc(100% - 64px); // 假设Header高度为64px
+  //display: flex;
+  //overflow-y: auto;
+  //overflow-x: hidden;
+  //padding: 0 1.01rem; // 对应左右间隙 101px
+  //justify-content: center;
+
+  position: absolute;
+  top: 40px; // 假设Header高度为64px
+  bottom: 0;
   overflow-y: auto;
-  overflow-x: hidden;
-  padding: 0 1.01rem; // 对应左右间隙 101px
+  display: flex;
   justify-content: center;
+
+  // 定义两个变量，用于导航栏的宽度
+  $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
+  $nav-expanded-width: 1.0rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
+
+  // 为位移和宽度变化添加平滑的过渡动画
+  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+
+  // 默认状态（导航栏收起时）
+  left: $nav-collapsed-width;
+  width: calc(100% - #{$nav-collapsed-width});
+
+  // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
+  &.nav-expanded {
+    left: $nav-expanded-width;
+    width: calc(100% - #{$nav-expanded-width});
+  }
 }
 
+
+
 .dashboard-container {
-  width: 16.80rem; // 对应 1680px
+  width: 14.80rem; // 对应 1680px
   min-height: 10.16rem; // 对应 1016px
   display: flex;
   flex-direction: column;

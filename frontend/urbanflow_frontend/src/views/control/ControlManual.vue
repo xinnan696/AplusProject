@@ -318,9 +318,6 @@ defineExpose({
 
 
 
-
-
-
 <style scoped lang="scss">
 .manual-control {
   width: 100%;

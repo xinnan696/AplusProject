@@ -13,14 +13,14 @@ export const getJunctions = async () => {
   console.log("MOCK API: Fetching junctions...");
   await sleep(100); // 模拟延迟
   return [
-    { junction_id: 'j001', junction_name: 'Main St & 1st Ave' },
-    { junction_id: 'j002', junction_name: 'River Rd & Oak Blvd' },
-    { junction_id: 'j003', junction_name: 'Elm Ave & Maple Dr' },
-    { junction_id: 'j004', junction_name: 'Highway 1 & Park Lane' },
-    { junction_id: 'j005', junction_name: 'Queen Ave & King St' },
-    { junction_id: 'j006', junction_name: 'Market Rd & Broadway' },
-    { junction_id: 'j007', junction_name: 'Oak St & 25th Ave' },
-    { junction_id: 'j008', junction_name: 'Maple Rd & 30th Ave' },
+    { junction_id: 'j001', junction_name: 'Main St_1st Ave' },
+    { junction_id: 'j002', junction_name: 'River Rd_Oak Blvd' },
+    { junction_id: 'j003', junction_name: 'Elm Ave_Maple Dr' },
+    { junction_id: 'j004', junction_name: 'Highway 1_Park Lane' },
+    { junction_id: 'j005', junction_name: 'Queen Ave_King St' },
+    { junction_id: 'j006', junction_name: 'Market Rd_Broadway' },
+    { junction_id: 'j007', junction_name: 'Oak St_25th Ave' },
+    { junction_id: 'j008', junction_name: 'Maple Rd_30th Ave' },
   ];
 };
 
