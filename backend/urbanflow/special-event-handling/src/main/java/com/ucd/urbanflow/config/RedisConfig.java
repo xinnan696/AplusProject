@@ -7,7 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * Redis Configuration Class
+ * Redis Configuration Class*
  */
 @Configuration
 public class RedisConfig {

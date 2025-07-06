@@ -1,7 +1,11 @@
 package com.ucd.urbanflow.event.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ucd.urbanflow.dto.service.EventSchedulerEvent;
 import com.ucd.urbanflow.event.entity.SpecialEventSchedule;
 import com.ucd.urbanflow.event.mapper.SpecialEventMapper;
+import com.ucd.urbanflow.service.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -21,6 +25,11 @@ public class EventProcessingService {
     
     @Autowired
     private SpecialEventMapper specialEventMapper;
+    
+    @Autowired
+    private EventService eventService;
+    
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     private static final String SIMULATION_TIME_KEY = "sumo:simulation_time";
     
@@ -52,8 +61,10 @@ public class EventProcessingService {
         
         for (SpecialEventSchedule event : pendingEvents) {
             try {
-                // TODO: 调用下一个服务
-
+                // 调用 EventService 触发事件
+                EventSchedulerEvent eventDTO = convertToEventDTO(event);
+                eventService.triggerEvent(eventDTO);
+                
                 boolean success = true;
                 
                 if (success) {
@@ -72,5 +83,32 @@ public class EventProcessingService {
         
         return String.format("Processed %d events: %d successful, %d failed", 
                             pendingEvents.size(), successCount, failCount);
+    }
+    
+    /**
+     * 将数据库实体转换为 DTO
+     */
+    private EventSchedulerEvent convertToEventDTO(SpecialEventSchedule schedule) {
+        try {
+            EventSchedulerEvent event = new EventSchedulerEvent();
+            event.setEventID(schedule.getEventId());
+            event.setEventType(schedule.getEventType());
+            event.setTriggerTime(schedule.getTriggerTime());
+            event.setDuration(schedule.getDuration());
+            
+            // 解析 lane_ids JSON 字符串
+            if (schedule.getLaneIds() != null && !schedule.getLaneIds().isEmpty()) {
+                List<String> laneIds = objectMapper.readValue(
+                    schedule.getLaneIds(), 
+                    new TypeReference<List<String>>() {}
+                );
+                event.setLaneIds(laneIds);
+            }
+            
+            return event;
+        } catch (Exception e) {
+            log.error("Error converting event entity to DTO: {}", schedule.getEventId(), e);
+            throw new RuntimeException("Failed to convert event", e);
+        }
     }
 }

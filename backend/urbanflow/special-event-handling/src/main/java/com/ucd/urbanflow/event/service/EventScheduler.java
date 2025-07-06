@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * 事件定时调度服务
+ * 事件定时调度服务*
  */
 @Slf4j
 @Service

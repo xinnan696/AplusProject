@@ -10,7 +10,7 @@ import java.util.List;
  */
 @Mapper
 public interface SpecialEventMapper {
-    
+
     /**
      * Find pending events by trigger time
      * @param currentTime Current simulation time

@@ -17,7 +17,7 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
     
-    <!-- Find pending events by trigger time -->
+    <!-- Find* pending events by trigger time -->
     <select id="findPendingEventsByTriggerTime" resultMap="SpecialEventScheduleResultMap">
         SELECT id, event_id, event_type, trigger_time, duration, lane_ids, event_status, created_at, updated_at
         FROM special_event_schedule 

@@ -31,4 +31,3 @@ public class EventController {
     public String processAllEvents() {
         return eventProcessingService.processAllEvents();
     }
-}
