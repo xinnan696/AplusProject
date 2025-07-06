@@ -1,18 +1,14 @@
 package com.ucd.urbanflow.service;
 
-import com.ucd.urbanflow.dto.service.ManualControlRequest;
-import com.ucd.urbanflow.dto.service.ManualControlResponse;
-import com.ucd.urbanflow.dto.service.TraCIClient;
+import com.ucd.urbanflow.dto.ManualControlRequest;
+import com.ucd.urbanflow.dto.ManualControlResponse;
+import com.ucd.urbanflow.dto.TraCIClient;
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class SignalControlService {

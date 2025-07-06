@@ -1,7 +1,7 @@
 package com.ucd.urbanflow.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ucd.urbanflow.dto.service.EventSchedulerEvent;
+import com.ucd.urbanflow.dto.EventSchedulerEvent;
 import jakarta.annotation.PostConstruct;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
