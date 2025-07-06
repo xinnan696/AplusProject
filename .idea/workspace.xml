@@ -5,16 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 1.0">
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -73,6 +72,9 @@
     &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
     &quot;ts.external.directory.path&quot;: &quot;E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -104,6 +106,8 @@
       <workItem from="1751570144311" duration="5623000" />
       <workItem from="1751578890516" duration="7853000" />
       <workItem from="1751717192591" duration="4157000" />
+      <workItem from="1751799523824" duration="18544000" />
+      <workItem from="1751829924102" duration="715000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
@@ -144,7 +148,19 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/feature/dashboard-yl" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
           </value>
         </entry>
       </map>

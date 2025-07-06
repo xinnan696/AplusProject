@@ -9,9 +9,9 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
+//import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
-// import { getCongestionDurationRanking } from '@/service/dashboard_api'
+import { getCongestionDurationRanking } from '@/service/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -31,7 +31,12 @@ const chartOption = ref({
     name: 'Minutes',
     nameTextStyle: { color: '#A0A0A0' },
     boundaryGap: [0, 0.01],
-    axisLabel: { color: '#A0A0A0' },
+    axisLabel:
+      { color: '#A0A0A0',
+        formatter: function (value) {
+          return Math.round(value);
+        }
+      },
     splitLine: { lineStyle: { color: '#3A3A59' } },
   },
   yAxis: {
@@ -57,32 +62,37 @@ const chartOption = ref({
 async function fetchData() {
   const response = await getCongestionDurationRanking({ time_range: props.filters.timeRange });
 
-  if (response && response.data && response.labels) {
-    // For horizontal bar chart, reverse the data so the highest value is at the top
-    chartOption.value.yAxis.data = [...response.labels].reverse();
-    const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
-    chartOption.value.series[0].data = [...dataInMinutes].reverse();
+  // if (response && response.data && response.labels) {
+  //   // For horizontal bar chart, reverse the data so the highest value is at the top
+  //   chartOption.value.yAxis.data = [...response.labels].reverse();
+  //   const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
+  //   chartOption.value.series[0].data = [...dataInMinutes].reverse();
+  // } else {
+  //   chartOption.value.yAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
+
+  if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
+
+    // 更新Y轴标签
+    chartOption.value.yAxis.data = [...response.yAxisLabels].reverse();
+    //chartOption.value.yAxis.data = response.yAxisLabels;
+
+    // 更新X轴配置
+    chartOption.value.xAxis.min = response.xAxisConfig.min;
+    chartOption.value.xAxis.max = response.xAxisConfig.max;
+    chartOption.value.xAxis.interval = response.xAxisConfig.interval;
+
+    // 更新图表数据
+    const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds);
+    const reversedData = [...dataInMinutes].reverse();
+    chartOption.value.series[0].data = reversedData;
+    //chartOption.value.series[0].data = response.data.map((d: any) => d.total_congestion_duration_seconds);
   } else {
+    // 如果接口出错或返回数据不规范，清空图表
     chartOption.value.yAxis.data = [];
     chartOption.value.series[0].data = [];
   }
-
-  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
-  //   // 更新Y轴标签
-  //   chartOption.value.yAxis.data = response.x\yAxisLabels;
-  //
-  //   // 更新X轴配置
-  //   chartOption.value.xAxis.min = response.xAxisConfig.min;
-  //   chartOption.value.xAxis.max = response.xAxisConfig.max;
-  //   chartOption.value.xAxis.interval = response.xAxisConfig.interval;
-  //
-  //   // 更新图表数据
-  //   chartOption.value.series[0].data = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
-  // } else {
-  //   // 如果接口出错或返回数据不规范，清空图表
-  //   chartOption.value.xAxis.data = [];
-  //   chartOption.value.series[0].data = [];
-  // }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

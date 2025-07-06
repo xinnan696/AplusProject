@@ -24,7 +24,7 @@
         </DashboardCard>
 
         <div class="card-row">
-          <DashboardCard title="Top Congested Segments" class="card-half-width">
+          <DashboardCard title="Congested Junction Count Trend" class="card-half-width">
             <template #filters>
               <CustomSelect
                 :options="timeRangeOptions"
@@ -33,11 +33,11 @@
               />
             </template>
             <template #default>
-              <TopCongestedSegmentsChart :filters="topSegmentsFilters" />
+              <CongestedJunctionCountTrendChart :filters="topSegmentsFilters" />
             </template>
           </DashboardCard>
 
-          <DashboardCard title="Congested Junction Count Trend" class="card-half-width">
+          <DashboardCard title="Top Congested Times" class="card-half-width">
             <template #filters>
               <CustomSelect
                 :options="timeRangeOptions"
@@ -46,7 +46,7 @@
               />
             </template>
             <template #default>
-              <CongestedJunctionCountTrendChart :filters="junctionCountFilters" />
+              <TopCongestedTimesChart :filters="junctionCountFilters" />
             </template>
           </DashboardCard>
         </div>
@@ -75,30 +75,30 @@ import ControlNav from '@/views/control/ControlNav.vue'
 import DashboardCard from '@/views/dashboard/DashboardCard.vue'
 import CustomSelect from '@/views/dashboard/CustomSelect.vue'
 import TrafficFlowChart from '@/views/dashboard/TrafficFlowChart.vue'
-import TopCongestedSegmentsChart from '@/views/dashboard/TopCongestedSegmentsChart.vue'
+import TopCongestedTimesChart from '@/views/dashboard/TopCongestedTimesChart.vue'
 import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctionCountTrendChart.vue'
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
-import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-// import { getJunctions } from '@/service/dashboard_api'
+//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+import { getJunctions } from '@/service/dashboard_api'
 
 // Filters State
 const trafficFlowFilters = reactive({
   junctionId: 'total_city',
-  timeRange: '24 hours',
+  timeRange: '24hours',
 })
 
 const topSegmentsFilters = reactive({
-  timeRange: '24 hours',
+  timeRange: '24hours',
 })
 
 const junctionCountFilters = reactive({
-  timeRange: '24 hours',
+  timeRange: '24hours',
 })
 
 const durationRankingFilters = reactive({
-  timeRange: '24 hours',
+  timeRange: '24hours',
 })
 
 // Filter Options
@@ -107,19 +107,19 @@ const junctionOptions = ref([
 ])
 
 const timeRangeOptions = ref([
-  { value: '24 hours', label: '24 hours' },
-  { value: 'one week', label: 'One week' },
-  { value: 'one month', label: 'One month' },
-  { value: 'six months', label: 'Six months' },
-  { value: 'one year', label: 'One year' },
+  { value: '24hours', label: '24 hours' },
+  { value: 'oneweek', label: 'One week' },
+  { value: 'onemonth', label: 'One month' },
+  { value: 'sixmonths', label: 'Six months' },
+  { value: 'oneyear', label: 'One year' },
 ])
 
 const durationRankingTimeRangeOptions = ref([
-  { value: '24 hours', label: '24 hours' },
-  { value: 'one month', label: 'One month' },
-  { value: 'three months', label: 'Three months' },
-  { value: 'six months', label: 'Six months' },
-  { value: 'one year', label: 'One year' },
+  { value: '24hours', label: '24 hours' },
+  { value: 'onemonth', label: 'One month' },
+  { value: 'threemonths', label: 'Three months' },
+  { value: 'sixmonths', label: 'Six months' },
+  { value: 'oneyear', label: 'One year' },
 ])
 
 // Fetch initial data for filters
@@ -183,7 +183,6 @@ onMounted(async () => {
     width: calc(100% - #{$nav-expanded-width});
   }
 }
-
 
 
 .dashboard-container {
