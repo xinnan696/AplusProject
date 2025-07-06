@@ -2,12 +2,14 @@ import os
 import json
 import redis.asyncio as redis
 import uvicorn
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, WebSocket, WebSocketDisconnect
 import asyncio
 from pydantic import BaseModel
 import traci
 import time
-
+from typing import List, Optional
+from event_manager import EventManager
+import traceback
 
 # SUMO
 sumoBinary = "E:/sumo/sumo-1.23.1/bin/sumo"
@@ -41,6 +43,14 @@ class StateDurationPayload(BaseModel):
     duration: int
     lightIndex: int
 
+class EventPayload(BaseModel):
+    event_id: str
+    duration: float
+
+class LaneClosurePayload(BaseModel):
+    event_id: str
+    duration: float
+    lane_ids: List[str]
 
 # Create FastAPI application and global variables
 app = FastAPI(
@@ -70,6 +80,9 @@ KEY_ALL_TLS = "sumo:tls"
 junction_names_map = {}
 tls_conflict_maps = {}
 junction_to_tls_map = {}
+
+# <<< 创建 EventManager 的全局实例 >>>
+event_manager = EventManager()
 
 
 # Advance Simulation
@@ -140,7 +153,12 @@ async def simulation_loop():
                                 print(f"Task[{tls_id}]: Time's up. Default program has been restored silently. Task lifecycle ended.")
                                 del TASK_SCHEDULER[tls_id]
 
-                # 3. Update data to Redis
+                # <<< 新增：每一步都检查特殊事件是否到期 >>>
+                # 3. Check special events
+                print("[SimLoop] Starting checking  special events...")
+                await event_manager.check_for_expired_events()
+
+                # 4. Update data to Redis
                 print("[SimLoop] Starting data update...")
 
                 for edgeID in traci.edge.getIDList():
@@ -188,7 +206,7 @@ async def simulation_loop():
                 connection_status["message"] = "SUMO connection lost during simulation."
                 # No need to break; the loop will continue naturally and enter reconnection logic on the next iteration
 
-        # 4. Send notifications immediately
+        # 5. Send notifications immediately
         if events_to_set:
             print(f"Sending  {len(events_to_set)} notifications immediately...")
             for event in events_to_set:
@@ -216,21 +234,6 @@ async def simulation_loop():
                 execution_time = end_time - start_time
                 print(f"pipe.execute() finished, duration: {execution_time:.4f} seconds")
             print("Redis cache update complete.")
-
-            # <<< MODIFICATION START: Read data for the target edge from Redis after writing it.
-            print(f"--- Reading data for target edge '{TARGET_EDGE_ID_TO_MONITOR}' from Redis ---")
-            # Use HGET to get the specific field (edge ID) from the hash (KEY_ALL_EDGES)
-            target_edge_data_json = await redis_client.hget(KEY_ALL_EDGES, TARGET_EDGE_ID_TO_MONITOR)
-
-            if target_edge_data_json:
-                # If data is found, parse the JSON and print it
-                retrieved_data = json.loads(target_edge_data_json)
-                print(f"SUCCESSFULLY RETRIEVED from Redis: {retrieved_data}")
-            else:
-                # If no data is found for that key, print a warning.
-                # This could happen if the edge ID is wrong or if the simulation hasn't produced data for it yet.
-                print(f"WARNING: Could not find data for edge '{TARGET_EDGE_ID_TO_MONITOR}' in Redis.")
-            # <<< MODIFICATION END
 
         except redis.RedisError as e:
             print(f"Redis Error: {e}")
@@ -445,6 +448,67 @@ async def shutdown_connections():
         await redis_client.close()
         connection_status["redis_connected"] = False
         print("[FastAPI] Redis connection closed")
+
+
+@app.websocket("/ws/events")
+async def websocket_event_handler(websocket: WebSocket):
+    """
+    处理来自后端的WebSocket连接，并持续监听事件触发指令。
+    """
+    await websocket.accept()
+    print("[Special Event] 后端WebSocket客户端已连接。")
+    try:
+        while True:
+            # 1. 等待并接收来自后端的消息
+            data = await websocket.receive_text()
+
+            try:
+                # 2. 解析JSON指令
+                command = json.loads(data)
+                event_type = command.get("event_type")
+                event_id = command.get("event_id")
+                duration = command.get("duration")
+
+                if not all([event_type, event_id, duration]):
+                    raise ValueError("[Special Event] 指令缺少必需字段: event_type, event_id, or duration")
+
+                print(f"[Special Event] 收到WebSocket指令: event_id={event_id}, type={event_type}")
+
+                # 3. 根据 event_type 调用不同的事件管理器方法
+                result = {}
+                async with TRACI_LOCK:
+                    if event_type == "vehicle_breakdown":
+                        result = await event_manager.trigger_vehicle_breakdown(event_id, duration)
+                    elif event_type == "vehicle_collision":
+                        result = await event_manager.trigger_vehicle_collision(event_id, duration)
+                    elif event_type == "lane_closure":
+                        lane_ids = command.get("lane_ids", [])
+                        if not lane_ids:
+                            raise ValueError("lane_closure 事件缺少 lane_ids 参数")
+                        result = await event_manager.trigger_lane_closure(event_id, duration, lane_ids)
+                    else:
+                        raise ValueError(f"[Special Event] 未知的事件类型: {event_type}")
+
+                # 4. 将执行结果通过WebSocket发回给后端
+                if result.get("success"):
+                    response_payload = {"status": "success", "event_id": event_id, **result.get("details", {})}
+                    await websocket.send_text(json.dumps(response_payload))
+                else:
+                    response_payload = {"status": "success", "event_id": event_id, **result.get("details", {})}
+                    await websocket.send_text(json.dumps(response_payload))
+
+            except json.JSONDecodeError:
+                await websocket.send_text(json.dumps({"status": "fail", "message": "无效的JSON格式。"}))
+            except ValueError as e:
+                await websocket.send_text(json.dumps({"status": "fail", "message": str(e)}))
+
+    except WebSocketDisconnect:
+        print("[Special Event] 后端WebSocket客户端已断开连接。")
+    except Exception as e:
+        print(f"WebSocket处理时发生未知错误: {e}")
+        print("--- 详细错误堆栈跟踪 ---")
+        traceback.print_exc()
+        print("--------------------------")
 
 
 def generate_and_send_junction_names():

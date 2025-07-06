@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 1.0">
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Vue Single File Component" />
+        <option value="TypeScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="REMOTE">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="origin/develop" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$/backend/traciModel" value="feature/traciModel-cyl" />
+      </map>
+    </option>
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="ROOT_SYNC" value="DONT_SYNC" />
+  </component>
+  <component name="MarkdownSettingsMigration">
+    <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProjectId" id="2yuN0IKkSd8s3qhzHcp2HfL70gE" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;E:/UCD/Summer/AplusProject&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.standard&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="E:\UCD\Summer\AplusProject\frontend\urbanflow_frontend\src" />
+    </key>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="" />
+      <created>1750680273358</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1750680273358</updated>
+      <workItem from="1750680275995" duration="2321000" />
+      <workItem from="1750686760858" duration="926000" />
+      <workItem from="1750688778149" duration="28000" />
+      <workItem from="1750688828917" duration="12000" />
+      <workItem from="1751133527286" duration="578000" />
+      <workItem from="1751134138287" duration="19000" />
+      <workItem from="1751371082587" duration="197000" />
+      <workItem from="1751451069967" duration="10000" />
+      <workItem from="1751548276915" duration="2298000" />
+      <workItem from="1751550758919" duration="6748000" />
+      <workItem from="1751570144311" duration="5623000" />
+      <workItem from="1751578890516" duration="7853000" />
+      <workItem from="1751717192591" duration="4157000" />
+      <workItem from="1751799523824" duration="18544000" />
+      <workItem from="1751829924102" duration="715000" />
+    </task>
+    <task id="LOCAL-00001" summary="commit newFast.py">
+      <created>1750682190182</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1750682190182</updated>
+    </task>
+    <task id="LOCAL-00002" summary="commit newFast.py">
+      <created>1750682735211</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1750682735211</updated>
+    </task>
+    <task id="LOCAL-00003" summary="dashboard frontend version 0.1">
+      <created>1751579914701</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1751579914701</updated>
+    </task>
+    <task id="LOCAL-00004" summary="dashboard frontend version 1.0">
+      <created>1751587881857</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1751587881857</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State>
+              <option name="FILTERS">
+                <map>
+                  <entry key="branch">
+                    <value>
+                      <list>
+                        <option value="origin/feature/dashboard-yl" />
+                      </list>
+                    </value>
+                  </entry>
+                </map>
+              </option>
+            </State>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <ignored-roots>
+      <path value="$PROJECT_DIR$/backend/traciModel" />
+    </ignored-roots>
+    <MESSAGE value="commit newFast.py" />
+    <MESSAGE value="dashboard frontend version 0.1" />
+    <MESSAGE value="dashboard frontend version 1.0" />
+    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 1.0" />
+  </component>
+</project>
