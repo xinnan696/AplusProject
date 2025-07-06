@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucd.urbanflow.event.mapper.SpecialEventMapper">
+    
+    <!-- Result mapping -->
+    <resultMap id="SpecialEventScheduleResultMap" type="com.ucd.urbanflow.event.entity.SpecialEventSchedule">
+        <id property="id" column="id"/>
+        <result property="eventId" column="event_id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="triggerTime" column="trigger_time"/>
+        <result property="duration" column="duration"/>
+        <result property="laneIds" column="lane_ids"/>
+        <result property="eventStatus" column="event_status"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+    
+    <!-- Find pending events by trigger time -->
+    <select id="findPendingEventsByTriggerTime" resultMap="SpecialEventScheduleResultMap">
+        SELECT id, event_id, event_type, trigger_time, duration, lane_ids, event_status, created_at, updated_at
+        FROM special_event_schedule 
+        WHERE trigger_time &lt;= #{currentTime} 
+        AND event_status = 'pending'
+        ORDER BY trigger_time ASC
+    </select>
+    
+    <!-- Find triggered events that should finish -->
+    <select id="findTriggeredEventsToFinish" resultMap="SpecialEventScheduleResultMap">
+        SELECT id, event_id, event_type, trigger_time, duration, lane_ids, event_status, created_at, updated_at
+        FROM special_event_schedule 
+        WHERE event_status = 'triggered'
+        AND #{currentTime} &gt;= (trigger_time + duration)
+    </select>
+    
+    <!-- Update event status -->
+    <update id="updateEventStatus">
+        UPDATE special_event_schedule 
+        SET event_status = #{status}, updated_at = NOW()
+        WHERE event_id = #{eventId}
+    </update>
+
+</mapper>
