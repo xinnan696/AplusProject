@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // 后端API基础地址 同时要配置在vite.config.ts
-// const API_BASE_URL = 'http://192.168.83.199:8087/api';
+// const API_BASE_URL = '/api';
 
 // 定义一个通用的错误返回值，防止图表因数据null而崩溃
 const errorResponse = { data: [], xAxisLabels: [], yAxisLabels: [], xAxisConfig: {}, yAxisConfig: {} };

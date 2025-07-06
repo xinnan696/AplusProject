@@ -1,20 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '@/views//dashboard/Dashboard.vue'
-import ControlHome from "@/views/control/ControlHome.vue";
 
 // 路由配置
 const routes = [
   // 🔸 根路径重定向到登录页
   {
-    // path: '/',
-    // redirect: '/login'
-    path: '/', // 根路径
-    name: 'dashboard-home', // 可以给个新名字
-    component: Dashboard
+    path: '/',
+    redirect: '/login'
     // path: '/', // 根路径
-    // name: 'control-home', // 可以给个新名字
-    // component: ControlHome
-
+    // name: 'dashboard-home', // 可以给个新名字
+    // component: Dashboard
   },
 
   // 🔸 登录相关页面
