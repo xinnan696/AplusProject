@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * DTO for login requests. The 'userId' field maps to the user's Account Number.
+ * DTO for login requests. The 'accountNumber' field maps to the user's Account Number.
  */
 @Data
 public class LoginRequest {
