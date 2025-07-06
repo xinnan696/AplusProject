@@ -32,4 +32,5 @@ public class CreateUserRequest {
     private String role; // e.g., "ROLE_USER"
 
     private boolean enabled;
+
 }
