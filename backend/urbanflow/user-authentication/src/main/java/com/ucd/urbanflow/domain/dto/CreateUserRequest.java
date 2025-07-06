@@ -31,5 +31,5 @@ public class CreateUserRequest {
     @NotBlank(message = "Role cannot be blank")
     private String role; // e.g., "ROLE_USER"
 
-    private boolean enabled; // Maps to the "Status" field in the UI
+    private boolean enabled;
 }
