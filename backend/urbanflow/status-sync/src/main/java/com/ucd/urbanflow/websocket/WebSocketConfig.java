@@ -1,3 +1,4 @@
+/*
 package com.ucd.urbanflow.websocket;
 
 import org.springframework.context.annotation.Configuration;
@@ -18,3 +19,4 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(statusHandler, "/api/status/ws").setAllowedOrigins("*");
     }
 }
+*/

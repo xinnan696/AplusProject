@@ -18,8 +18,16 @@ public class TopCongestedSegmentsService {
     private static final int TOP_N = 6;
 
     public Map<String, Object> buildDashboardData(String timeRange) {
-        // 自动算 start/end
-        Date end = new Date();
+
+//        Date end = new Date();
+        Date end = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            end = sdf.parse("2024-07-07 22:00:00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            end = new Date();
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
@@ -27,17 +35,17 @@ public class TopCongestedSegmentsService {
         cal.set(Calendar.MILLISECOND, 0);
 
         Date start;
-        switch (timeRange == null ? "24 hours" : timeRange.toLowerCase()) {
-            case "one week":
+        switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
+            case "oneweek":
                 cal.add(Calendar.DAY_OF_MONTH, -7);
                 break;
-            case "one month":
+            case "onemonth":
                 cal.add(Calendar.MONTH, -1);
                 break;
-            case "six months":
+            case "sixmonths":
                 cal.add(Calendar.MONTH, -6);
                 break;
-            case "one year":
+            case "oneyear":
                 cal.add(Calendar.YEAR, -1);
                 break;
             default:
@@ -71,7 +79,7 @@ public class TopCongestedSegmentsService {
             m.put("junction_name", entry.getKey());
             m.put("congestion_count", entry.getValue());
             data.add(m);
-            min = Math.min(min, entry.getValue());
+            min = 0;
             max = Math.max(max, entry.getValue());
         }
         if (min == Integer.MAX_VALUE) min = 0;
@@ -79,7 +87,7 @@ public class TopCongestedSegmentsService {
         int interval = (max - min) / 6 > 0 ? (max - min) / 6 : 5;
 
         Map<String, Object> yAxisConfig = new HashMap<>();
-        yAxisConfig.put("min", min);
+        yAxisConfig.put("min", 0);
         yAxisConfig.put("max", max);
         yAxisConfig.put("interval", interval);
 
