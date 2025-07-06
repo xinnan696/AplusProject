@@ -15,7 +15,15 @@ public class TrafficFlowService {
     private TrafficFlowMapper mapper;
 
     public Map<String, Object> buildDashboardData(String junctionId, String timeRange) {
-        Date end = new Date();
+//        Date end = new Date();
+        Date end = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            end = sdf.parse("2024-07-07 22:00:00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            end = new Date();
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
@@ -24,16 +32,16 @@ public class TrafficFlowService {
 
         Date start;
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
-            case "one week":
+            case "oneweek":
                 cal.add(Calendar.DAY_OF_MONTH, -7);
                 break;
-            case "one month":
+            case "onemonth":
                 cal.add(Calendar.MONTH, -1);
                 break;
-            case "six months":
+            case "sixmonths":
                 cal.add(Calendar.MONTH, -6);
                 break;
-            case "one year":
+            case "oneyear":
                 cal.add(Calendar.YEAR, -1);
                 break;
             default:
@@ -49,7 +57,7 @@ public class TrafficFlowService {
         List<Integer> data = new ArrayList<>();
         int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 
-        if ("24 hours".equalsIgnoreCase(timeRange) || timeRange == null) {
+        if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
             Map<Integer, Integer> flowByHour = new LinkedHashMap<>();
             for (int i = 0; i < 24; i += 2) flowByHour.put(i, 0);
             for (TrafficFlow s : stats) {
@@ -67,7 +75,7 @@ public class TrafficFlowService {
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
-        } else if ("one week".equalsIgnoreCase(timeRange)) {
+        } else if ("oneweek".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> flowByDay = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Calendar calendar = Calendar.getInstance();
@@ -89,7 +97,7 @@ public class TrafficFlowService {
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
-        } else if ("one month".equalsIgnoreCase(timeRange)) {
+        } else if ("onemonth".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> flowByWeek = new LinkedHashMap<>();
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(start);
@@ -118,7 +126,7 @@ public class TrafficFlowService {
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
-        } else if ("six months".equalsIgnoreCase(timeRange)) {
+        } else if ("sixmonths".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> flowByMonth = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM");
             Calendar calendar = Calendar.getInstance();

@@ -18,7 +18,7 @@ public class TrafficFlowController {
     @Autowired
     private TrafficFlowService trafficFlowService;
 
-    @GetMapping("/dashborad")
+    @GetMapping("/dashboard")
     public Map<String, Object> getDashboardData(
             @RequestParam String junctionId,
             @RequestParam String timeRange

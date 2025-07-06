@@ -16,7 +16,15 @@ public class CongestedRoadCountService {
     private CongestedRoadCountMapper congestedRoadCountMapper;
 
     public Map<String, Object> buildDashboardData(String timeRange) {
-        Date end = new Date();
+//        Date end = new Date();
+        Date end = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            end = sdf.parse("2024-07-07 22:00:00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            end = new Date();
+        }
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
@@ -25,16 +33,16 @@ public class CongestedRoadCountService {
 
         Date start;
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
-            case "one week":
+            case "oneweek":
                 cal.add(Calendar.DAY_OF_MONTH, -7);
                 break;
-            case "one month":
+            case "onemonth":
                 cal.add(Calendar.MONTH, -1);
                 break;
-            case "six months":
+            case "sixmonths":
                 cal.add(Calendar.MONTH, -6);
                 break;
-            case "one year":
+            case "oneyear":
                 cal.add(Calendar.YEAR, -1);
                 break;
             default: // "24hours" or invalid
@@ -50,7 +58,7 @@ public class CongestedRoadCountService {
         List<Map<String, Object>> data = new ArrayList<>();
         int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 
-        if ("24 hours".equalsIgnoreCase(timeRange) || timeRange == null) {
+        if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
             Map<Integer, Integer> bucket = new LinkedHashMap<>();
             for (int i = 0; i < 24; i += 2) bucket.put(i, 0);
             for (CongestedRoadCount s : stats) {
@@ -72,7 +80,7 @@ public class CongestedRoadCountService {
                 min = Math.min(min, val);
                 max = Math.max(max, val);
             }
-        } else if ("one week".equalsIgnoreCase(timeRange)) {
+        } else if ("oneweek".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> bucket = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
             Calendar calendar = Calendar.getInstance();
@@ -97,7 +105,7 @@ public class CongestedRoadCountService {
                 min = Math.min(min, val);
                 max = Math.max(max, val);
             }
-        } else if ("one month".equalsIgnoreCase(timeRange)) {
+        } else if ("onemonth".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> bucket = new LinkedHashMap<>();
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(start);
@@ -130,7 +138,7 @@ public class CongestedRoadCountService {
                 min = Math.min(min, val);
                 max = Math.max(max, val);
             }
-        } else if ("six months".equalsIgnoreCase(timeRange)) {
+        } else if ("sixmonths".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> bucket = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM");
             Calendar calendar = Calendar.getInstance();
@@ -155,7 +163,7 @@ public class CongestedRoadCountService {
                 min = Math.min(min, val);
                 max = Math.max(max, val);
             }
-        } else if ("one year".equalsIgnoreCase(timeRange)) {
+        } else if ("oneyear".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> bucket = new LinkedHashMap<>();
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(start);

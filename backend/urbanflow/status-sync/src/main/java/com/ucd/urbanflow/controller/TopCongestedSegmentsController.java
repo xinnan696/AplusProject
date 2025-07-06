@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 import java.util.Map;
 
-@RestController("/api/congestedtimes")
-@RequestMapping
+@RestController
+@RequestMapping("/api/congestedtimes")
 public class TopCongestedSegmentsController {
     @Autowired
     private TopCongestedSegmentsService topCongestedSegmentsService;

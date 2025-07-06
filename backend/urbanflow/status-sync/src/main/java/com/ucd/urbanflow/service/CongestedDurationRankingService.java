@@ -11,6 +11,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.lettuce.core.GeoArgs.Unit.m;
+
 @Service
 public class CongestedDurationRankingService {
     @Autowired
@@ -18,7 +20,15 @@ public class CongestedDurationRankingService {
 
 
     public Map<String, Object> buildDashboardData(String timeRange) {
-        Date end = new Date();
+//        Date end = new Date();
+        Date end = null;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            end = sdf.parse("2024-07-07 22:00:00");
+        } catch (Exception e) {
+            e.printStackTrace();
+            end = new Date();
+        }
         Calendar c = Calendar.getInstance();
         c.setTime(end);
         c.set(Calendar.MINUTE, 0);
@@ -29,19 +39,19 @@ public class CongestedDurationRankingService {
 
         // aggregate by time range
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
-            case "24 hours":
+            case "24hours":
                 c.add(Calendar.HOUR_OF_DAY, -24);
                 break;
-            case "one week":
+            case "oneweek":
                 c.add(Calendar.DAY_OF_MONTH, -7);
                 break;
-            case "one month":
+            case "onemonth":
                 c.add(Calendar.MONTH, -1);
                 break;
-            case "six months":
+            case "sixmonths":
                 c.add(Calendar.MONTH, -6);
                 break;
-            case "one year":
+            case "oneyear":
                 c.add(Calendar.YEAR, -1);
                 break;
             default:
@@ -51,163 +61,50 @@ public class CongestedDurationRankingService {
 
         List<CongestedDurationRanking> stats = congestedDurationRankingMapper.selectByTimeRange(start, end);
 
+        System.out.println("start = " + start + ", end = " + end);
+        System.out.println("stats.size() = " + stats.size());
+        if (!stats.isEmpty()) {
+            for (CongestedDurationRanking s : stats) {
+                System.out.println(s.getTimeBucket() + " " + s.getJunctionName() + " " + s.getTotalCongestionDurationSeconds());
+            }
+        }
 
-        List<String> xAxisLabels = new ArrayList<>();
+        Map<String, Double> durationByJunction = new HashMap<>();
+        for (CongestedDurationRanking s : stats) {
+            String name = s.getJunctionName();
+            double val = s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds();
+            durationByJunction.put(name, durationByJunction.getOrDefault(name, 0.0) + val);
+        }
+
+        List<Map.Entry<String, Double>> sorted = new ArrayList<>(durationByJunction.entrySet());
+        sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        List<String> yAxisLabels = new ArrayList<>();
         List<Map<String, Object>> data = new ArrayList<>();
         double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
 
-        if ("24 hours".equalsIgnoreCase(timeRange) || timeRange == null) {
-            Map<Integer, Double> bucket = new LinkedHashMap<>();
-            for (int i=0; i<24; i+=2) bucket.put(i, 0.0);
-            for (CongestedDurationRanking s : stats) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(s.getTimeBucket());
-                int hour = cal.get(Calendar.HOUR_OF_DAY);
-                int hourBucket = (hour / 2) * 2;
-                bucket.put(hourBucket, bucket.getOrDefault(hourBucket, 0.0) + (s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds()));
-            }
-            xAxisLabels = new ArrayList<>();
-            data = new ArrayList<>();
-            for (int i=0; i<24; i+=2) {
-                xAxisLabels.add(String.valueOf(i));
-                double val = bucket.get(i);
-                Map<String, Object> m = new HashMap<>();
-                m.put("duration_sum", val);
-                data.add(m);
-                min = Math.min(min, val);
-                max = Math.max(max, val);
-            }
+        for (Map.Entry<String, Double> entry : sorted) {
+            yAxisLabels.add(entry.getKey());
+            Map<String, Object> m = new HashMap<>();
+            m.put("junction_name", entry.getKey());
+            m.put("total_congestion_duration_seconds", entry.getValue());
+            data.add(m);
+            min = 0;
+            max = Math.max(max, entry.getValue());
         }
-        else if ("one week".equalsIgnoreCase(timeRange)) {
-            Map<String, Double> bucket = new LinkedHashMap<>();
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(start);
-            while (!calendar.getTime().after(end)) {
-                String label = df.format(calendar.getTime());
-                bucket.put(label, 0.0);
-                calendar.add(Calendar.DATE, 1);
-            }
-            for (CongestedDurationRanking s : stats) {
-                String label = df.format(s.getTimeBucket());
-                bucket.put(label, bucket.getOrDefault(label, 0.0)
-                        + (s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds()));
-            }
-            xAxisLabels = new ArrayList<>(bucket.keySet());
-            data = new ArrayList<>();
-            for (String label : xAxisLabels) {
-                double val = bucket.get(label);
-                Map<String, Object> m = new HashMap<>();
-                m.put("duration_sum", val);
-                data.add(m);
-                min = Math.min(min, val);
-                max = Math.max(max, val);
-            }
-        }
-        else if ("one month".equalsIgnoreCase(timeRange)) {
-            Map<String, Double> bucket = new LinkedHashMap<>();
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(start);
-            int weekIndex = 1;
-            while (calendar.getTime().before(end)) {
-                Date weekStart = calendar.getTime();
-                calendar.add(Calendar.DATE, 7);
-                Date weekEnd = calendar.getTime().before(end) ? calendar.getTime() : end;
-                String label = "Week " + weekIndex + " (" + new SimpleDateFormat("MM-dd").format(weekStart) + ")";
-                bucket.put(label, 0.0);
-                weekIndex++;
-            }
-            for (CongestedDurationRanking s : stats) {
-                long days = (s.getTimeBucket().getTime() - start.getTime()) / (1000 * 3600 * 24);
-                int idx = (int)(days / 7) + 1;
-                Calendar tmp = Calendar.getInstance();
-                tmp.setTime(start);
-                tmp.add(Calendar.DATE, (idx - 1) * 7);
-                String label = "Week " + idx + " (" + new SimpleDateFormat("MM-dd").format(tmp.getTime()) + ")";
-                bucket.put(label, bucket.getOrDefault(label, 0.0)
-                        + (s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds()));
-            }
-            xAxisLabels = new ArrayList<>(bucket.keySet());
-            data = new ArrayList<>();
-            for (String label : xAxisLabels) {
-                double val = bucket.get(label);
-                Map<String, Object> m = new HashMap<>();
-                m.put("duration_sum", val);
-                data.add(m);
-                min = Math.min(min, val);
-                max = Math.max(max, val);
-            }
-        } else if ("six months".equalsIgnoreCase(timeRange)) {
-            Map<String, Double> bucket = new LinkedHashMap<>();
-            SimpleDateFormat df = new SimpleDateFormat("yyyy-MM");
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(start);
-            while (!calendar.getTime().after(end)) {
-                String label = df.format(calendar.getTime());
-                bucket.put(label, 0.0);
-                calendar.add(Calendar.MONTH, 1);
-            }
-            for (CongestedDurationRanking s : stats) {
-                String label = df.format(s.getTimeBucket());
-                bucket.put(label, bucket.getOrDefault(label, 0.0)
-                        + (s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds()));
-            }
-            xAxisLabels = new ArrayList<>(bucket.keySet());
-            data = new ArrayList<>();
-            for (String label : xAxisLabels) {
-                double val = bucket.get(label);
-                Map<String, Object> m = new HashMap<>();
-                m.put("duration_sum", val);
-                data.add(m);
-                min = Math.min(min, val);
-                max = Math.max(max, val);
-            }
-        } else if ("one year".equalsIgnoreCase(timeRange)) {
-            Map<String, Double> bucket = new LinkedHashMap<>();
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTime(start);
-            int quarterIndex = 1;
-            SimpleDateFormat df = new SimpleDateFormat("yyyy");
-            while (calendar.getTime().before(end)) {
-                String label = df.format(calendar.getTime()) + "-Q" + quarterIndex;
-                bucket.put(label, 0.0);
-                calendar.add(Calendar.MONTH, 3);
-                quarterIndex++;
-            }
-            for (CongestedDurationRanking s : stats) {
-                Calendar sc = Calendar.getInstance();
-                sc.setTime(s.getTimeBucket());
-                int month = sc.get(Calendar.MONTH);
-                int idx = (month / 3) + 1;
-                String label = new SimpleDateFormat("yyyy").format(s.getTimeBucket()) + "-Q" + idx;
-                bucket.put(label, bucket.getOrDefault(label, 0.0)
-                        + (s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds()));
-            }
-            xAxisLabels = new ArrayList<>(bucket.keySet());
-            data = new ArrayList<>();
-            for (String label : xAxisLabels) {
-                double val = bucket.get(label);
-                Map<String, Object> m = new HashMap<>();
-                m.put("duration_sum", val);
-                data.add(m);
-                min = Math.min(min, val);
-                max = Math.max(max, val);
-            }
-        }
-
 
         if (min == Double.MAX_VALUE) min = 0;
         if (max == Double.MIN_VALUE) max = 0;
-        double interval = (max - min) / 6 > 0 ? (max - min) / 6 : 50;
+        double interval = (max - min) / 6 > 0 ? (max - min) / 6 : 100;
 
-        Map<String, Object> yAxisConfig = new HashMap<>();
-        yAxisConfig.put("min", min);
-        yAxisConfig.put("max", max);
-        yAxisConfig.put("interval", interval);
+        Map<String, Object> xAxisConfig = new HashMap<>();
+        xAxisConfig.put("min", 0);
+        xAxisConfig.put("max", max);
+        xAxisConfig.put("interval", interval);
 
         Map<String, Object> resp = new HashMap<>();
-        resp.put("xAxisLabels", xAxisLabels);
-        resp.put("yAxisConfig", yAxisConfig);
+        resp.put("yAxisLabels", yAxisLabels);
+        resp.put("xAxisConfig", xAxisConfig);
         resp.put("data", data);
         return resp;
     }
