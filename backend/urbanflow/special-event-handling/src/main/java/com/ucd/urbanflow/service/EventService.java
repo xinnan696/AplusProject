@@ -1,6 +1,6 @@
 package com.ucd.urbanflow.service;
 
-import com.ucd.urbanflow.dto.service.EventSchedulerEvent;
+import com.ucd.urbanflow.dto.EventSchedulerEvent;
 import com.ucd.urbanflow.websocket.TraCIEventDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

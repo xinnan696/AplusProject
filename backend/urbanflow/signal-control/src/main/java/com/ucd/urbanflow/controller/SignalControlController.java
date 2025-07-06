@@ -1,7 +1,7 @@
 package com.ucd.urbanflow.controller;
 
-import com.ucd.urbanflow.dto.service.ManualControlRequest;
-import com.ucd.urbanflow.dto.service.ManualControlResponse;
+import com.ucd.urbanflow.dto.ManualControlRequest;
+import com.ucd.urbanflow.dto.ManualControlResponse;
 import com.ucd.urbanflow.service.SignalControlService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
