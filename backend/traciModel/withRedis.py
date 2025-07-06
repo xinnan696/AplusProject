@@ -497,18 +497,32 @@ async def websocket_event_handler(websocket: WebSocket):
                     response_payload = {"status": "success", "event_id": event_id, **result.get("details", {})}
                     await websocket.send_text(json.dumps(response_payload))
 
+
             except json.JSONDecodeError:
                 await websocket.send_text(json.dumps({"status": "fail", "message": "无效的JSON格式。"}))
             except ValueError as e:
                 await websocket.send_text(json.dumps({"status": "fail", "message": str(e)}))
+            except traci.TraCIException as e:
+                # 捕获traci执行错误，并将其作为失败消息返回给后端
+                print(f"TraCI 执行错误: {e}")
+                # 尝试从命令中获取event_id，以便返回给后端
+                try:
+                    failed_event_id = json.loads(data).get("event_id", "unknown")
+                except:
+                    failed_event_id = "unknown"
+                await websocket.send_text(json.dumps({"status": "fail","event_id": failed_event_id,"message": f"TraCI command failed: {e}"
+                }))
+            except Exception as e:
+                # 捕获其他所有未知错误，打印堆栈但保持循环继续
+                print(f"处理单个WebSocket消息时发生未知错误: {e}")
+                traceback.print_exc()
 
     except WebSocketDisconnect:
         print("[Special Event] 后端WebSocket客户端已断开连接。")
     except Exception as e:
-        print(f"WebSocket处理时发生未知错误: {e}")
-        print("--- 详细错误堆栈跟踪 ---")
+        # 这个外部的except现在只会在连接建立等更严重的情况下被触发
+        print(f"WebSocket连接级别发生未知错误: {e}")
         traceback.print_exc()
-        print("--------------------------")
 
 
 def generate_and_send_junction_names():
