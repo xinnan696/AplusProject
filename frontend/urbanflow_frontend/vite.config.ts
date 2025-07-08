@@ -37,7 +37,11 @@ export default defineConfig({
         target: 'http://localhost:8082',
         changeOrigin: true,
         rewrite: path => path, // 保留原始路径
-}
+      },
+      '/api':{
+        target: 'http://192.168.83.199:8087',
+        changeOrigin: true,
+      }
     },
   },
 })

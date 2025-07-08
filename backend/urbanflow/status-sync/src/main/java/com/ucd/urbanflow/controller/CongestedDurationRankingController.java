@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Date;
 import java.util.Map;
 
-@RestController("/api/durationranking")
-@RequestMapping
+@RestController
+@RequestMapping("/api/durationranking")
 public class CongestedDurationRankingController {
 
     @Autowired
