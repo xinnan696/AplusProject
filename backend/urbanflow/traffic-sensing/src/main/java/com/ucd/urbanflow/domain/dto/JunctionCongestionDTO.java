@@ -10,5 +10,7 @@ import lombok.NoArgsConstructor;
 public class JunctionCongestionDTO {
     private String junctionId;
     private String junctionName;
-    private int congestionCount; // 代表该路口拥堵指数 (最大入口车流量)
+//    private int maxVehicleCount;
+    private int congestionCount;
+
 }

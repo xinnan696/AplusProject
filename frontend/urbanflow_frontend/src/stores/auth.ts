@@ -24,41 +24,52 @@ const userRole = computed(() => user.value?.role || 'GUEST');
 
 // --- ACTIONS ---
 
-/**
-* Handles user login by calling the backend API.
-*/
 async function login(credentials: object) {
-      const response = await apiClient.post('/auth/login', credentials);
-      const responseData = response.data.data;
+    const response = await apiClient.post('/auth/login', credentials);
+    const responseData = response.data.data;
 
-      token.value = responseData.token;
-      user.value = responseData.user;
+    token.value = responseData.token;
+    user.value = responseData.user;
 
-      localStorage.setItem('authToken', token.value);
-      localStorage.setItem('user', JSON.stringify(user.value));
+    localStorage.setItem('authToken', token.value);
+    localStorage.setItem('user', JSON.stringify(user.value));
 
-      await router.push({ name: 'Control' });
-    }
+    await router.push({ name: 'Control' });
+  }
 
-    /**
-     * Clears authentication state and redirects to the login page.
-     */
-    function logout() {
-      token.value = null;
-      user.value = null;
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-      router.push({ name: 'Login' });
-    }
+  function logout() {
+    token.value = null;
+    user.value = null;
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    router.push({ name: 'Login' });
+  }
 
-    // ... other actions (forgotPassword, resetPassword) remain the same ...
+  /**
+   * @param payload - An object containing the user's email, e.g., { email: '...' }
+   */
+  async function forgotPassword(payload: object) {
+    // This calls the backend API and returns the promise.
+    return apiClient.post('/auth/forgot-password', payload);
+  }
 
-    return {
-      token,
-      user,
-      isAuthenticated,
-      userRole,
-      login,
-      logout,
-    };
+  /**
+   * @param payload - An object containing the token and newPassword.
+   */
+  async function resetPassword(payload: object) {
+    // This calls the backend API and returns the promise.
+    return apiClient.post('/auth/reset-password', payload);
+  }
+
+  return {
+    // All state and actions are now returned and available to components.
+    token,
+    user,
+    isAuthenticated,
+    userRole,
+    login,
+    logout,
+    forgotPassword,
+    resetPassword,
+  };
 });

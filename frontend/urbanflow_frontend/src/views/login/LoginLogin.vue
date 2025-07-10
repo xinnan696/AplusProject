@@ -1,13 +1,8 @@
 <template>
   <div class="auth-page">
     <div class="auth-box">
-      <div class="logo">logo</div>
+      <img src="@/assets/images/LOGO.png" alt="UrbanFlow Logo" class="logo-image" />
       <div class="system-title">URBANFLOW SYSTEM</div>
-
-      <div v-if="errors.api" class="api-error-toast-style">
-        <span class="iconfont icon-error">&#xe60b;</span>
-        <span>{{ errors.api }}</span>
-      </div>
 
       <form @submit.prevent="handleLogin">
         <div class="input-group">
@@ -17,7 +12,6 @@
             type="text"
             placeholder="Account Number"
             @input="clearError('accountNumber')"
-            :class="{ 'input-error': errors.accountNumber }"
           />
           <p v-if="errors.accountNumber" class="error-text">{{ errors.accountNumber }}</p>
         </div>
@@ -29,7 +23,6 @@
             type="password"
             placeholder="Password"
             @input="clearError('password')"
-            :class="{ 'input-error': errors.password }"
           />
           <p v-if="errors.password" class="error-text">{{ errors.password }}</p>
         </div>
@@ -52,6 +45,8 @@
 import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { toast } from '@/utils/ToastService';
+
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -64,7 +59,6 @@ const loginForm = reactive({
 const errors = reactive({
   accountNumber: '',
   password: '',
-  api: ''
 });
 
 const loading = ref(false);
@@ -98,7 +92,8 @@ const handleLogin = async () => {
   try {
     await authStore.login(loginForm);
   } catch (error: any) {
-    errors.api = error.response?.data?.message || 'Login failed. Please try again later.';
+    const errorMessage = error.response?.data?.message || 'Login failed. Please try again later.';
+    toast.error(errorMessage);
   } finally {
     loading.value = false;
   }
@@ -110,119 +105,29 @@ const goToForgot = () => {
 </script>
 
 <style scoped>
-.auth-page {
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-image: url('@/assets/images/LoginBg.png');
-  background-size: cover;
-  background-position: center;
-}
+.auth-page { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-image: url('@/assets/images/LoginBg.png'); background-size: cover; background-position: center; }
 .auth-box {
-  width: 480px;
-  padding: 40px 50px;
-  background-color: #1E1E2F;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  width: 420px;
+  padding: 40px;
+  background-color: #2c2f48;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   color: #fff;
   text-align: center;
   display: flex;
   flex-direction: column;
 }
-.logo {
-  font-size: 24px;
-  font-weight: bold;
-  letter-spacing: 2px;
-  margin-bottom: 20px;
-  text-transform: uppercase;
+.logo-image {
+  width: 100px; /* Adjusted logo size */
+  height: auto;
+  margin: 0 auto 25px;
 }
-.system-title {
-  font-size: 28px;
-  font-weight: bold;
-  color: #00e3ff;
-  margin-bottom: 40px;
-}
-.input-group {
-  position: relative;
-  width: 100%;
-  margin-bottom: 35px;
-}
-.input-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-}
-.input-group input {
-  width: 100%;
-  padding: 14px 15px 14px 50px;
-  border-radius: 8px;
-  border: 1px solid #00e3ff;
-  background-color: transparent;
-  color: #fff;
-  font-size: 16px;
-  outline: none;
-}
-.input-group input::placeholder {
-  color: rgba(255, 255, 255, 0.7);
-}
-.submit-button {
-  width: 100%;
-  padding: 15px;
-  background-color: #00e3ff;
-  color: #1E1E2F;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  font-size: 16px;
-  margin-top: 10px;
-}
-.submit-button:hover {
-  background-color: #00bcd4;
-}
-.forgot-password {
-  margin-top: 20px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-}
-.api-error-message {
-  color: #FF4D4F;
-  margin-bottom: 20px;
-  padding: 10px;
-  border: 1px solid #FF4D4F;
-  border-radius: 8px;
-}
-.error-text {
-  position: absolute;
-  left: 0;
-  bottom: -22px; /* Positions it perfectly below the input group */
-  color: #FF4D4F;
-  font-size: 12px;
-  text-align: left;
-}
-
-.api-error-toast-style {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 15px;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  background-color: #2B2C3D;
-  color: #E74C3C; /* Error color */
-  border: 1px solid #E74C3C;
-  font-size: 14px;
-}
-
-.api-error-toast-style .iconfont {
-  font-size: 18px;
-  margin-right: 10px;
-}
+.system-title { font-size: 26px; font-weight: 600; color: #00e3ff; margin-bottom: 40px; letter-spacing: 1px; }
+.input-group { position: relative; width: 100%; margin-bottom: 35px; }
+.input-icon { position: absolute; left: 18px; top: 14px; width: 20px; height: 20px; opacity: 0.6; }
+.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00e3ff; background-color: transparent; color: #fff; font-size: 16px; outline: none; }
+.input-group input::placeholder { color: rgba(255, 255, 255, 0.7); }
+.submit-button { width: 100%; padding: 14px; background-color: #00e3ff; color: #1E1E2F; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; font-size: 16px; margin-top: 10px; }
+.forgot-password { margin-top: 25px; font-size: 14px; color: rgba(255, 255, 255, 0.8); cursor: pointer; }
+.error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
 </style>

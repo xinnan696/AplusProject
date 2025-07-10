@@ -25,7 +25,7 @@
 
     <select id="findByEmail" resultMap="UserResultMap">
         SELECT * FROM users
-        WHERE email = #{email} AND is_deleted = FALSE
+        WHERE email = #{email}
     </select>
 
     <select id="findById" resultMap="UserResultMap">
@@ -47,14 +47,27 @@
     <update id="update" parameterType="com.ucd.urbanflow.domain.pojo.User">
         UPDATE users
         <set>
-            <if test="userName != null">user_name = #{userName},</if>
-            <if test="department != null">department = #{department},</if>
-            <if test="email != null">email = #{email},</if>
-            <if test="phoneNumber != null">phone_number = #{phoneNumber},</if>
-            <if test="role != null">role = #{role},</if>
-            <if test="password != null">password = #{password},</if>
+            <if test="userName != null and userName != ''">
+                user_name = #{userName},
+            </if>
+            <if test="department != null">
+                department = #{department},
+            </if>
+            <if test="email != null and email != ''">
+                email = #{email},
+            </if>
+            <if test="phoneNumber != null">
+                phone_number = #{phoneNumber},
+            </if>
+            <if test="role != null and role != ''">
+                role = #{role},
+            </if>
+            <if test="password != null and password != ''">
+                password = #{password},
+            </if>
             enabled = #{enabled},
             locked = #{locked},
+            is_deleted = #{isDeleted},
         </set>
         WHERE id = #{id}
     </update>
