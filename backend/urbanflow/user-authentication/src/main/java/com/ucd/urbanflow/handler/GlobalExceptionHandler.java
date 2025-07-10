@@ -1,6 +1,8 @@
 package com.ucd.urbanflow.handler;
 
 import com.ucd.urbanflow.domain.vo.ApiResponse;
+import com.ucd.urbanflow.exception.DuplicateResourceException;
+import com.ucd.urbanflow.exception.ResourceNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -40,6 +42,20 @@ public class GlobalExceptionHandler {
         String errorMessage = errors.values().stream().findFirst().orElse("Invalid request parameter.");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(400, errorMessage));
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDuplicateResource(DuplicateResourceException ex) {
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(409, ex.getMessage()));
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleResourceNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND) // HTTP 404: Not Found
+                .body(ApiResponse.error(404, ex.getMessage()));
     }
 
     @ExceptionHandler(RuntimeException.class)

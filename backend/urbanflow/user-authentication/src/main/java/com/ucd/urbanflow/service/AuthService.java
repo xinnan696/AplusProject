@@ -9,6 +9,8 @@ import com.ucd.urbanflow.domain.vo.UserVO;
 import com.ucd.urbanflow.mapper.PasswordResetTokenMapper;
 import com.ucd.urbanflow.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.MailException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +28,7 @@ import java.util.UUID;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserMapper userMapper;
@@ -68,11 +71,10 @@ public class AuthService {
      * Processes a 'forgot password' request using programmatic transaction management.
      */
     public void processForgotPassword(String email) {
+        User user = userMapper.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("This email is not associated with any account"));
         transactionTemplate.execute(status -> {
             try {
-                User user = userMapper.findByEmail(email)
-                        .orElseThrow(() -> new UsernameNotFoundException("This email is not associated with any account"));
-
                 String token = UUID.randomUUID().toString();
                 PasswordResetToken resetToken = new PasswordResetToken();
                 resetToken.setEmail(user.getEmail());
@@ -81,11 +83,12 @@ public class AuthService {
                 resetToken.setUsed(false);
 
                 tokenMapper.save(resetToken);
-
                 emailService.sendPasswordResetEmail(user.getEmail(), token);
+
             } catch (Exception e) {
+                log.error("Exception during forgot password transaction for email {}: {}", email, e.getMessage());
                 status.setRollbackOnly();
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to process password reset request. Please try again.", e);
             }
             return null;
         });

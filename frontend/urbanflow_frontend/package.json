@@ -15,6 +15,7 @@
     "@vueuse/core": "^13.4.0",
     "axios": "^1.10.0",
     "date-fns": "^4.1.0",
+    "echarts": "^5.6.0",
     "normalize.css": "^8.0.1",
     "ol": "^10.6.1",
     "pinia": "^3.0.1",

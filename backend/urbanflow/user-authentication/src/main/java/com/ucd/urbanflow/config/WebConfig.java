@@ -14,7 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // This configuration allows cross-origin requests from the frontend application.
         registry.addMapping("/api/**") // Apply CORS policy to all API endpoints under /api/
-                .allowedOrigins("http://localhost:5173") // IMPORTANT: The origin of your Vue.js frontend app
+                .allowedOriginPatterns("*") // IMPORTANT: The origin of your Vue.js frontend app
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS") // Allowed HTTP methods
                 .allowedHeaders("*") // Allow all headers
                 .allowCredentials(true); // Allow cookies and authentication headers

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Mapper
-public interface UserMapper {
+public interface UserMapper{
     Optional<User> findByAccountNumber(@Param("accountNumber") String accountNumber);
     Optional<User> findByEmail(@Param("email") String email);
     Optional<User> findById(@Param("id") Long id);
