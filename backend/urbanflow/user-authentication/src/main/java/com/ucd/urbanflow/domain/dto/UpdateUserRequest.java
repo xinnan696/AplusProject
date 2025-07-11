@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * DTO for updating an existing user's profile.
  */
@@ -23,4 +25,6 @@ public class UpdateUserRequest {
     private String role;
 
     private boolean enabled;
+
+    private List<String> managedAreas;
 }

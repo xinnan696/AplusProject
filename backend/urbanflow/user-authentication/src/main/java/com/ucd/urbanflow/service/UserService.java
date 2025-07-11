@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,15 +24,34 @@ public class UserService {
     private UserMapper userMapper;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private AreaManagementService areaManagementService;
 
+    @Transactional
     public UserVO createUser(CreateUserRequest request) {
-        log.info("Attempting to create user. Checking if userMapper is null: {}", userMapper == null);
+        log.info("Creating user with account number: {}", request.getAccountNumber());
+
         if (userMapper.findByAccountNumber(request.getAccountNumber()).isPresent()) {
             throw new DuplicateResourceException("Account Number already exists.");
         }
         if (userMapper.findByEmail(request.getEmail()).isPresent()) {
             throw new DuplicateResourceException("Email already exists.");
         }
+
+        if ("Traffic Manager".equals(request.getRole())) {
+            if (request.getManagedAreas() == null || request.getManagedAreas().isEmpty()) {
+                throw new IllegalStateException("Traffic Manager must have at least one managed area.");
+            }
+
+            String validationError = areaManagementService.validateAreaAssignmentRequest(
+                    null, request.getManagedAreas()
+            );
+            if (validationError != null) {
+                throw new IllegalStateException(validationError);
+            }
+        }
+
+        // 创建用户
         User user = new User();
         user.setAccountNumber(request.getAccountNumber());
         user.setUserName(request.getUserName());
@@ -43,50 +63,130 @@ public class UserService {
         user.setEnabled(request.isEnabled());
         user.setLocked(false);
         user.setDeleted(false);
+
+        log.info("About to save user to database...");
         userMapper.save(user);
+        log.info("User saved successfully with ID: {}", user.getId());
+
+        if ("Traffic Manager".equals(request.getRole())) {
+            log.info("User is Traffic Manager, checking managed areas...");
+            log.info("Managed areas from request: {}", request.getManagedAreas());
+
+            if (request.getManagedAreas() != null && !request.getManagedAreas().isEmpty()) {
+                log.info("Assigning areas {} to user {}", request.getManagedAreas(), user.getId());
+                try {
+                    List<String> assignedAreas = areaManagementService.assignAreasToUser(
+                            user.getId(),
+                            request.getManagedAreas(),
+                            user.getId()
+                    );
+                    log.info("Successfully assigned areas {} to user {}", assignedAreas, user.getId());
+                } catch (Exception e) {
+                    log.error("Failed to assign areas to user {}: {}", user.getId(), e.getMessage());
+
+                    userMapper.softDeleteById(user.getId());
+                    throw new IllegalStateException("Failed to assign areas: " + e.getMessage());
+                }
+            }
+        }
+
         return mapToUserVO(user);
     }
 
+    @Transactional
     public UserVO updateUser(Long id, UpdateUserRequest request) {
+        log.info("Updating user with ID: {}", id);
+
+
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
-        // Validation for email uniqueness
+
+
         Optional<User> userWithSameEmail = userMapper.findByEmail(request.getEmail());
         if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(id)) {
             throw new DuplicateResourceException("Email is already in use by another account.");
         }
+
+        boolean wasTrafficManager = "Traffic Manager".equals(user.getRole());
+        boolean isTrafficManager = "Traffic Manager".equals(request.getRole());
+
         user.setUserName(request.getUserName());
         user.setEmail(request.getEmail());
         user.setDepartment(request.getDepartment());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setRole(request.getRole());
         user.setEnabled(request.isEnabled());
+
         userMapper.update(user);
+        if (wasTrafficManager && !isTrafficManager) {
+            areaManagementService.removeUserAreaAssignments(id);
+            log.info("Removed all area assignments for user {} (role changed from Traffic Manager)", id);
+        }
+
+        if (isTrafficManager && request.getManagedAreas() != null) {
+
+            try {
+
+                areaManagementService.removeUserAreaAssignments(id);
+
+                if (!request.getManagedAreas().isEmpty()) {
+                    areaManagementService.assignAreasToUser(id, request.getManagedAreas(), id);
+                }
+            } catch (Exception e) {
+                log.error("Failed to update area assignments for user {}: {}", id, e.getMessage());
+                throw new IllegalStateException("Failed to update area assignments: " + e.getMessage());
+            }
+        }
+
         return mapToUserVO(user);
     }
 
+    @Transactional
     public void deleteUser(Long id) {
-        userMapper.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+        log.info("Deleting user with ID: {}", id);
+
+        User user = userMapper.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        if ("Traffic Manager".equals(user.getRole())) {
+            areaManagementService.removeUserAreaAssignments(id);
+            log.info("Removed area assignments for deleted user {}", id);
+        }
+
         userMapper.softDeleteById(id);
     }
 
     public UserVO getUserById(Long id) {
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
         return mapToUserVO(user);
     }
 
     public List<UserVO> getAllUsers() {
-        return userMapper.findAllActive().stream().map(this::mapToUserVO).collect(Collectors.toList());
+        List<User> users = userMapper.findAllActive();
+        return users.stream().map(this::mapToUserVO).collect(Collectors.toList());
     }
 
     private UserVO mapToUserVO(User user) {
-        return UserVO.builder()
+        UserVO.UserVOBuilder builder = UserVO.builder()
                 .id(user.getId())
                 .accountNumber(user.getAccountNumber())
                 .userName(user.getUserName())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .build();
+                .enabled(user.isEnabled());
+
+        if ("Traffic Manager".equals(user.getRole())) {
+            try {
+                List<String> managedAreas = areaManagementService.getUserManagedAreas(user.getId());
+                builder.managedAreas(managedAreas);
+            } catch (Exception e) {
+                log.error("Failed to get managed areas for user {}: {}", user.getId(), e.getMessage());
+                builder.managedAreas(List.of());
+            }
+        }
+
+        return builder.build();
     }
 }
