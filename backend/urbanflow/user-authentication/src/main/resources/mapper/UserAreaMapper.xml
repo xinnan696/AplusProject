@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.UserAreaMapper">
+
+    <resultMap id="UserAreaMappingResultMap" type="com.ucd.urbanflow.domain.pojo.UserAreaMapping">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="areaName" column="area_name"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="createdBy" column="created_by"/>
+    </resultMap>
+
+    <insert id="saveBatch" parameterType="java.util.List">
+        INSERT INTO user_area_mapping (user_id, area_name, enabled, created_at, updated_at, created_by)
+        VALUES
+        <foreach collection="mappings" item="mapping" separator=",">
+            (#{mapping.userId}, #{mapping.areaName}, #{mapping.enabled}, NOW(), NOW(), #{mapping.createdBy})
+        </foreach>
+    </insert>
+
+
+    <select id="findByUserId" parameterType="java.lang.Long" resultMap="UserAreaMappingResultMap">
+        SELECT * FROM user_area_mapping WHERE user_id = #{userId} AND enabled = true
+    </select>
+
+
+    <select id="findByAreaName" parameterType="java.lang.String" resultMap="UserAreaMappingResultMap">
+        SELECT uam.*
+        FROM user_area_mapping uam
+        WHERE uam.area_name = #{areaName} AND uam.enabled = true
+        LIMIT 1
+    </select>
+
+    <select id="findOccupiedAreasWithUserInfo" resultType="java.util.Map">
+        SELECT 
+            uam.area_name as areaName,
+            u.user_name as userName,
+            u.account_number as accountNumber,
+            uam.created_at as createdAt
+        FROM user_area_mapping uam
+        INNER JOIN users u ON uam.user_id = u.id
+        WHERE uam.enabled = true AND u.is_deleted = false
+        ORDER BY uam.area_name
+    </select>
+
+    <delete id="deleteByUserId" parameterType="java.lang.Long">
+        DELETE FROM user_area_mapping WHERE user_id = #{userId}
+    </delete>
+
+    <select id="isAreaOccupied" parameterType="java.lang.String" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0 FROM user_area_mapping 
+        WHERE area_name = #{areaName} AND enabled = true
+    </select>
+
+    <select id="getAvailableAreas" resultType="java.lang.String">
+        SELECT area_name FROM (
+            SELECT 'Left' as area_name
+            UNION ALL
+            SELECT 'Right' as area_name
+        ) all_areas
+        WHERE area_name NOT IN (
+            SELECT area_name FROM user_area_mapping WHERE enabled = true
+        )
+    </select>
+
+</mapper>

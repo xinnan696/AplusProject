@@ -1,4 +1,4 @@
-package com.ucd.urbanflow.event.service;
+package com.ucd.urbanflow.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
