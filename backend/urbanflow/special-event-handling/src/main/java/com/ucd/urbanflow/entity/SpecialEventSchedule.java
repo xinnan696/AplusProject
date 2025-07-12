@@ -1,4 +1,4 @@
-package com.ucd.urbanflow.event.entity;
+package com.ucd.urbanflow.entity;
 
 import lombok.Data;
 import java.time.LocalDateTime;
@@ -14,42 +14,42 @@ public class SpecialEventSchedule {
      * Primary key ID
      */
     private Long id;
-    
+
     /**
      * Unique event identifier
      */
     private String eventId;
-    
+
     /**
      * Event type (e.g., lane_closure, vehicle_stop)
      */
     private String eventType;
-    
+
     /**
      * Trigger time (simulation seconds)
      */
     private Integer triggerTime;
-    
+
     /**
      * Duration (seconds)
      */
     private Integer duration;
-    
+
     /**
      * Lane ID list (JSON format string)
      */
     private String laneIds;
-    
+
     /**
      * Event status: pending, triggered, finished, failed
      */
     private String eventStatus;
-    
+
     /**
      * Created timestamp
      */
     private LocalDateTime createdAt;
-    
+
     /**
      * Updated timestamp
      */

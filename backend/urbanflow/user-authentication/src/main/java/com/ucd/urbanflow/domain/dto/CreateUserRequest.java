@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * DTO for creating a new user from the administration panel.
  * Fields match the "Add New User" form.
@@ -33,4 +35,5 @@ public class CreateUserRequest {
 
     private boolean enabled;
 
+    private List<String> managedAreas;
 }

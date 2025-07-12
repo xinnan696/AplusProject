@@ -1,10 +1,10 @@
-package com.ucd.urbanflow.event.service;
+package com.ucd.urbanflow.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ucd.urbanflow.dto.service.EventSchedulerEvent;
-import com.ucd.urbanflow.event.entity.SpecialEventSchedule;
-import com.ucd.urbanflow.event.mapper.SpecialEventMapper;
+import com.ucd.urbanflow.dto.EventSchedulerEvent;
+import com.ucd.urbanflow.entity.SpecialEventSchedule;
+import com.ucd.urbanflow.mapper.SpecialEventMapper;
 import com.ucd.urbanflow.service.EventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * 事件处理服务
- */
+
 @Slf4j
 @Service
 public class EventProcessingService {
@@ -33,9 +31,7 @@ public class EventProcessingService {
     
     private static final String SIMULATION_TIME_KEY = "sumo:simulation_time";
     
-    /**
-     * 获取当前需要处理的事件列表
-     */
+
     public List<SpecialEventSchedule> getCurrentEvents() {
         String simTimeStr = redisTemplate.opsForValue().get(SIMULATION_TIME_KEY);
         if (simTimeStr == null) {
@@ -46,9 +42,7 @@ public class EventProcessingService {
         return specialEventMapper.findPendingEventsByTriggerTime(currentTime);
     }
     
-    /**
-     * 处理所有待触发事件
-     */
+
     public String processAllEvents() {
         List<SpecialEventSchedule> pendingEvents = getCurrentEvents();
         
@@ -85,9 +79,7 @@ public class EventProcessingService {
                             pendingEvents.size(), successCount, failCount);
     }
     
-    /**
-     * 将数据库实体转换为 DTO
-     */
+
     private EventSchedulerEvent convertToEventDTO(SpecialEventSchedule schedule) {
         try {
             EventSchedulerEvent event = new EventSchedulerEvent();
@@ -95,8 +87,7 @@ public class EventProcessingService {
             event.setEventType(schedule.getEventType());
             event.setTriggerTime(schedule.getTriggerTime());
             event.setDuration(schedule.getDuration());
-            
-            // 解析 lane_ids JSON 字符串
+
             if (schedule.getLaneIds() != null && !schedule.getLaneIds().isEmpty()) {
                 List<String> laneIds = objectMapper.readValue(
                     schedule.getLaneIds(), 

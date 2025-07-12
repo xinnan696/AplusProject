@@ -39,7 +39,7 @@ public class AuthService {
     private final EmailService emailService;
     private final LoginAttemptService loginAttemptService;
     private final TransactionTemplate transactionTemplate; // 2. 注入 TransactionTemplate
-
+    private final AreaManagementService areaManagementService;
     /**
      * Handles the user login process. This method is primarily read-only
      * and does not require a transaction wrapper.
@@ -64,6 +64,7 @@ public class AuthService {
         loginAttemptService.loginSucceeded(user.getEmail());
         String jwt = jwtService.generateToken(user);
         UserVO userVO = mapToUserVO(user);
+        userVO.setManagedAreas(areaManagementService.getUserManagedAreas(user.getId()));
         return LoginResponse.builder().token(jwt).user(userVO).build();
     }
 
