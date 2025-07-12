@@ -8,6 +8,7 @@ import router from './router'
 import '@/style/iconfont.css'
 import '@/utils/rem.js'
 import '@/style/index.scss'
+import '@/style/button-hover.scss'
 
 const app = createApp(App)
 
