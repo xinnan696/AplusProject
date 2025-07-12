@@ -2,12 +2,6 @@
 
 Complete frontend implementation for the UrbanFlow traffic management system, providing comprehensive traffic control and management features.
 
-Q:
-
-> 1. AI里面的建议栏展示多久，什么时候切换，成功修改（大概十多秒）后还是设置时间，打开aimode，congestedroad显示更多？
-> 2. 用户信息的add，edit等等页面设计
-> 3. 状态栏会显示修改后的状态（持续多久）
-
 ### ***The project opens to the login page by default. You can log in with any username and password to pass authentication.
 
 ### ***To clear current login session: Open browser developer tools (F12), go to Console and run: `localStorage.removeItem('authToken')`, then refresh(F5) the page.
