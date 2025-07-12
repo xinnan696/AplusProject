@@ -51,7 +51,7 @@ public class UserService {
             }
         }
 
-
+        // 创建用户
         User user = new User();
         user.setAccountNumber(request.getAccountNumber());
         user.setUserName(request.getUserName());
