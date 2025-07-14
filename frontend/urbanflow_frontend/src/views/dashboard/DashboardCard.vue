@@ -126,13 +126,15 @@ const calculateTooltipPosition = () => {
 
 .custom-tooltip-text {
   // --- CHANGE: 更新 Tooltip 样式 ---
-  background-color: rgba(20, 22, 40, 0.92);
-  color: #E0E0E0;
+  background-color: rgba(45, 45, 45, 0.95);
+  color: #ffffff;
   border: 1px solid #4a4a70;
   border-radius: 4px;
   padding: 0.08rem 0.12rem;
-  font-size: 0.20rem;
-  font-weight: normal;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Inter', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Roboto', sans-serif !important;
+  line-height: 1.3 !important;
   white-space: nowrap;
 
   /* 默认样式，会被 JS 的动态样式覆盖 */

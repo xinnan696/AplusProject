@@ -28,15 +28,20 @@ const chartOption = ref({
     borderColor: '#4a4a70',
     borderWidth: 1,
     textStyle: {
-      color: '#E0E0E0'
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '500',
+      fontFamily: "Inter, 'Segoe UI', Arial, 'Helvetica Neue', Roboto, sans-serif",
+      lineHeight: 16,
     },
+    extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
     formatter: function (params) {
       // params 是一个数组，我们通常取第一个点来获取X轴信息
       let tooltipHtml = `${params[0].axisValueLabel}<br/>`;
       // 遍历所有系列的数据点
       params.forEach(item => {
         // item.marker 是颜色小圆点, item.seriesName 是系列名, item.value 是值
-        tooltipHtml += `${item.marker} ${item.seriesName}: <strong>${item.value}</strong> cars<br/>`;
+        tooltipHtml += `${item.seriesName}: <strong>${item.value}</strong> cars<br/>`;
       });
       return tooltipHtml;
     }},
