@@ -11,11 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +30,20 @@ public class TrafficService {
 
     // 定义用于缓存计算结果的 Redis Key
     private static final String CACHE_KEY_CONGESTED_JUNCTIONS = "traffic:cache:top6_congested_junctions";
+
+    public List<Map<String, String>> getJunctionname() {
+        List<Map<String, String>> junctionList = new ArrayList<>();
+        List<JunctionIncomingEdge> allJunctionEdges = junctionMapper.findAllJunctionEdges();
+        if (!CollectionUtils.isEmpty(allJunctionEdges)){
+            for (JunctionIncomingEdge edge : allJunctionEdges) {
+                Map<String, String> map = new HashMap<>();
+                map.put("junctionId", edge.getJunctionId());
+                map.put("junctionName", edge.getJunctionName());
+                junctionList.add(map);
+            }
+        }
+        return junctionList;
+    }
 
     /**
      * 【无需修改】此方法为原始的REST API提供服务。

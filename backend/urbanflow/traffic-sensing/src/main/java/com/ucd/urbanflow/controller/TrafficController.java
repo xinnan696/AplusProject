@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/traffic")
@@ -22,5 +23,11 @@ public class TrafficController {
     public ResponseEntity<List<JunctionCongestionDTO>> getCongestedJunctions() {
         List<JunctionCongestionDTO> congestedJunctions = trafficService.getCongestedJunctions();
         return ResponseEntity.ok(congestedJunctions);
+    }
+
+    @GetMapping("/junctions")
+    public ResponseEntity<List<Map<String, String>>> getJunctionnameList() {
+        List<Map<String, String>> junctionnameList = trafficService.getJunctionname();
+        return ResponseEntity.ok(junctionnameList);
     }
 }

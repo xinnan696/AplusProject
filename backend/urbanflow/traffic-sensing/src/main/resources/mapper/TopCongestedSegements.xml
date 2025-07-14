@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper">
+
+    <insert id="insert" parameterType="com.ucd.urbanflow.domain.pojo.TopCongestedSegments">
+        INSERT INTO congested_times_ranking (time_bucket, junction_name, congestion_times)
+        VALUES (#{timeBucket}, #{junction_name}, #{congestion_times})
+    </insert>
+
+</mapper>
