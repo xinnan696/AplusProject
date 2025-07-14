@@ -1,0 +1,13 @@
+package com.ucd.urbanflow.model;
+
+import lombok.Data;
+
+import java.util.Date;
+
+@Data
+public class CongestedDurationRanking {
+    private Integer id;
+    private Date timeBucket;
+    private String junctionName;
+    private Integer totalCongestionDurationSeconds;
+}

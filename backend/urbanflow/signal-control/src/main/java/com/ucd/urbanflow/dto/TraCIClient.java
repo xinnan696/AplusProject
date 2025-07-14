@@ -1,4 +1,4 @@
-package com.ucd.urbanflow.dto.service;
+package com.ucd.urbanflow.dto;
 
 
 import org.springframework.http.client.SimpleClientHttpRequestFactory;

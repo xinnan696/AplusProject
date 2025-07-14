@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.ucd.urbanflow.mapper.CongestedDurationRankingMapper">
+
+    <select id="selectByTimeRange" resultType="com.ucd.urbanflow.model.CongestedDurationRanking">
+        SELECT * FROM congestion_duration_ranking
+        WHERE time_bucket BETWEEN #{start} AND #{end}
+    </select>
+
+</mapper>

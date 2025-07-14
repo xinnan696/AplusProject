@@ -1,4 +1,4 @@
-package com.ucd.urbanflow.dto.service;
+package com.ucd.urbanflow.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
