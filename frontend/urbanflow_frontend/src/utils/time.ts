@@ -14,30 +14,30 @@ export function generateXAxisLabels(range: string): string[] {
   let xAxisLabels: string[] = [];
 
   switch (range) {
-    case '24 hours':
+    case '24hours':
       start = subDays(end, 1);
       for (let i = 0; i <= 24; i += 2) {
         const hour = startOfHour(new Date(start.getTime() + i * 3600 * 1000));
         xAxisLabels.push(format(hour, 'HH:00'));
       }
       break;
-    case 'one week':
+    case 'oneweek':
       start = subWeeks(end, 1);
       xAxisLabels = eachDayOfInterval({ start, end }).map((d: Date) => format(d, 'eee'));
       break;
-    case 'one month':
+    case 'onemonth':
       start = subMonths(end, 1);
       xAxisLabels = eachWeekOfInterval({ start, end }).map((d: Date, i: number) => `Week ${i + 1}`);
       break;
-    case 'three months':
+    case 'threemonths':
       start = subMonths(end, 3);
       xAxisLabels = eachMonthOfInterval({ start, end }).map((d: Date) => format(d, 'MMM'));
       break;
-    case 'six months':
+    case 'sixmonths':
       start = subMonths(end, 6);
       xAxisLabels = eachMonthOfInterval({ start, end }).map((d: Date) => format(d, 'MMM'));
       break;
-    case 'one year':
+    case 'oneyear':
       start = subYears(end, 1);
       const months = eachMonthOfInterval({ start, end });
       for(let i = 0; i < months.length; i+=2) {

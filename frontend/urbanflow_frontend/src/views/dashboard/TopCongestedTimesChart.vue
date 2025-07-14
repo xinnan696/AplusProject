@@ -9,8 +9,8 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-//import { getTopCongestedTimes } from '@/mocks/mockDashboardData'
-import {getTopCongestedTimes} from '@/service/dashboard_api'
+import { getTopCongestedTimes } from '@/mocks/mockDashboardData'
+//import {getTopCongestedTimes} from '@/service/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -63,10 +63,14 @@ function generateGradientColors(startColor: string, endColor: string, steps: num
 
 const chartOption = ref({
   tooltip: {
-    rigger: 'axis',
+    trigger: 'axis',
     axisPointer: { type: 'shadow' },
+    backgroundColor: 'rgba(20, 22, 40, 0.92)',
+    borderColor: '#4a4a70',
+    borderWidth: 1,
     textStyle: {
-      fontSize: 14 // 您可以调整这个数值，单位是像素
+      color: '#E0E0E0',
+      fontSize: 14,
     },
   },
   grid: { top: '20px', left: '3%', right: '4%', bottom: '1%', containLabel: true },
@@ -99,38 +103,38 @@ const chartOption = ref({
 async function fetchData() {
   const response = await getTopCongestedTimes({ time_range: props.filters.timeRange });
 
-  // if (response && response.data && response.labels) {
-  //   const startColor = '#6a11cb';
-  //   const endColor = '#2af598';
-  //   gradientColors.value = generateGradientColors(startColor, endColor, response.data.length);
-  //
-  //   chartOption.value.xAxis.data = response.labels;
-  //   chartOption.value.series[0].data = response.data.map((d: any) => d.congestion_count);
-  // } else {
-  //   chartOption.value.xAxis.data = [];
-  //   chartOption.value.series[0].data = [];
-  // }
-
-  if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
-    // 更新X轴标签
-
+  if (response && response.data && response.labels) {
     const startColor = '#6a11cb';
     const endColor = '#2af598';
     gradientColors.value = generateGradientColors(startColor, endColor, response.data.length);
-    chartOption.value.xAxis.data = response.xAxisLabels;
 
-    // 更新Y轴配置
-    chartOption.value.yAxis.min = response.yAxisConfig.min;
-    chartOption.value.yAxis.max = response.yAxisConfig.max;
-    chartOption.value.yAxis.interval = response.yAxisConfig.interval;
-
-    // 更新图表数据
+    chartOption.value.xAxis.data = response.labels;
     chartOption.value.series[0].data = response.data.map((d: any) => d.congestion_count);
   } else {
-    // 如果接口出错或返回数据不规范，清空图表
     chartOption.value.xAxis.data = [];
     chartOption.value.series[0].data = [];
   }
+
+  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
+  //   // 更新X轴标签
+  //
+  //   const startColor = '#6a11cb';
+  //   const endColor = '#2af598';
+  //   gradientColors.value = generateGradientColors(startColor, endColor, response.data.length);
+  //   chartOption.value.xAxis.data = response.xAxisLabels;
+  //
+  //   // 更新Y轴配置
+  //   chartOption.value.yAxis.min = response.yAxisConfig.min;
+  //   chartOption.value.yAxis.max = response.yAxisConfig.max;
+  //   chartOption.value.yAxis.interval = response.yAxisConfig.interval;
+  //
+  //   // 更新图表数据
+  //   chartOption.value.series[0].data = response.data.map((d: any) => d.congestion_count);
+  // } else {
+  //   // 如果接口出错或返回数据不规范，清空图表
+  //   chartOption.value.xAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

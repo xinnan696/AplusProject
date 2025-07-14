@@ -11,8 +11,8 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-//import { getTopCongestedSegments } from '@/mocks/mockDashboardData'
-import { getCongestedJunctionCountTrend } from '@/service/dashboard_api'
+import { getCongestedJunctionCountTrend } from '@/mocks/mockDashboardData'
+//import { getCongestedJunctionCountTrend } from '@/service/dashboard_api'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -21,7 +21,14 @@ const props = defineProps<{
 }>()
 
 const chartOption = ref({
-  tooltip: { trigger: 'axis',
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(20, 22, 40, 0.92)',
+    borderColor: '#4a4a70',
+    borderWidth: 1,
+    textStyle: {
+      color: '#E0E0E0'
+    },
     formatter: function (params) {
       let point = params[0];
       return `
@@ -54,30 +61,30 @@ const chartOption = ref({
 async function fetchData() {
   const response = await getCongestedJunctionCountTrend({ time_range: props.filters.timeRange });
 
-  // if (response && response.data && response.labels) {
-  //   chartOption.value.xAxis.data = response.labels;
-  //   chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
-  // } else {
-  //   chartOption.value.xAxis.data = [];
-  //   chartOption.value.series[0].data = [];
-  // }
-
-  if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
-    // 更新X轴标签
-    chartOption.value.xAxis.data = response.xAxisLabels;
-
-    // 更新Y轴配置
-    chartOption.value.yAxis.min = response.yAxisConfig.min;
-    chartOption.value.yAxis.max = response.yAxisConfig.max;
-    chartOption.value.yAxis.interval = response.yAxisConfig.interval;
-
-    // 更新图表数据
+  if (response && response.data && response.labels) {
+    chartOption.value.xAxis.data = response.labels;
     chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
   } else {
-    // 如果接口出错或返回数据不规范，清空图表
     chartOption.value.xAxis.data = [];
     chartOption.value.series[0].data = [];
   }
+
+  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
+  //   // 更新X轴标签
+  //   chartOption.value.xAxis.data = response.xAxisLabels;
+  //
+  //   // 更新Y轴配置
+  //   chartOption.value.yAxis.min = response.yAxisConfig.min;
+  //   chartOption.value.yAxis.max = response.yAxisConfig.max;
+  //   chartOption.value.yAxis.interval = response.yAxisConfig.interval;
+  //
+  //   // 更新图表数据
+  //   chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
+  // } else {
+  //   // 如果接口出错或返回数据不规范，清空图表
+  //   chartOption.value.xAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

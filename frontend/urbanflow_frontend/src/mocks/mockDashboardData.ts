@@ -39,7 +39,7 @@ export const getTrafficFlow = async (params: { junction_id?: string, time_range:
 };
 
 // 模拟获取拥堵路口数量API
-export const getTopCongestedSegments = async (params: { time_range: string }) => {
+export const getCongestedJunctionCountTrend = async (params: { time_range: string }) => {
   console.log(`MOCK API: Fetching top congested segments for [${params.time_range}]...`);
   await sleep(350); // 模拟延迟
 
@@ -53,7 +53,7 @@ export const getTopCongestedSegments = async (params: { time_range: string }) =>
 };
 
 // 模拟近期拥堵交叉口API
-export const getCongestedJunctionCountTrend = async (params: { time_range: string }) => {
+export const getTopCongestedTimes = async (params: { time_range: string }) => {
   console.log(`MOCK API: Fetching congested road count trend for [${params.time_range}]...`);
   await sleep(500); // 模拟延迟
 

@@ -4,16 +4,24 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 1.0">
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 3.0">
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_5_14_21__Changes_.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_5_14_21__Changes_.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/time.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/time.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CustomSelect.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CustomSelect.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashboardCard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashboardCard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -108,6 +116,12 @@
       <workItem from="1751717192591" duration="4157000" />
       <workItem from="1751799523824" duration="18544000" />
       <workItem from="1751829924102" duration="715000" />
+      <workItem from="1751832124141" duration="1401000" />
+      <workItem from="1751904105771" duration="2322000" />
+      <workItem from="1751971128961" duration="2000" />
+      <workItem from="1752184125478" duration="7684000" />
+      <workItem from="1752261394559" duration="826000" />
+      <workItem from="1752452781656" duration="427000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
@@ -137,7 +151,14 @@
       <option name="project" value="LOCAL" />
       <updated>1751587881857</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="dashboard frontend version 2.1">
+      <created>1751832285279</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1751832285279</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -173,6 +194,7 @@
     <MESSAGE value="commit newFast.py" />
     <MESSAGE value="dashboard frontend version 0.1" />
     <MESSAGE value="dashboard frontend version 1.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 1.0" />
+    <MESSAGE value="dashboard frontend version 2.1" />
+    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 2.1" />
   </component>
 </project>

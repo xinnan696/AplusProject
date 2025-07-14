@@ -160,7 +160,7 @@ watch(() => props.modelValue, () => {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 150px; // 约等于 5 * (行高 + padding)
+  max-height: 120px; // 约等于 5 * (行高 + padding)
   overflow-y: auto;
 
   &::-webkit-scrollbar {

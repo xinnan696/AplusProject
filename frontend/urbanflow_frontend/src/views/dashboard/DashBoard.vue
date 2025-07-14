@@ -5,39 +5,68 @@
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
       <div class="dashboard-container">
-        <DashboardCard title="Traffic Flow" class="card-full-width">
+        <DashboardCard
+          title="Congested Junction Count Trend"
+          titleTooltip="This chart shows the trend in the number of congested junctions over time for the selected time range."
+          class="card-full-width"
+        >
           <template #filters>
             <CustomSelect
-              :options="junctionOptions"
-              v-model="trafficFlowFilters.junctionId"
-              class="filter-select"
-            />
-            <CustomSelect
               :options="timeRangeOptions"
-              v-model="trafficFlowFilters.timeRange"
+              v-model="topSegmentsFilters.timeRange"
               class="filter-select"
             />
           </template>
           <template #default>
-            <TrafficFlowChart :filters="trafficFlowFilters" />
+            <CongestedJunctionCountTrendChart :filters="topSegmentsFilters" />
+          </template>
+        </DashboardCard>
+
+        <DashboardCard
+          title="Junction Congestion Duration Ranking"
+          titleTooltip="This chart ranks junctions by total congestion duration, showing the junctions with the most persistent congestion."
+          class="card-full-width"
+        >
+          <template #filters>
+            <CustomSelect
+              :options="durationRankingTimeRangeOptions"
+              v-model="durationRankingFilters.timeRange"
+              class="filter-select"
+            />
+          </template>
+          <template #default>
+            <CongestionDurationRankingChart :filters="durationRankingFilters" />
           </template>
         </DashboardCard>
 
         <div class="card-row">
-          <DashboardCard title="Congested Junction Count Trend" class="card-half-width">
+          <DashboardCard
+            title="Traffic Flow"
+            titleTooltip="This chart shows traffic flow of selected junctions or this city for the selected time range."
+            class="card-half-width"
+          >
             <template #filters>
               <CustomSelect
+                :options="junctionOptions"
+                v-model="trafficFlowFilters.junctionId"
+                class="filter-select"
+              />
+              <CustomSelect
                 :options="timeRangeOptions"
-                v-model="topSegmentsFilters.timeRange"
+                v-model="trafficFlowFilters.timeRange"
                 class="filter-select"
               />
             </template>
             <template #default>
-              <CongestedJunctionCountTrendChart :filters="topSegmentsFilters" />
+              <TrafficFlowChart :filters="trafficFlowFilters" />
             </template>
           </DashboardCard>
 
-          <DashboardCard title="Top Congested Times" class="card-half-width">
+          <DashboardCard
+            title="Top Congested Times"
+            titleTooltip="This chart shows the junctions with the top-ranking number of congestion events in the selected time range."
+            class="card-half-width"
+          >
             <template #filters>
               <CustomSelect
                 :options="timeRangeOptions"
@@ -50,19 +79,6 @@
             </template>
           </DashboardCard>
         </div>
-
-        <DashboardCard title="Junction Congestion Duration Ranking" class="card-full-width">
-          <template #filters>
-            <CustomSelect
-              :options="durationRankingTimeRangeOptions"
-              v-model="durationRankingFilters.timeRange"
-              class="filter-select"
-            />
-          </template>
-          <template #default>
-            <CongestionDurationRankingChart :filters="durationRankingFilters" />
-          </template>
-        </DashboardCard>
       </div>
     </div>
   </div>
@@ -80,8 +96,8 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
-//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-import { getJunctions } from '@/service/dashboard_api'
+import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+//import { getJunctions } from '@/service/dashboard_api'
 
 // Filters State
 const trafficFlowFilters = reactive({
@@ -103,7 +119,7 @@ const durationRankingFilters = reactive({
 
 // Filter Options
 const junctionOptions = ref([
-  { value: 'total_city', label: 'Total City' },
+  { value: 'total_city', label: 'All Junctions' },
 ])
 
 const timeRangeOptions = ref([
@@ -126,7 +142,7 @@ const durationRankingTimeRangeOptions = ref([
 onMounted(async () => {
   const junctions = await getJunctions()
   junctionOptions.value = [
-    { value: 'total_city', label: 'Total City' },
+    { value: 'total_city', label: 'All Junctions' },
     ...junctions.map(j => ({ value: j.junction_id, label: j.junction_name })),
   ]
 })
@@ -208,7 +224,7 @@ onMounted(async () => {
 .card-half-width {
   width: 50%; // Will be calculated by flex
   flex-grow: 1;
-  height: 2.92rem; // Top Congested & Count Trend 高度
+  height: 3.25rem; // Top Congested & Count Trend 高度
 }
 
 .filter-select {
