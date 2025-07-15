@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.JunctionMapper">
+
+    <select id="findAllJunctions" resultType="com.ucd.urbanflow.dto.Junction">
+        SELECT DISTINCT junction_id, junction_name
+        FROM junction_incoming_edges
+        WHERE junction_id IS NOT NULL AND junction_name IS NOT NULL
+    </select>
+
+</mapper>

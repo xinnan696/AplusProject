@@ -47,3 +47,4 @@ networks:
 
 volumes:
   db_data:
+  influxdb_data:
