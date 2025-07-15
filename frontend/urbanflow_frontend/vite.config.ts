@@ -39,7 +39,7 @@ export default defineConfig({
         rewrite: path => path, // 保留原始路径
       },
       '/api':{
-        target: 'http://192.168.83.199:8087',
+        target: 'http://192.168.83.41:8083',
         changeOrigin: true,
       }
     },

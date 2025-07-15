@@ -96,8 +96,8 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
-import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-//import { getJunctions } from '@/service/dashboard_api'
+//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+import { getJunctions } from '@/service/dashboard_api'
 
 // Filters State
 const trafficFlowFilters = reactive({
@@ -143,7 +143,7 @@ onMounted(async () => {
   const junctions = await getJunctions()
   junctionOptions.value = [
     { value: 'total_city', label: 'All Junctions' },
-    ...junctions.map(j => ({ value: j.junction_id, label: j.junction_name })),
+    ...junctions.map(j => ({ value: j.junctionId, label: j.junctionName})),
   ]
 })
 </script>
