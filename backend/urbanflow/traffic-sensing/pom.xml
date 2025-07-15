@@ -43,7 +43,7 @@
         <dependency>
             <groupId>org.mybatis.spring.boot</groupId>
             <artifactId>mybatis-spring-boot-starter</artifactId>
-            <version>2.3.0</version>
+            <version>3.0.4</version>
         </dependency>
 
         <dependency>
@@ -86,7 +86,7 @@
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${lombok.version}</version>
+                            <version>1.18.34</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

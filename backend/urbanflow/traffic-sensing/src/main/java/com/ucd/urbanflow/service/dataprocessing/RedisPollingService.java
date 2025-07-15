@@ -38,6 +38,12 @@ public class RedisPollingService {
     // A thread-safe, reactive sink to publish events to downstream services.
     private final Sinks.Many<EnrichedTrafficEvent> sink = Sinks.many().multicast().onBackpressureBuffer();
 
+    /**
+     * [MODIFIED] The single, constant key for the Redis Hash containing all edge data.
+     * Please change this value if your actual Redis hash key is different.
+     */
+    private static final String REDIS_EDGE_HASH_KEY = "sumo:edge";
+
     public RedisPollingService(StringRedisTemplate redisTemplate, JunctionMapper junctionMapper) {
         this.redisTemplate = redisTemplate;
         this.junctionMapper = junctionMapper;
@@ -51,19 +57,14 @@ public class RedisPollingService {
         log.info("Updating junction-to-edges map from database...");
         try {
             List<JunctionIncomingEdge> mappings = junctionMapper.findAllJunctionEdges();
-
-            // Group all edge IDs by their parent junction ID.
             Map<String, List<String>> newMap = mappings.stream()
                     .collect(Collectors.groupingBy(
                             JunctionIncomingEdge::getJunctionId,
                             Collectors.mapping(JunctionIncomingEdge::getIncomingEdgeId, Collectors.toList())
                     ));
-
-            // Create a simple map from junction ID to junction name.
             Map<String, String> newNameMap = mappings.stream()
                     .collect(Collectors.toMap(JunctionIncomingEdge::getJunctionId, JunctionIncomingEdge::getJunctionName, (name1, name2) -> name1));
 
-            // Atomically update the caches.
             junctionToEdgesMap.clear();
             junctionToEdgesMap.putAll(newMap);
             junctionIdToNameMap.clear();
@@ -76,96 +77,108 @@ public class RedisPollingService {
     }
 
     /**
-     * Polls Redis for new edge data at high frequency, simulates missing fields,
-     * enriches the data, and publishes it to the reactive stream.
+     * [MODIFIED] Polls Redis efficiently by fetching all edge data at once.
      */
     @Scheduled(fixedDelay = 1000) // Poll every 1 second
     public void pollRedisForChanges() {
-        // First, calculate the set of currently congested junctions for this time step.
-        Set<String> congestedJunctions = getCongestedJunctions();
-
-        // NOTE: In a production environment, use SCAN to avoid blocking Redis.
-        Set<String> edgeKeys = redisTemplate.keys("sumo:edge:*");
-        if (edgeKeys == null || edgeKeys.isEmpty()) {
+        // Step 1: Fetch ALL edge data from the hash in a single, efficient command.
+        Map<String, RedisEdgeData> allCurrentEdgeData = fetchAllEdgeDataFromHash();
+        if (allCurrentEdgeData.isEmpty()) {
             return;
         }
 
-        for (String key : edgeKeys) {
-            String json = redisTemplate.opsForValue().get(key);
-            if (json == null) continue;
+        // Step 2: Calculate the set of congested junctions using the in-memory data.
+        Set<String> congestedJunctions = getCongestedJunctions(allCurrentEdgeData);
 
-            RedisEdgeData edgeData = gson.fromJson(json, RedisEdgeData.class);
-
-            // If the real "occupancy" field is not present in the message from Redis,simulate it here.
-//            if (edgeData.getOccupancy() == null) {
-//                if (edgeData.getLaneNumber() != null && edgeData.getLaneNumber() > 0 && edgeData.getWaitingVehicleCount() != null) {
-//                    // Assuming each waiting car occupies ~15% of a lane segment for calculation purposes.
-//                    float simulatedOccupancy = (float) (((double) edgeData.getWaitingVehicleCount() / edgeData.getLaneNumber()) * 15.0);
-//                    edgeData.setOccupancy(Math.min(simulatedOccupancy, 100.0f)); // Cap at 100%
-//                } else {
-//                    edgeData.setOccupancy(0.0f); // Default to 0 if data is missing for simulation
-//                }
-//            }
-
+        // Step 3: Process each data point from the fetched in-memory map.
+        for (RedisEdgeData edgeData : allCurrentEdgeData.values()) {
             if (isNewData(edgeData)) {
                 lastSeenTimestamps.put(edgeData.getEdgeId(), edgeData.getTimestamp());
 
-                // Find the parent junction for the current edge from our cached map.
                 findJunctionIdForEdge(edgeData.getEdgeId()).ifPresent(junctionId -> {
                     EnrichedTrafficEvent event = EnrichedTrafficEvent.builder()
                             .edgeId(edgeData.getEdgeId())
                             .junctionId(junctionId)
                             .junctionName(junctionIdToNameMap.getOrDefault(junctionId, junctionId))
                             .simulationStep(edgeData.getTimestamp().longValue())
-                            .vehicleCount(edgeData.getVehicleCount() != null ? edgeData.getVehicleCount() : 0)
-                            .waitTime(edgeData.getWaitTime() != null ? edgeData.getWaitTime() : 0.0)
-                            .waitingVehicleCount(edgeData.getWaitingVehicleCount() != null ? edgeData.getWaitingVehicleCount() : 0)
+                            .vehicleCount(Optional.ofNullable(edgeData.getVehicleCount()).orElse(0))
+                            .waitTime(Optional.ofNullable(edgeData.getWaitTime()).orElse(0.0))
+                            .waitingVehicleCount(Optional.ofNullable(edgeData.getWaitingVehicleCount()).orElse(0))
                             .congested(congestedJunctions.contains(junctionId))
                             .build();
 
-                    // Publish the fully enriched event to the stream for other services to consume.
                     sink.tryEmitNext(event);
+                    log.info(">>>> [LAYER 1 SUCCESS] Published event for edge: {}", event.getEdgeId());
+
                 });
             }
         }
     }
 
     /**
-     * Calculates the set of currently congested junctions by calculating occupancy for each.
+     * [NEW] Helper method to fetch all fields from the edge data hash at once.
+     * This corresponds to the HGETALL command in Redis.
+     * @return A Map where the key is the edgeId and the value is the parsed RedisEdgeData object.
+     */
+    private Map<String, RedisEdgeData> fetchAllEdgeDataFromHash() {
+        try {
+            Map<Object, Object> rawHash = redisTemplate.opsForHash().entries(REDIS_EDGE_HASH_KEY);
+            return rawHash.entrySet().stream()
+                    .collect(Collectors.toMap(
+                            entry -> (String) entry.getKey(),
+                            entry -> gson.fromJson((String) entry.getValue(), RedisEdgeData.class)
+                    ));
+        } catch (Exception e) {
+            log.error("Failed to fetch or parse edge data hash from Redis key: {}", REDIS_EDGE_HASH_KEY, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * [MODIFIED] Calculates congested junctions using the pre-fetched data map for efficiency.
+     * @param allEdgeData A map containing all current edge data from Redis for this cycle.
      * @return A set of congested junction IDs for the current time step.
      */
-    private Set<String> getCongestedJunctions() {
+    private Set<String> getCongestedJunctions(Map<String, RedisEdgeData> allEdgeData) {
         if (junctionToEdgesMap.isEmpty()) {
             return Collections.emptySet();
         }
 
         return junctionToEdgesMap.entrySet().stream()
-                .filter(entry -> isJunctionCongested(entry.getValue()))
+                .filter(entry -> isJunctionCongested(entry.getValue(), allEdgeData))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
 
     /**
-     * Checks if a single junction is congested by finding the max lane occupancy of its incoming edges.
+     * [MODIFIED] Checks if a junction is congested by looking up its edges in the pre-fetched data map.
      * @param incomingEdgeIds A list of incoming edge IDs for the junction.
+     * @param allEdgeData The map of all available edge data for this cycle.
      * @return true if the junction is congested, false otherwise.
      */
-    private boolean isJunctionCongested(List<String> incomingEdgeIds) {
+    private boolean isJunctionCongested(List<String> incomingEdgeIds, Map<String, RedisEdgeData> allEdgeData) {
         double maxOccupancy = 0.0;
         for (String edgeId : incomingEdgeIds) {
-            String json = redisTemplate.opsForValue().get("sumo:edge:" + edgeId);
-            if (json == null) continue;
-
-            RedisEdgeData edgeData = gson.fromJson(json, RedisEdgeData.class);
+            // No Redis call here. We use the map that was already fetched.
+            RedisEdgeData edgeData = allEdgeData.get(edgeId);
             if (edgeData == null) continue;
 
-            float currentOccupancy = edgeData.getOccupancy() != null ? edgeData.getOccupancy() : 0.0f;
+            // --- Simulation Block ---
+            if (edgeData.getOccupancy() == null) {
+                if (edgeData.getLaneNumber() != null && edgeData.getLaneNumber() > 0 && edgeData.getWaitingVehicleCount() != null) {
+                    float simulatedOccupancy = (float) (((double) edgeData.getWaitingVehicleCount() / edgeData.getLaneNumber()) * 15.0);
+                    edgeData.setOccupancy(Math.min(simulatedOccupancy, 100.0f));
+                } else {
+                    edgeData.setOccupancy(0.0f);
+                }
+            }
+            // --- End Simulation Block ---
+
+            float currentOccupancy = Optional.ofNullable(edgeData.getOccupancy()).orElse(0.0f);
             if (currentOccupancy > maxOccupancy) {
                 maxOccupancy = currentOccupancy;
             }
         }
-
-        // Compare the resulting max occupancy with the configurable threshold.
         return maxOccupancy > congestionThreshold;
     }
 
@@ -201,18 +214,9 @@ public class RedisPollingService {
     }
 
     /**
-     * A simple inner class to hold junction information for the mapping cache.
-     * Using a record for a compact, immutable data carrier.
+     * 对外暴露 Sink，用于测试时手动推送数据。
      */
-    private static class JunctionInfo {
-        private final String id;
-        private final String name;
-
-        JunctionInfo(String id, String name) {
-            this.id = id;
-            this.name = name;
-        }
-        public String getId() { return id; }
-        public String getName() { return name; }
+    public Sinks.Many<EnrichedTrafficEvent> getSink() {
+        return this.sink;
     }
 }

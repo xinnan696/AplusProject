@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalysisService {
 
-    private static final int WINDOW_SIZE = 280;
+    private static final int WINDOW_SIZE = 3; //280;
     private final TrafficDataPointRepository tsdbRepository;
     private final TrafficFlowMapper trafficFlowMapper;
     private final CongestionRoadCountMapper congestionRoadCountMapper;
@@ -37,7 +37,9 @@ public class AnalysisService {
     private final CongestedDurationRankingMapper congestedDurationRankingMapper;
 
     // A stateful, atomic counter for the last processed simulation step.
-    private final AtomicLong lastProcessedStep = new AtomicLong(0);
+//    private final AtomicLong lastProcessedStep = new AtomicLong(0);
+    private final AtomicLong lastProcessedStep = new AtomicLong(259);
+
 
     // The configurable initial time for the aggregation buckets.
     @Value("${traffic.analysis.base-time}")
@@ -65,10 +67,13 @@ public class AnalysisService {
     public void analysisTrigger() {
         tsdbRepository.findLatestStep().subscribe(latestStep -> {
             long currentLastProcessed = lastProcessedStep.get();
+            log.info("Checking for window. Latest step in DB: {}, Last processed step: {}, Window size: {}", latestStep, currentLastProcessed, WINDOW_SIZE);
+
             if (latestStep >= currentLastProcessed + WINDOW_SIZE) {
                 long endStep = currentLastProcessed + WINDOW_SIZE;
 
                 Date currentTimeBucket = this.baseTime;
+                log.info(">>>> [LAYER 3 TRIGGERED] Condition met. Processing window: steps {} -> {} with timeBucket {}", currentLastProcessed + 1, endStep, currentTimeBucket);
 
                 log.info("Analysis window triggered: steps {} -> {} with timeBucket {}", currentLastProcessed + 1, endStep, currentTimeBucket);
 
@@ -85,6 +90,8 @@ public class AnalysisService {
     }
 
     private void processWindowData(List<TrafficDataPoint> dataWindow, Date timeBucket) {
+        log.info(">>>> [LAYER 3 PROCESSING] Received {} data points from InfluxDB for timeBucket: {}", dataWindow.size(), timeBucket);
+
         if (dataWindow == null || dataWindow.isEmpty()) {
             log.warn("Window data is empty, skipping analysis for timeBucket: {}", timeBucket);
             return;
@@ -111,8 +118,12 @@ public class AnalysisService {
             tf.setTimeBucket(timeBucket);
             tf.setJunctionId(junctionId);
             tf.setFlowRateHourly(totalFlow);
-            trafficFlowMapper.insert(tf);
-        });
+            log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
+            try {
+                trafficFlowMapper.insert(tf);
+            } catch (Exception e) {
+                log.error("!!! [LAYER 3 FAILED] Error while saving to traffic_flow table.", e);
+            }        });
     }
 
     private void processCongestionJunctionCounts(Map<String, List<TrafficDataPoint>> data, Date timeBucket) {

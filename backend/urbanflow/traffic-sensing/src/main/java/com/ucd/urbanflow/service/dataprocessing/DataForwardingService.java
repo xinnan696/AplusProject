@@ -26,14 +26,17 @@ public class DataForwardingService {
     public void setUpPipeline() {
         log.info("Starting data forwarding pipeline: Redis -> InfluxDB");
         pollingService.getEventStream()
+                .doOnNext(event -> {
+                    log.info(">>>> [LAYER 2 RECEIVED] ForwardingService received event for edge: {}", event.getEdgeId());
+                })
                 .publishOn(Schedulers.boundedElastic())
                 .map(this::transform)
                 .bufferTimeout(200, Duration.ofSeconds(5)) // Batch 200 items or every 5 seconds
                 .flatMap(tsdbRepository::saveAll)
                 .doOnError(e -> log.error("Data forwarding pipeline error", e))
                 .subscribe(
-                        success -> log.trace("Successfully forwarded a batch of data to InfluxDB"),
-                        error -> log.error("Forwarding pipeline terminated with an error", error)
+                        success -> log.info("✅Successfully forwarded a batch of data to InfluxDB"),
+                        error -> log.error("❌Forwarding pipeline terminated with an error", error)
                 );
     }
 
