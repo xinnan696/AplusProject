@@ -13,5 +13,5 @@ public class ManualControlRequest {
     private Integer lightIndex;
     private Integer duration;
     private String state;
-    private String source = "manual";
+    private String source;
 }

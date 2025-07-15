@@ -24,9 +24,27 @@ services:
     networks:
       - backend
 
+  influxdb:
+    image: influxdb:latest
+    container_name: urbanflow-influxdb
+    ports:
+      - "9999:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=Urb@nFl0w_Dev-Pass!
+      - DOCKER_INFLUXDB_INIT_ORG=urbanflow-project
+      - DOCKER_INFLUXDB_INIT_BUCKET=traffic_staging_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=ThIs_Is_My_S3cr3t_D3v_T0ken_F0r_UrbanFl0w
+    networks:
+      - backend
+
 networks:
   backend:
     driver: bridge
 
 volumes:
-  db_data:                        # Volume to persist database files
+  db_data:
+  influxdb_data:

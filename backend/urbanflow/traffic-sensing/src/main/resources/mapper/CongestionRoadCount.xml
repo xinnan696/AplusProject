@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.CongestionRoadCountMapper">
+
+    <insert id="insert" parameterType="com.ucd.urbanflow.domain.pojo.CongestedRoadCount">
+        INSERT INTO congestion_junction_counts (time_bucket, congested_junction_count)
+        VALUES (#{timeBucket}, #{congested_junction_count})
+    </insert>
+
+</mapper>

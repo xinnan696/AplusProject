@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ucd.urbanflow.mapper.LogMapper">
+
+    <insert id="insertAuthLog" parameterType="com.ucd.urbanflow.dto.AuthLogDTO">
+        INSERT INTO auth_logs
+        (account_number, operation_type, operation_result, ip_address, user_agent, result_message)
+        VALUES
+        (#{accountNumber}, #{operationType}, #{operationResult}, #{ipAddress}, #{userAgent}, #{resultMessage})
+    </insert>
+
+    <insert id="insertSignalControlLog" parameterType="com.ucd.urbanflow.dto.SignalControlLogDTO">
+        INSERT INTO signal_control_logs
+        (account_number, junction_id, light_index, light_state, duration, operation_source, operation_result, result_message)
+        VALUES
+        (#{accountNumber}, #{junctionId}, #{lightIndex}, #{lightState}, #{duration}, #{operationSource}, #{operationResult}, #{resultMessage})
+    </insert>
+
+    <insert id="insertUserPermissionLog" parameterType="com.ucd.urbanflow.dto.UserPermissionLogDTO">
+        INSERT INTO user_permission_logs
+        (account_number, target_account, operation_type, operation_result, result_message, operated_fields)
+        VALUES
+        (#{accountNumber}, #{targetAccount}, #{operationType}, #{operationResult}, #{resultMessage}, #{operatedFields})
+    </insert>
+
+    <insert id="insertSpecialEventLog">
+        INSERT INTO special_event_logs
+        (event_id, event_type, vehicle_id, lane_ids, duration, operation_result, result_message)
+        VALUES
+        (#{log.eventId}, #{log.eventType}, #{log.vehicleId}, #{laneIdsJson}, #{log.duration}, #{log.operationResult}, #{log.resultMessage})
+    </insert>
+
+    <select id="queryUserLogs" resultType="com.ucd.urbanflow.domain.vo.UserLogVO">
+        SELECT
+        id,
+        userId,
+        account_number,
+        user_name,
+        action,
+        detail,
+        module,
+        timestamp
+        FROM (
+        -- Signal Control Logs
+        SELECT
+        l.id,
+        u.id AS userId,
+        l.account_number,
+        COALESCE(u.user_name, 'Unknown User') AS user_name,
+        UPPER(l.operation_source) AS action,
+        l.result_message AS detail,
+        'TRAFFIC_CONTROL' AS module,
+        l.created_at AS timestamp
+        FROM
+        signal_control_logs l
+        LEFT JOIN
+        users u ON l.account_number = u.account_number
+        <where>
+            <if test="startDate != null and startDate != ''"> AND l.created_at >= #{startDate} </if>
+            <if test="endDate != null and endDate != ''"> AND l.created_at &lt; DATE_ADD(STR_TO_DATE(#{endDate}, '%Y-%m-%d'), INTERVAL 1 DAY) </if>
+        </where>
+
+        UNION ALL
+
+        -- Auth Logs
+        SELECT
+        l.id,
+        u.id AS userId,
+        l.account_number,
+        COALESCE(u.user_name, 'Unknown User') AS user_name,
+        l.operation_type AS action,
+        CONCAT(l.operation_type, ' ', l.operation_result, '. ', l.result_message) AS detail,
+        'AUTH' AS module,
+        l.created_at AS timestamp
+        FROM
+        auth_logs l
+        LEFT JOIN
+        users u ON l.account_number = u.account_number
+        <where>
+            <if test="startDate != null and startDate != ''"> AND l.created_at >= #{startDate} </if>
+            <if test="endDate != null and endDate != ''"> AND l.created_at &lt; DATE_ADD(STR_TO_DATE(#{endDate}, '%Y-%m-%d'), INTERVAL 1 DAY) </if>
+        </where>
+
+        UNION ALL
+
+        -- User Permission Logs
+        SELECT
+        l.id,
+        u.id AS userId,
+        l.account_number,
+        COALESCE(u.user_name, 'Unknown User') AS user_name,
+        l.operation_type AS action,
+        CONCAT('Performed ', l.operation_type, ' on user ', l.target_account, '. Details: ', l.operated_fields) as detail,
+        'USER_MANAGEMENT' AS module,
+        l.created_at AS timestamp
+        FROM
+        user_permission_logs l
+        LEFT JOIN
+        users u ON l.account_number = u.account_number
+        <where>
+            <if test="startDate != null and startDate != ''"> AND l.created_at >= #{startDate} </if>
+            <if test="endDate != null and endDate != ''"> AND l.created_at &lt; DATE_ADD(STR_TO_DATE(#{endDate}, '%Y-%m-%d'), INTERVAL 1 DAY) </if>
+        </where>
+
+        ) AS all_logs
+        ORDER BY timestamp DESC
+    </select>
+</mapper>
