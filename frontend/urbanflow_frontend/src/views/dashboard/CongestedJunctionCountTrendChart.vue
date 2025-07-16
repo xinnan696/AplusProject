@@ -1,5 +1,3 @@
-
-
 <template>
   <v-chart class="chart" :option="chartOption" autoresize />
 </template>
@@ -12,7 +10,7 @@ import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 //import { getTopCongestedSegments } from '@/mocks/mockDashboardData'
-import { getCongestedJunctionCountTrend } from '@/service/dashboard_api'
+import { getCongestedJunctionCountTrend } from '@/services/dashboard_api.ts'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -23,7 +21,7 @@ const props = defineProps<{
 const chartOption = ref({
   tooltip: { trigger: 'axis',
     formatter: function (params) {
-      let point = params[0];
+      const point = params[0];
       return `
       ${point.axisValueLabel}<br/>
       ${point.marker} ${point.seriesName}: <strong>${point.value}</strong> junctions

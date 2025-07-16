@@ -14,33 +14,51 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 本地：8081 用户模块
-      '/api-user': {
-        target: 'http://localhost:8081',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api-user/, ''),
-      },
-      // 本地：8083 交通模块
-      '/api-traffic': {
-        target: 'http://localhost:8083',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api-traffic/, ''),
-      },
-      // ✅ 保留：8087 本地信号灯模块
       '/api-status': {
         target: 'http://localhost:8087',
         changeOrigin: true,
-        rewrite: path => path, // 不修改路径，完整转发
+        rewrite: path => path,
       },
-      // ✅ 新增：远程信号灯测试模块（用于 POST 到 10.241.43.177）
       '/api/signalcontrol': {
         target: 'http://localhost:8082',
         changeOrigin: true,
-        rewrite: path => path, // 保留原始路径
+        rewrite: path => path,
       },
-      '/api':{
-        target: 'http://192.168.83.199:8087',
+      '/api/auth': {
+        target: 'http://localhost:8081',
         changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/area-permission': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/areas': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/users': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/logs': {
+        target: 'http://localhost:8086',
+        changeOrigin: true,
+        rewrite: path => path,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        }
       }
     },
   },

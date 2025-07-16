@@ -1,6 +1,13 @@
 <template>
   <div class="dashboard-page">
-    <ControlHeader @toggle-nav="toggleNav" />
+    <ControlHeader 
+      @toggle-nav="toggleNav"
+      @toggle-record="toggleRecord"
+      @toggle-emergency="toggleEmergency"
+      @toggle-priority="togglePriority"
+      @mode-changed="handleModeChange"
+      @sign-out="handleSignOut"
+    />
     <ControlNav :isVisible="isNavVisible" />
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
@@ -65,13 +72,18 @@
         </DashboardCard>
       </div>
     </div>
+
+    <!-- Record Panel -->
+    <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
+import ControlRecord from '@/views/control/ControlRecord.vue'
 import DashboardCard from '@/views/dashboard/DashboardCard.vue'
 import CustomSelect from '@/views/dashboard/CustomSelect.vue'
 import TrafficFlowChart from '@/views/dashboard/TrafficFlowChart.vue'
@@ -81,7 +93,9 @@ import CongestionDurationRankingChart from '@/views/dashboard/CongestionDuration
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
 //import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-import { getJunctions } from '@/service/dashboard_api'
+import { getJunctions } from '@/services/dashboard_api.ts'
+
+const router = useRouter()
 
 // Filters State
 const trafficFlowFilters = reactive({
@@ -100,6 +114,11 @@ const junctionCountFilters = reactive({
 const durationRankingFilters = reactive({
   timeRange: '24hours',
 })
+
+// Panel states  
+const isRecordVisible = ref(false)
+const isEmergencyVisible = ref(false)
+const isPriorityVisible = ref(false)
 
 // Filter Options
 const junctionOptions = ref([
@@ -122,6 +141,44 @@ const durationRankingTimeRangeOptions = ref([
   { value: 'oneyear', label: 'One year' },
 ])
 
+// Handle sign out
+const handleSignOut = () => {
+  // Remove authentication token
+  localStorage.removeItem('authToken')
+  
+  // Redirect to login page
+  router.push({ name: 'Login' })
+}
+
+// Header button handlers
+const toggleRecord = () => {
+  isRecordVisible.value = !isRecordVisible.value
+  if (isRecordVisible.value) {
+    isEmergencyVisible.value = false
+    isPriorityVisible.value = false
+  }
+}
+
+const toggleEmergency = () => {
+  isEmergencyVisible.value = !isEmergencyVisible.value
+  if (isEmergencyVisible.value) {
+    isRecordVisible.value = false
+    isPriorityVisible.value = false
+  }
+}
+
+const togglePriority = () => {
+  isPriorityVisible.value = !isPriorityVisible.value
+  if (isPriorityVisible.value) {
+    isRecordVisible.value = false
+    isEmergencyVisible.value = false
+  }
+}
+
+const handleModeChange = (isAI: boolean) => {
+  console.log('Mode changed to:', isAI ? 'AI Mode' : 'Manual Mode')
+}
+
 // Fetch initial data for filters
 onMounted(async () => {
   const junctions = await getJunctions()
@@ -133,11 +190,8 @@ onMounted(async () => {
 </script>
 
 <style scoped lang="scss">
-// 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
-// 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
-  //position: fixed;
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
@@ -152,67 +206,60 @@ onMounted(async () => {
 }
 
 .main-area {
-  //height: calc(100% - 64px); // 假设Header高度为64px
-  //display: flex;
-  //overflow-y: auto;
-  //overflow-x: hidden;
-  //padding: 0 1.01rem; // 对应左右间隙 101px
-  //justify-content: center;
-
   position: absolute;
-  top: 40px; // 假设Header高度为64px
+  top: 64px; // Header 高度
   bottom: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   justify-content: center;
 
-  // 定义两个变量，用于导航栏的宽度
-  $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
-  $nav-expanded-width: 1.0rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
-
-  // 为位移和宽度变化添加平滑的过渡动画
+  // 导航栏动画过渡
   transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
 
   // 默认状态（导航栏收起时）
-  left: $nav-collapsed-width;
-  width: calc(100% - #{$nav-collapsed-width});
+  left: 0;
+  width: 100%;
 
-  // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
+  // 导航栏展开时
   &.nav-expanded {
-    left: $nav-expanded-width;
-    width: calc(100% - #{$nav-expanded-width});
+    left: 240px; // 导航栏宽度
+    width: calc(100% - 240px);
   }
 }
 
-
 .dashboard-container {
-  width: 14.80rem; // 对应 1680px
-  min-height: 10.16rem; // 对应 1016px
+  width: 100%; // 使用百分比宽度
+  max-width: 1400px; // 最大宽度限制
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem; // 中间上下间隙 15px
-  padding: 0.22rem 0; // 对应上下间隙 22px
+  gap: 1.5%; // 卡片间隙用百分比
+  padding: 2% 0; // 上下间距用百分比
+  box-sizing: border-box;
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
-  gap: 0.18rem; // 中间左右间隙 18px
+  gap: 1.8%; // 左右间隙用百分比
+  height: 33%; // 中间行高度
 }
 
 .card-full-width {
-  height: 3.25rem; // Traffic Flow & Duration Ranking 高度
+  width: 100%;
+  height: 33%; // Traffic Flow 卡片高度
   flex-shrink: 0;
 }
 
 .card-half-width {
-  width: 50%; // Will be calculated by flex
-  flex-grow: 1;
-  height: 2.92rem; // Top Congested & Count Trend 高度
+  width: 49.1%; // 每个卡片占一半宽度（减去gap）
+  height: 100%; // 继承父元素高度
+  flex-shrink: 0;
 }
 
 .filter-select {
-  width: 1.40rem; // 下拉栏宽度 140px
-  height: 0.32rem; // 下拉栏高度 32px
+  width: 140px; // 保持固定像素宽度
+  height: 32px; // 保持固定像素高度
 }
 </style>

@@ -1,4 +1,3 @@
-// @ts-ignore
 import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, startOfHour } from 'date-fns';
 
 /**
