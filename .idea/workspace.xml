@@ -4,16 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 1.0">
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 3.2">
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/EmergencyRequestDialog.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/emergency/EmergencyVehicle.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54__Changes_.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55_[Changes]/shelved.patch" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/service/dashboard_api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedSegmentsChart.vue" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -173,6 +171,7 @@
     <MESSAGE value="commit newFast.py" />
     <MESSAGE value="dashboard frontend version 0.1" />
     <MESSAGE value="dashboard frontend version 1.0" />
-    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 1.0" />
+    <MESSAGE value="dashboard frontend version 3.2" />
+    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 3.2" />
   </component>
 </project>
