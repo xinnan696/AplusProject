@@ -1,10 +1,17 @@
+<template>
+  <div></div>
+</template>
 
+<script setup lang="ts">
+
+</script>
+
+<style lang="scss">
 
 .btn-hover-icon {
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   border-radius: 0.08rem;
   overflow: visible;
-
 
   &:hover {
     color: #00D4F8;
@@ -23,6 +30,7 @@
     transform: translateY(0) scale(0.95);
   }
 }
+
 
 .btn-hover-switch {
   &:hover .slider {
@@ -91,6 +99,7 @@
   }
 }
 
+
 .btn-hover-circle {
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   overflow: visible;
@@ -113,6 +122,7 @@
     transform: translateY(0) scale(0.95);
   }
 }
+
 
 .btn-hover-solid {
   background: linear-gradient(135deg, #00B4D8 0%, #00D4F8 50%, #0090aa 100%);
@@ -154,19 +164,19 @@
   }
 }
 
+
 .simple-tooltip {
   position: absolute;
   left: 50%;
   top: calc(100% + 8px);
   transform: translateX(-50%);
-  padding: 8px 12px;
-  background: rgba(20, 22, 40, 0.92);
-  border: #4a4a70;
+  padding: 6px 10px;
+  background: rgba(45, 45, 45, 0.95) !important;
   color: #ffffff !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   font-family: 'Inter', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Roboto', sans-serif !important;
-  line-height: 1.3 !important;
+  line-height: 1.2 !important;
   border-radius: 4px;
   white-space: nowrap;
   opacity: 0;
@@ -175,26 +185,15 @@
   z-index: 99999;
   pointer-events: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  min-height: 28px;
+  min-height: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   letter-spacing: 0.01em;
 }
 
-// ===========================================
-// 活跃状态样式
-// ===========================================
-.btn-active {
-  color: #00D4F8;
-  background: rgba(0, 180, 216, 0.1);
-  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
-  transform: translateY(-2px) scale(1.1);
-}
 
-// ===========================================
-// 动画样式
-// ===========================================
 .panel-slide-down {
   animation: slideDown 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
@@ -209,6 +208,7 @@
     transform: translateY(0) scale(1);
   }
 }
+
 
 .shimmer-effect {
   position: relative;
@@ -231,3 +231,11 @@
   50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
   100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
 }
+
+.btn-active {
+  color: #00D4F8;
+  background: rgba(0, 180, 216, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.4);
+  transform: translateY(-2px) scale(1.1);
+}
+</style>

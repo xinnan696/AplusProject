@@ -1,9 +1,22 @@
 <template>
-  <router-view></router-view>
+  <div id="app">
+    <!-- Loading Transition Overlay -->
+    <LoadingTransition 
+      v-if="authStore.showTransition" 
+      :user="authStore.user"
+      @complete="authStore.completeTransition"
+    />
+    
+    <!-- Main Application -->
+    <router-view v-show="!authStore.showTransition"></router-view>
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+import LoadingTransition from '@/components/LoadingTransition.vue'
 
+const authStore = useAuthStore()
 </script>
 
 <style>

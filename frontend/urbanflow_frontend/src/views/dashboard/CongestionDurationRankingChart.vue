@@ -11,7 +11,7 @@ import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/compone
 import VChart from 'vue-echarts'
 //import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
-import { getCongestionDurationRanking } from '@/service/dashboard_api'
+import { getCongestionDurationRanking } from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -51,9 +51,9 @@ const chartOption = ref({
     itemStyle: {
       borderRadius: [0, 5, 5, 0],
       color: new graphic.LinearGradient(1, 0, 0, 0, [
-        { offset: 0, color: '#0D6EFD' },
+        { offset: 0, color: '#FFC107' },
         { offset: 0.5, color: '#6610F2' },
-        { offset: 1, color: '#FFC107' }
+        { offset: 1, color: '#0D6EFD' }
       ])
     }
   }],
