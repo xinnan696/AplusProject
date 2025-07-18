@@ -4,14 +4,346 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="dashboard frontend version 3.2">
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/EmergencyRequestDialog.vue" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/emergency/EmergencyVehicle.vue" afterDir="false" />
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="emergency vehicle develop">
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/jarRepositories.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__ch_qos_logback_logback_classic_1_5_18.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__ch_qos_logback_logback_core_1_5_18.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_classmate_1_7_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_annotations_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_core_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_core_jackson_databind_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_datatype_jackson_datatype_jdk8_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_datatype_jackson_datatype_jsr310_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_fasterxml_jackson_module_jackson_module_parameter_names_2_17_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_code_findbugs_jsr305_3_0_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_code_gson_gson_2_10_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_code_gson_gson_2_9_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_errorprone_error_prone_annotations_2_26_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_guava_failureaccess_1_0_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_guava_guava_33_2_0_jre.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_guava_listenablefuture_9999_0_empty_to_avoid_conflict_with_guava.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_google_j2objc_j2objc_annotations_3_0_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_influxdb_influxdb_client_core_6_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_influxdb_influxdb_client_java_6_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_influxdb_influxdb_client_utils_6_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_jayway_jsonpath_json_path_2_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_mysql_mysql_connector_j_8_0_33.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_mysql_mysql_connector_j_8_3_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_okhttp3_logging_interceptor_4_12_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_okhttp3_okhttp_4_12_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_okio_okio_3_3_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_okio_okio_jvm_3_3_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_retrofit2_adapter_rxjava3_2_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_retrofit2_converter_gson_2_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_retrofit2_converter_scalars_2_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_squareup_retrofit2_retrofit_2_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_vaadin_external_google_android_json_0_0_20131108_vaadin1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__com_zaxxer_HikariCP_5_1_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__commons_fileupload_commons_fileupload_1_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__commons_io_commons_io_2_11_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_github_openfeign_feign_core_13_2_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_github_openfeign_feign_slf4j_13_2_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_github_openfeign_form_feign_form_3_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_github_openfeign_form_feign_form_spring_3_8_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_jsonwebtoken_jjwt_api_0_12_6.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_jsonwebtoken_jjwt_impl_0_12_6.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_jsonwebtoken_jjwt_jackson_0_12_6.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_lettuce_lettuce_core_6_3_2_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_micrometer_micrometer_commons_1_13_14.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_micrometer_micrometer_observation_1_13_14.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_buffer_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_codec_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_codec_dns_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_codec_http2_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_codec_http_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_codec_socks_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_common_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_handler_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_handler_proxy_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_resolver_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_resolver_dns_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_resolver_dns_classes_macos_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_resolver_dns_native_macos_osx_x86_64_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_transport_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_transport_classes_epoll_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_transport_native_epoll_linux_x86_64_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_netty_netty_transport_native_unix_common_4_1_121_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_projectreactor_netty_reactor_netty_core_1_1_30.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_projectreactor_netty_reactor_netty_http_1_1_30.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_projectreactor_reactor_core_3_6_17.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__io_reactivex_rxjava3_rxjava_3_1_10.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__jakarta_activation_jakarta_activation_api_2_1_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__jakarta_annotation_jakarta_annotation_api_2_1_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__jakarta_validation_jakarta_validation_api_3_0_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__jakarta_xml_bind_jakarta_xml_bind_api_4_0_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_bytebuddy_byte_buddy_1_14_19.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_bytebuddy_byte_buddy_agent_1_14_19.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_minidev_accessors_smart_2_5_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__net_minidev_json_smart_2_5_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_csv_1_9_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_commons_commons_pool2_2_12_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_logging_log4j_log4j_api_2_23_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_logging_log4j_log4j_to_slf4j_2_23_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_tomcat_embed_tomcat_embed_core_10_1_41.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_tomcat_embed_tomcat_embed_el_10_1_41.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apache_tomcat_embed_tomcat_embed_websocket_10_1_41.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_apiguardian_apiguardian_api_1_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_aspectj_aspectjweaver_1_9_24.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_assertj_assertj_core_3_25_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_awaitility_awaitility_4_2_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_bouncycastle_bcprov_jdk18on_1_77.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_checkerframework_checker_qual_3_42_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_eclipse_angus_angus_activation_2_0_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_eclipse_angus_jakarta_mail_2_0_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_hamcrest_hamcrest_2_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_hibernate_validator_hibernate_validator_8_0_2_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_java_websocket_Java_WebSocket_1_5_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_jboss_logging_jboss_logging_3_5_3_Final.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_jetbrains_annotations_13_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_jetbrains_kotlin_kotlin_stdlib_1_9_25.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_jetbrains_kotlin_kotlin_stdlib_jdk7_1_9_25.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_jetbrains_kotlin_kotlin_stdlib_jdk8_1_9_25.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_json_json_20231013.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_jupiter_junit_jupiter_5_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_jupiter_junit_jupiter_api_5_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_jupiter_junit_jupiter_engine_5_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_jupiter_junit_jupiter_params_5_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_platform_junit_platform_commons_1_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_junit_platform_junit_platform_engine_1_10_5.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mockito_mockito_core_5_11_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mockito_mockito_junit_jupiter_5_11_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_mybatis_3_5_14.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_mybatis_3_5_17.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_mybatis_spring_3_0_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_mybatis_spring_3_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_autoconfigure_3_0_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_autoconfigure_3_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_starter_3_0_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_starter_3_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_starter_test_3_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_mybatis_spring_boot_mybatis_spring_boot_test_autoconfigure_3_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_objenesis_objenesis_3_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_opentest4j_opentest4j_1_3_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_ow2_asm_asm_9_7_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_projectlombok_lombok_1_18_38.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_reactivestreams_reactive_streams_1_0_4.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_skyscreamer_jsonassert_1_5_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_jul_to_slf4j_2_0_17.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_api_2_0_17.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_autoconfigure_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_aop_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_cache_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_data_redis_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_jdbc_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_json_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_logging_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_mail_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_reactor_netty_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_security_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_test_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_tomcat_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_validation_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_web_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_webflux_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_starter_websocket_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_test_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_boot_spring_boot_test_autoconfigure_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_cloud_spring_cloud_commons_4_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_cloud_spring_cloud_context_4_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_cloud_spring_cloud_openfeign_core_4_1_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_cloud_spring_cloud_starter_4_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_cloud_spring_cloud_starter_openfeign_4_1_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_data_spring_data_commons_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_data_spring_data_keyvalue_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_data_spring_data_redis_3_3_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_security_spring_security_config_6_3_9.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_security_spring_security_core_6_3_9.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_security_spring_security_crypto_6_3_9.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_security_spring_security_rsa_1_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_security_spring_security_web_6_3_9.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_aop_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_beans_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_context_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_context_support_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_core_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_expression_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_jcl_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_jdbc_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_messaging_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_oxm_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_test_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_tx_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_web_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_webflux_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_webmvc_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_websocket_6_1_20.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_xmlunit_xmlunit_core_2_9_1.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_yaml_snakeyaml_2_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__redis_clients_jedis_5_1_0.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/src/main/java/com/ucd/urbanflow/client/LogServiceClient.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/src/main/java/com/ucd/urbanflow/dto/AuthLogDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/src/main/java/com/ucd/urbanflow/dto/SignalControlLogDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/src/main/java/com/ucd/urbanflow/dto/SpecialEventLogDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/common/src/main/java/com/ucd/urbanflow/dto/UserPermissionLogDTO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/config/AsyncConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/controller/DiagnosticController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/controller/LogController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/domain/vo/UserLogVO.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/mapper/LogMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/service/LogService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/resources/mapper/LogMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/config/AuthenticatedUser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/config/JwtAuthenticationFilter.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/dto/Junction.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/mapper/JunctionMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/service/JunctionNameCache.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/service/JwtService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/resources/mapper/JunctionMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/dto/EmergencyVehicleEventDto.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/entity/EmergencyVehicleEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/mapper/EmergencyVehicleMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EmergencyVehicleScheduler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EmergencyVehicleService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/util/JsonStringListTypeHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/resources/mapper/EmergencyVehicleMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/config/InfluxDBConfig.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/controller/DataTestController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/dto/EnrichedTrafficEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/dto/RedisEdgeData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/dto/RedisTlsData.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/pojo/CongestedDurationRanking.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/pojo/CongestedRoadCount.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/pojo/TopCongestedSegments.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/pojo/TrafficFlow.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/tsdb/TrafficDataPoint.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/mapper/CongestedDurationRankingMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/mapper/CongestionRoadCountMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/mapper/TopCongestedSegmentsMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/mapper/TrafficFlowMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/respository/TrafficDataPointRepository.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/service/dataprocessing/AnalysisService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/service/dataprocessing/DataForwardingService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/service/dataprocessing/RedisPollingService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/mapper/CongestedDurationRankingMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/mapper/CongestionRoadCount.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/mapper/TopCongestedSegements.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/mapper/TrafficFlowMapper.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/config/AuthenticatedUser.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/ButtonHoverStyles.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/LoadingTransition.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/PermissionIndicator.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/TrafficLightIcon.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/TrafficLightStatusBar.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/common/CommonBottom.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/composables/useAreaPermissions.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/composables/useTrafficLightPermissions.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/services/areaApi.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/services/dashboard_api.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/services/userApi.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/services/userLogApi.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/operationStore.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/userStore.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/mapPermissionUtils.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/permissionUtils.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual_PermissionFunctions.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual_PermissionStyles.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlRecord.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/PriorityVehicleTracking.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/AddUser.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/EditUser.vue" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/UserDetails.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/AplusProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AplusProject.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54_[Changes]/shelved.patch" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_54__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55_[Changes]/shelved.patch" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_2025_7_6_11_55__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/docker-compose.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/docker-compose.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/LoggingAndAuditApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/java/com/ucd/urbanflow/LoggingAndAuditApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/SignalControlApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/SignalControlApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/dto/ManualControlRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/dto/ManualControlRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/service/SignalControlService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/java/com/ucd/urbanflow/service/SignalControlService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EventService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EventService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/EventResultHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/EventResultHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TraCIEventDispatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TraCIEventDispatcher.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/status-sync/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/status-sync/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/java/com/ucd/urbanflow/websocket/StatusWebSocketHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/java/com/ucd/urbanflow/websocket/StatusWebSocketHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/java/com/ucd/urbanflow/websocket/WebSocketConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/java/com/ucd/urbanflow/websocket/WebSocketConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/TrafficSensingApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/TrafficSensingApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/controller/TrafficController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/controller/TrafficController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/vo/EdgeData.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/domain/vo/EdgeData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/service/TrafficService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/java/com/ucd/urbanflow/service/TrafficService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/UserAuthenticationApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/UserAuthenticationApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/config/JwtAuthenticationFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/config/JwtAuthenticationFilter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AreaController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AreaController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AreaPermissionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AreaPermissionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/AuthController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/UserController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/controller/UserController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/domain/pojo/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/domain/pojo/User.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/AuthService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/JwtService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/JwtService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/UserDetailsServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/UserDetailsServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/java/com/ucd/urbanflow/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/App.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/App.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/assets/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/assets/main.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/BaseToast.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/BaseToast.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/common/CommonInput.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/common/CommonInput.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/common/CommonSelect.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/common/CommonSelect.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/navCom/NavGroup.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/navCom/NavGroup.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/navCom/NavItem.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/components/navCom/NavItem.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/main.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/mocks/mockDashboardData.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/router/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/auth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/auth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/button-hover.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/button-hover.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/iconfont.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/iconfont.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/index.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/index.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/tls.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/tls.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/variables.scss" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/style/variables.scss" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/ToastService.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/ToastService.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/api.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/navState.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/navState.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/rem.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/rem.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/time.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/utils/time.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlAI.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlAI.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlBoard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlCongested.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlCongested.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHeader.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHeader.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHome.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHome.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlManual.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlMap.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlMap.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlNav.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlNav.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestedJunctionCountTrendChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/CongestionDurationRankingChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/DashBoard.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TopCongestedTimesChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/dashboard/TrafficFlowChart.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/help/HelpPage.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/help/HelpPage.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/UserList.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/UserList.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/UserLog.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/user/UserLog.vue" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,6 +355,8 @@
       <list>
         <option value="Vue Single File Component" />
         <option value="TypeScript File" />
+        <option value="Tag Library Descriptor" />
+        <option value="Class" />
       </list>
     </option>
   </component>
@@ -51,37 +385,165 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="useMavenConfig" value="true" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
   <component name="ProjectId" id="2yuN0IKkSd8s3qhzHcp2HfL70gE" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/UCD/Summer/AplusProject&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.standard&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Project&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Git.Branch.Popup.ShowAllRemotes": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "E:/UCD/Summer/AplusProject",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "spring.configuration.checksum": "4fe10fd2854c291019f8005be5eb8d87",
+    "ts.external.directory.path": "E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
+    ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\UCD\Summer\AplusProject\frontend\urbanflow_frontend\src" />
     </key>
+  </component>
+  <component name="RunDashboard">
+    <option name="configurationTypes">
+      <set>
+        <option value="SpringBootApplicationConfigurationType" />
+        <option value="js.build_tools.npm" />
+      </set>
+    </option>
+  </component>
+  <component name="RunManager" selected="Docker.urbanflow/docker-compose.yaml: Compose Deployment">
+    <configuration name="logs_table.sql and 1 more" type="DatabaseScript" editBeforeRun="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/logs_table.sql" />
+      <script-file value="$PROJECT_DIR$/lane.sql" />
+      <script-mode>FILE</script-mode>
+      <data-source id="4723155f-af39-4e5d-8954-85e4e4a90590" namespace="schema/&quot;urbanflow&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="AiIntelligenceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="ai-intelligence" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.AiIntelligenceApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LoggingAndAuditApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="logging-and-audit" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.LoggingAndAuditApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SignalControlApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="signal-control" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.SignalControlApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="SpecialEventHandlingApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="special-event-handling" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.SpecialEventHandlingApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="StatusSyncApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="status-sync" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.StatusSyncApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="TrafficSensingApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="traffic-sensing" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.TrafficSensingApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserAuthenticationApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="user-authentication" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.ucd.urbanflow.UserAuthenticationApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="docker-deploy" factoryName="docker-compose.yml" temporary="true">
+      <deployment type="docker-compose.yml">
+        <settings />
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <configuration name="urbanflow/docker-compose.yaml: Compose Deployment" type="docker-deploy" factoryName="docker-compose.yml" temporary="true" server-name="Docker">
+      <deployment type="docker-compose.yml">
+        <settings>
+          <option name="envFilePath" value="" />
+          <option name="sourceFilePath" value="backend/urbanflow/docker-compose.yaml" />
+        </settings>
+      </deployment>
+      <method v="2" />
+    </configuration>
+    <configuration name="dev" type="js.build_tools.npm" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/frontend/urbanflow_frontend/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Database Script.logs_table.sql and 1 more" />
+      <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
+      <item itemvalue="npm.dev" />
+      <item itemvalue="Spring Boot.AiIntelligenceApplication" />
+      <item itemvalue="Spring Boot.LoggingAndAuditApplication" />
+      <item itemvalue="Spring Boot.SignalControlApplication" />
+      <item itemvalue="Spring Boot.SpecialEventHandlingApplication" />
+      <item itemvalue="Spring Boot.StatusSyncApplication" />
+      <item itemvalue="Spring Boot.TrafficSensingApplication" />
+      <item itemvalue="Spring Boot.UserAuthenticationApplication" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
+      </list>
+    </recent_temporary>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -106,6 +568,8 @@
       <workItem from="1751717192591" duration="4157000" />
       <workItem from="1751799523824" duration="18544000" />
       <workItem from="1751829924102" duration="715000" />
+      <workItem from="1752702828133" duration="14919000" />
+      <workItem from="1752807160280" duration="710000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
@@ -135,7 +599,14 @@
       <option name="project" value="LOCAL" />
       <updated>1751587881857</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="emergency vehicle develop">
+      <created>1752701798037</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1752701798037</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -172,6 +643,7 @@
     <MESSAGE value="dashboard frontend version 0.1" />
     <MESSAGE value="dashboard frontend version 1.0" />
     <MESSAGE value="dashboard frontend version 3.2" />
-    <option name="LAST_COMMIT_MESSAGE" value="dashboard frontend version 3.2" />
+    <MESSAGE value="emergency vehicle develop" />
+    <option name="LAST_COMMIT_MESSAGE" value="emergency vehicle develop" />
   </component>
 </project>

@@ -20,7 +20,7 @@ public class SecurityConfig {
                         // 对所有以 "/api/traffic/" 开头的请求，允许所有用户访问（无需认证）
                         .requestMatchers("/api/traffic/**").permitAll()
                         // 对于任何其他未明确匹配的请求，都要求用户必须经过认证
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 // 启用HTTP Basic认证，用于访问受保护的资源
                 .httpBasic(withDefaults());

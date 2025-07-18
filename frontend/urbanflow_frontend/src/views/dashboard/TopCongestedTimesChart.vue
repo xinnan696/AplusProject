@@ -10,7 +10,7 @@ import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 //import { getTopCongestedTimes } from '@/mocks/mockDashboardData'
-import {getTopCongestedTimes} from '@/service/dashboard_api'
+import {getTopCongestedTimes} from '@/services/dashboard_api.ts'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -26,7 +26,7 @@ const gradientColors = ref<string[]>([]);
  * @param startColor 起始颜色 (HEX, e.g., '#ff0000')
  * @param endColor 结束颜色 (HEX, e.g., '#00ff00')
  * @param steps 渐变的步数 (柱子的数量)
- * @returns 返回一个包含HEX颜色字符串的数组
+ * @returns 返回一个
  */
 function generateGradientColors(startColor: string, endColor: string, steps: number): string[] {
   // NEW: 处理 steps 为 0 或 1 的边界情况
@@ -66,7 +66,7 @@ const chartOption = ref({
     rigger: 'axis',
     axisPointer: { type: 'shadow' },
     textStyle: {
-      fontSize: 14 // 您可以调整这个数值，单位是像素
+      fontSize: 14
     },
   },
   grid: { top: '20px', left: '3%', right: '4%', bottom: '1%', containLabel: true },

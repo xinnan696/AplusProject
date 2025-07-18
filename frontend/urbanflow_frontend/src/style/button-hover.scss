@@ -1,16 +1,10 @@
-// Modify the tooltip style：simple-tooltip
-
 
 
 .btn-hover-icon {
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   border-radius: 0.08rem;
   overflow: visible;
-  padding: 0.08rem 0.06rem;
 
-  &.record {
-    padding: 0;
-  }
 
   &:hover {
     color: #00D4F8;
@@ -160,14 +154,14 @@
   }
 }
 
-// Modify the tooltip style
 .simple-tooltip {
   position: absolute;
   left: 50%;
   top: calc(100% + 8px);
   transform: translateX(-50%);
   padding: 8px 12px;
-  background: rgba(45, 45, 45, 0.95) !important;
+  background: rgba(20, 22, 40, 0.92);
+  border: #4a4a70;
   color: #ffffff !important;
   font-size: 12px !important;
   font-weight: 500 !important;
@@ -188,7 +182,9 @@
   letter-spacing: 0.01em;
 }
 
-
+// ===========================================
+// 活跃状态样式
+// ===========================================
 .btn-active {
   color: #00D4F8;
   background: rgba(0, 180, 216, 0.1);
@@ -196,7 +192,9 @@
   transform: translateY(-2px) scale(1.1);
 }
 
-
+// ===========================================
+// 动画样式
+// ===========================================
 .panel-slide-down {
   animation: slideDown 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
 }

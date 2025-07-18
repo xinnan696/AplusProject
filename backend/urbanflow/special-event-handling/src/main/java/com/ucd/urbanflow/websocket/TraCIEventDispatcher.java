@@ -1,5 +1,6 @@
 package com.ucd.urbanflow.websocket;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ucd.urbanflow.dto.EventSchedulerEvent;
 import jakarta.annotation.PostConstruct;
@@ -22,6 +23,7 @@ public class TraCIEventDispatcher {
     private final ObjectMapper objectMapper=new ObjectMapper();
 
     private boolean connected = false;
+
 
     @PostConstruct
     public void init() {
@@ -61,7 +63,7 @@ public class TraCIEventDispatcher {
         return connected && client.isOpen();
     }
 
-    public void sendEvent(EventSchedulerEvent event) {
+    public void sendEvent(Object event) {
         if (!isConnected()) {
             logger.warn("WebSocket nit connected!");
             return;
@@ -74,4 +76,5 @@ public class TraCIEventDispatcher {
             logger.error("Failed to sent event", e);
         }
     }
+
 }

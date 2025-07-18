@@ -3,6 +3,15 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/AplusProject.iml" filepath="$PROJECT_DIR$/.idea/AplusProject.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/ai-intelligence/ai-intelligence.iml" filepath="$PROJECT_DIR$/backend/urbanflow/ai-intelligence/ai-intelligence.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/common/common.iml" filepath="$PROJECT_DIR$/backend/urbanflow/common/common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/logging-and-audit/logging-and-audit.iml" filepath="$PROJECT_DIR$/backend/urbanflow/logging-and-audit/logging-and-audit.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/signal-control/signal-control.iml" filepath="$PROJECT_DIR$/backend/urbanflow/signal-control/signal-control.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/special-event-handling/special-event-handling.iml" filepath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/special-event-handling.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/status-sync/status-sync.iml" filepath="$PROJECT_DIR$/backend/urbanflow/status-sync/status-sync.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/traffic-sensing/traffic-sensing.iml" filepath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/traffic-sensing.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/urbanflow.iml" filepath="$PROJECT_DIR$/backend/urbanflow/urbanflow.iml" />
+      <module fileurl="file://$PROJECT_DIR$/backend/urbanflow/user-authentication/user-authentication.iml" filepath="$PROJECT_DIR$/backend/urbanflow/user-authentication/user-authentication.iml" />
     </modules>
   </component>
 </project>

@@ -1,6 +1,5 @@
 import { ref } from 'vue'
 
-// 全局导航栏状态
 export const isNavVisible = ref(false)
 
 export const toggleNav = () => {

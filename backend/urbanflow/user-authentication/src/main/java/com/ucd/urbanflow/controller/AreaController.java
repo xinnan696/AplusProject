@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/api/areas")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+//@PreAuthorize("hasRole('ADMIN')")
 public class AreaController {
     
     private final AreaManagementService areaManagementService;

@@ -1,0 +1,137 @@
+.area-tag {
+  font-size: 0.1rem;
+  padding: 0.02rem 0.04rem;
+  border-radius: 0.02rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.area-tag.area-left.controllable {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.area-tag.area-right.controllable {
+  background: rgba(0, 180, 216, 0.2);
+  color: #00B4D8;
+}
+
+.area-tag.area-left.readonly,
+.area-tag.area-right.readonly {
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
+
+.readonly-indicator {
+  font-size: 0.1rem;
+  color: #999;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.disabled * {
+  cursor: not-allowed !important;
+}
+
+.light-buttons.disabled .light-btn:not(:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.light-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.light-btn:disabled:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%) !important;
+}
+
+.custom-input:disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.triangle-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.triangle-btn:disabled:hover {
+  background: transparent !important;
+  color: #00E5FF !important;
+  transform: none !important;
+}
+
+.apply-btn:disabled {
+  background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%) !important;
+  color: #A0AEC0 !important;
+  border-color: rgba(74, 85, 104, 0.5) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+
+.select-wrapper.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.custom-select.disabled {
+  border-color: rgba(0, 180, 216, 0.2);
+  background: linear-gradient(135deg, #0F1423 0%, #1A1F35 100%);
+  cursor: not-allowed;
+}
+
+.duration-custom.disabled {
+  border-color: rgba(0, 180, 216, 0.2);
+  background: linear-gradient(135deg, #0F1423 0%, #1A1F35 100%);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 0.24rem;
+}
+
+.suggestion-item.suggestion-readonly {
+  border-left: 3px solid #FFC107;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.05) 100%);
+}
+
+.suggestion-item.suggestion-uncontrollable {
+  opacity: 0.8;
+}
+
+.suggestion-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.suggestion-permission {
+  font-size: 0.09rem;
+  padding: 0.02rem 0.04rem;
+  border-radius: 0.02rem;
+  font-weight: 600;
+}
+
+.suggestion-permission.perm-control {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.suggestion-permission.perm-readonly {
+  background: rgba(255, 193, 7, 0.2);
+  color: #FFC107;
+}
