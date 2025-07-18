@@ -10,6 +10,7 @@ import time
 from typing import List, Optional
 from event_manager import EventManager
 import traceback
+from junction_data_processor import JunctionDataProcessor
 
 # SUMO
 sumoBinary = "E:/sumo/sumo-1.23.1/bin/sumo"
@@ -17,6 +18,7 @@ sumoBinary = "E:/sumo/sumo-1.23.1/bin/sumo"
 TRACI_PORT = 8813
 sumoCmd = [sumoBinary, "-c", "E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.sumocfg",  "--start"]
 #sumoCmd = ["sumo", "-c", "sumo_scenario/osm.sumocfg"]
+SQL_FILE_PATH = "junction_flow_relations.sql"
 
 # Redis Configuration
 # Read JSON configuration file
@@ -29,7 +31,7 @@ REDIS_PORT = redis_config.get('port')
 REDIS_DB = redis_config.get('db')
 SUMO_HOST = "host.docker.internal"
 
-TARGET_EDGE_ID_TO_MONITOR = "1314507321#1"
+TARGET_EDGE_ID_TO_MONITOR = "542295429#6"
 
 # Pydantic Models for Request Bodies
 # This tells FastAPI how to validate and parse the incoming JSON
@@ -42,15 +44,6 @@ class StateDurationPayload(BaseModel):
     state: str
     duration: int
     lightIndex: int
-
-class EventPayload(BaseModel):
-    event_id: str
-    duration: float
-
-class LaneClosurePayload(BaseModel):
-    event_id: str
-    duration: float
-    lane_ids: List[str]
 
 # Create FastAPI application and global variables
 app = FastAPI(
@@ -75,18 +68,21 @@ stop_simulation_event = asyncio.Event()
 KEY_SIM_TIME = "sumo:simulation_time"
 KEY_ALL_EDGES = "sumo:edge"
 KEY_ALL_TLS = "sumo:tls"
+KEY_EMERGENCY_VEHICLES = "sumo:emergency_vehicles"
+KEY_ALL_JUNCTIONS = "sumo:junction"
 
 # Global variables to store static data generated at startup
 junction_names_map = {}
 tls_conflict_maps = {}
 junction_to_tls_map = {}
+junction_processor: Optional[JunctionDataProcessor] = None
 
 # <<< 创建 EventManager 的全局实例 >>>
 event_manager = EventManager()
 
 
 # Advance Simulation
-async def simulation_loop():
+async def simulation_loop(processor):
     print("Background scheduler loop has started.")
 
     while not stop_simulation_event.is_set():
@@ -99,6 +95,11 @@ async def simulation_loop():
         # Initialize containers for data to be cached in Redis
         edges_to_cache = {}
         tls_to_cache = {}
+
+        junctions_to_cache = {}
+
+        emergency_vehicles_to_cache = {}
+        redis_ev_keys_to_delete = []
 
         # Initialize containers for data to be cached in Redis
         async with TRACI_LOCK:
@@ -144,7 +145,7 @@ async def simulation_loop():
                                 del TASK_SCHEDULER[tls_id]
 
                             if verification_event:
-                                print(f"[SimLoop] > > > Adding  '{tls_id}' to the to-be-set list")
+                                print(f"[SimLoop] > > > Adding '{tls_id}' to the to-be-set list")
                                 events_to_set.append(verification_event)
 
                         elif task_state == "RUNNING_MANUAL_PHASE":
@@ -155,13 +156,19 @@ async def simulation_loop():
 
                 # <<< 新增：每一步都检查特殊事件是否到期 >>>
                 # 3. Check special events
-                print("[SimLoop] Starting checking  special events...")
+                print("[SimLoop] Starting checking special events...")
                 await event_manager.check_for_expired_events()
 
                 # 4. Update data to Redis
                 print("[SimLoop] Starting data update...")
 
                 for edgeID in traci.edge.getIDList():
+                    waiting_vehicle_count = traci.edge.getLastStepHaltingNumber(edgeID)
+                    waiting_time = traci.edge.getWaitingTime(edgeID)
+                    if waiting_vehicle_count > 0:
+                        avg_waiting_time = waiting_time / waiting_vehicle_count
+                    else:
+                        avg_waiting_time = 0.0
                     edge_data = {
                         "edgeID": edgeID,
                         "edgeName": traci.edge.getStreetName(edgeID) or "",
@@ -170,9 +177,9 @@ async def simulation_loop():
                         "speed": traci.edge.getLastStepMeanSpeed(edgeID) or 0.0,
                         'vehicleCount': traci.edge.getLastStepVehicleNumber(edgeID) or 0,
                         'vehicleIDs': list(traci.edge.getLastStepVehicleIDs(edgeID) or []),
-                        'waitTime': traci.edge.getWaitingTime(edgeID) or 0.0,
-                        'waitingVehicleIDs': list(traci.edge.getPendingVehicles(edgeID) or []),
-                        "waitingVehicleCount": traci.edge.getLastStepHaltingNumber(edgeID) or 0
+                        'waitingTime': avg_waiting_time or 0.0,
+                        'occupancy': traci.edge.getLastStepOccupancy(edgeID) or 0.0,
+                        "waitingVehicleCount": waiting_vehicle_count or 0
                     }
                     edges_to_cache[edgeID] = json.dumps(edge_data)
 
@@ -183,6 +190,8 @@ async def simulation_loop():
                             correct_junction_id = junc_id
                             break
                     junction_name = junction_names_map.get(correct_junction_id, f"Unknown Junction ({correct_junction_id})")
+                    nextSwitch = traci.trafficlight.getNextSwitch(tlsID)
+                    nextSwitchTime = nextSwitch - current_time
                     tls_data = {
                         "tlsID": tlsID,
                         "junction_id": correct_junction_id,
@@ -193,10 +202,19 @@ async def simulation_loop():
                         "duration": traci.trafficlight.getPhaseDuration(tlsID) or 0.0,
                         "connection": traci.trafficlight.getControlledLinks(tlsID) or [],
                         "spendTime": traci.trafficlight.getSpentDuration(tlsID) or 0.0,
-                        "nextSwitchTime": traci.trafficlight.getNextSwitch(tlsID) or -1.0
+                        "nextSwitchTime": nextSwitchTime or 0.0
                     }
                     tls_to_cache[tlsID] = json.dumps(tls_data)
 
+                print("[SimLoop] Starting junction data collection...")
+                junctions_to_cache = processor.calculate_all_junctions_metrics(current_time)
+
+                # 调用 EventManager 来追踪紧急车辆，传入本轮所需的环境数据
+                print("[SimLoop] Starting emergency vehicle datat update .....")
+                emergency_vehicles_to_cache, redis_ev_keys_to_delete = \
+                    await event_manager.track_active_emergency_vehicles(
+                        current_time, tls_to_cache, junction_to_tls_map
+                    )
 
             except traci.TraCIException as step_error:
                 # If the connection is lost during simulationStep, handle it gracefully
@@ -208,11 +226,11 @@ async def simulation_loop():
 
         # 5. Send notifications immediately
         if events_to_set:
-            print(f"Sending  {len(events_to_set)} notifications immediately...")
+            print(f"[SimLoop] Sending {len(events_to_set)} notifications immediately...")
             for event in events_to_set:
                 event.set()
         try:
-            print("Background data packaging complete, starting Redis cache update...")
+            print("[SimLoop] Background data packaging complete, starting Redis cache update...")
             async with redis_client.pipeline(transaction=False) as pipe:
                 # Cache simulation time
                 pipe.set(KEY_SIM_TIME, sim_time_to_cache, ex=REDIS_EXPIRATION_SECONDS)
@@ -227,16 +245,29 @@ async def simulation_loop():
                     pipe.hset(KEY_ALL_TLS, mapping=tls_to_cache)
                     pipe.expire(KEY_ALL_TLS, REDIS_EXPIRATION_SECONDS)
 
-                print("Background process starting to send all commands to the redis server for execution...")
+                if junctions_to_cache:
+                    pipe.hset(KEY_ALL_JUNCTIONS, mapping=junctions_to_cache)
+                    pipe.expire(KEY_ALL_JUNCTIONS, REDIS_EXPIRATION_SECONDS)
+
+                # 写入紧急车辆数据并设置过期时间
+                if emergency_vehicles_to_cache:
+                    pipe.hset(KEY_EMERGENCY_VEHICLES,mapping=emergency_vehicles_to_cache)
+                    pipe.expire(KEY_EMERGENCY_VEHICLES, REDIS_EXPIRATION_SECONDS)
+
+                # 如果有需要删除的紧急车辆条目
+                if redis_ev_keys_to_delete:
+                    pipe.hdel(KEY_EMERGENCY_VEHICLES, *redis_ev_keys_to_delete)
+
+                print("[SimLoop] Background process starting to send all commands to the redis server for execution...")
                 start_time = time.monotonic()
                 await pipe.execute()
                 end_time = time.monotonic()
                 execution_time = end_time - start_time
-                print(f"pipe.execute() finished, duration: {execution_time:.4f} seconds")
-            print("Redis cache update complete.")
+                print(f"[SimLoop] pipe.execute() finished, duration: {execution_time:.4f} seconds")
+            print("[SimLoop] Redis cache update complete.")
 
         except redis.RedisError as e:
-            print(f"Redis Error: {e}")
+            print(f"[SimLoop] Redis Error: {e}")
 
         #  Add this crucial line to give the event loop a chance to handle other tasks
         await asyncio.sleep(0.1)
@@ -248,11 +279,11 @@ async def start_simulation_and_connect():
     # Connect to Redis
     try:
         redis_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
-        print(f"Connecting to Redis ({redis_url})...")
+        print(f"[Start Up] Connecting to Redis ({redis_url})...")
         redis_client = redis.from_url(redis_url, decode_responses=True)
         await redis_client.ping()
         connection_status["redis_connected"] = True
-        print("Successfully connected to Redis。")
+        print("[Start Up] Successfully connected to Redis。")
     except redis.RedisError as e:
         connection_status["message"] = f"Failed to connect to Redis: {e}"
         print(connection_status["message"])
@@ -261,20 +292,24 @@ async def start_simulation_and_connect():
 
     # 2. Use traci.start to launch and connect to SUMO
     try:
-        print("Launching SUMO process using traci.start...")
+        print("[Start Up] Launching SUMO process using traci.start...")
         # traci.start will launch the process defined in sumoCmd and automatically connect to the specified port
         traci.start(sumoCmd, port=TRACI_PORT)
         connection_status["sumo_connected"] = True
         connection_status["message"] = "Service is ready"
-        print(f"Successfully launched and connected to SUMO (Port: {TRACI_PORT})。")
+        print(f"[Start Up] Successfully launched and connected to SUMO (Port: {TRACI_PORT})。")
 
         # After SUMO starts, immediately execute internal initialization tasks
-        print("SUMO connected, starting one-time initialization tasks...")
+        print("[Start Up] SUMO connected, starting one-time initialization tasks...")
         generate_and_send_junction_names()
         build_all_conflict_maps()
         build_junction_tls_maps()
         verify_official_junction_names()
-        print("One-time initialization tasks completed.")
+        print("[Start Up] Initializing Junction Data Processor...")
+        # 处理器依赖于 junction_to_tls_map，所以必须在它被创建后实例化
+        junction_processor = JunctionDataProcessor(SQL_FILE_PATH, junction_to_tls_map)
+        junction_processor.load_and_process_data()  # 让处理器加载自己的数据
+        print("[Start Up] One-time initialization tasks completed.")
     except Exception as e:
         connection_status["message"] = f"Failed to start SUMO: {e}"
         print(connection_status["message"])
@@ -285,7 +320,7 @@ async def start_simulation_and_connect():
 
     # 3. Start the background simulation task
     stop_simulation_event.clear()
-    simulation_task = asyncio.create_task(simulation_loop())
+    simulation_task = asyncio.create_task(simulation_loop(junction_processor))
     print("[FastAPI] Background simulation task has been created.")
 
 """Check if the service is ready"""
@@ -456,7 +491,7 @@ async def websocket_event_handler(websocket: WebSocket):
     处理来自后端的WebSocket连接，并持续监听事件触发指令。
     """
     await websocket.accept()
-    print("[Special Event] 后端WebSocket客户端已连接。")
+    print("[Special/Emergency Event] 后端WebSocket客户端已连接。")
     try:
         while True:
             # 1. 等待并接收来自后端的消息
@@ -469,10 +504,10 @@ async def websocket_event_handler(websocket: WebSocket):
                 event_id = command.get("event_id")
                 duration = command.get("duration")
 
-                if not all([event_type, event_id, duration]):
-                    raise ValueError("[Special Event] 指令缺少必需字段: event_type, event_id, or duration")
+                if not all([event_type, event_id]):
+                    raise ValueError("[Special/Emergency Event] 指令缺少必需字段: event_type, event_id")
 
-                print(f"[Special Event] 收到WebSocket指令: event_id={event_id}, type={event_type}")
+                print(f"[Special/Emergency Event] 收到WebSocket指令: event_id={event_id}, type={event_type}")
 
                 # 3. 根据 event_type 调用不同的事件管理器方法
                 result = {}
@@ -484,31 +519,47 @@ async def websocket_event_handler(websocket: WebSocket):
                     elif event_type == "lane_closure":
                         lane_ids = command.get("lane_ids", [])
                         if not lane_ids:
-                            raise ValueError("lane_closure 事件缺少 lane_ids 参数")
+                            raise ValueError("[Special/Emergency Event] lane_closure 事件缺少 lane_ids 参数")
                         result = await event_manager.trigger_lane_closure(event_id, duration, lane_ids)
+                    elif event_type == "emergency_event":
+                        result = await event_manager.trigger_emergency_vehicle(command)
                     else:
-                        raise ValueError(f"[Special Event] 未知的事件类型: {event_type}")
+                        raise ValueError(f"[Special/Emergency Event] 未知的事件类型: {event_type}")
 
                 # 4. 将执行结果通过WebSocket发回给后端
                 if result.get("success"):
                     response_payload = {"status": "success", "event_id": event_id, **result.get("details", {})}
                     await websocket.send_text(json.dumps(response_payload))
                 else:
-                    response_payload = {"status": "success", "event_id": event_id, **result.get("details", {})}
+                    response_payload = {"status": "fail", "event_id": event_id, **result.get("details", {})}
                     await websocket.send_text(json.dumps(response_payload))
+
 
             except json.JSONDecodeError:
                 await websocket.send_text(json.dumps({"status": "fail", "message": "无效的JSON格式。"}))
             except ValueError as e:
                 await websocket.send_text(json.dumps({"status": "fail", "message": str(e)}))
+            except traci.TraCIException as e:
+                # 捕获traci执行错误，并将其作为失败消息返回给后端
+                print(f"[Special/Emergency Event] TraCI 执行错误: {e}")
+                # 尝试从命令中获取event_id，以便返回给后端
+                try:
+                    failed_event_id = json.loads(data).get("event_id", "unknown")
+                except:
+                    failed_event_id = "unknown"
+                await websocket.send_text(json.dumps({"status": "fail","event_id": failed_event_id,"message": f"TraCI command failed: {e}"
+                }))
+            except Exception as e:
+                # 捕获其他所有未知错误，打印堆栈但保持循环继续
+                print(f"[Special/Emergency Event] 处理单个WebSocket消息时发生未知错误: {e}")
+                traceback.print_exc()
 
     except WebSocketDisconnect:
-        print("[Special Event] 后端WebSocket客户端已断开连接。")
+        print("[[Special/Emergency Event] 后端WebSocket客户端已断开连接。")
     except Exception as e:
-        print(f"WebSocket处理时发生未知错误: {e}")
-        print("--- 详细错误堆栈跟踪 ---")
+        # 这个外部的except现在只会在连接建立等更严重的情况下被触发
+        print(f"[Special/Emergency Event] WebSocket连接级别发生未知错误: {e}")
         traceback.print_exc()
-        print("--------------------------")
 
 
 def generate_and_send_junction_names():
@@ -529,40 +580,43 @@ def generate_and_send_junction_names():
 
         # 3. Get the street names of all related Edges
         for edge_id in (incoming_edges + outgoing_edges):
-            street_name = traci.edge.getStreetName(edge_id)
-            if street_name:  # Ensure the name is not empty
-                street_names.add(street_name)
+            # Check if the edge is not an internal junction edge (these start with ':')
+            if not edge_id.startswith(':'):
+                street_name = traci.edge.getStreetName(edge_id)
+                if street_name:  # Ensure the name is not empty
+                    street_names.add(street_name)
 
         # 4. Consolidate the names
         if street_names:
             # Sort to ensure consistent name order, then join with " - "
-            junction_name = "-".join(sorted(list(street_names)))
+            junction_name = "-".join(sorted(list(street_names))[:2])
             junction_names_map[jid] = junction_name
         else:
             # If a Junction has no connecting edges with names, give it a default name
             junction_names_map[jid] = f"Unnamed Junction ({jid})"
 
     if not junction_names_map:
-        print("Failed to generate any junction names, task ending.")
+        print("[Start Up] Failed to generate any junction names, task ending.")
         return
 
-    print(f"Successfully generated names for {len(junction_names_map)} junctions...")
+    print(f"[Start Up] Successfully generated names for {len(junction_names_map)} junctions...")
     return junction_names_map
+
 
 # Analyzes the traffic light logic in the simulation to build a conflict map for each light.
 # This function should be called once after the simulation starts.
 def build_all_conflict_maps():
-    print("Building conflict relationship maps for traffic lights...")
+    print("[Start Up] Building conflict relationship maps for traffic lights...")
     tls_ids = traci.trafficlight.getIDList()
     for tlsID in tls_ids:
         try:
             logics = traci.trafficlight.getCompleteRedYellowGreenDefinition(tlsID)
             if not logics:
-                print(f"Warning: No logic definition found for traffic light '{tlsID}'.")
+                print(f"[Start Up] Warning: No logic definition found for traffic light '{tlsID}'.")
                 continue
             program = logics[0]
             if not program.phases:
-                print(f"Warning: No phases found in the program for traffic light '{tlsID}'.")
+                print(f"[Start Up] Warning: No phases found in the program for traffic light '{tlsID}'.")
                 continue
             num_links = len(program.phases[0].state)
             is_compatible = [[False] * num_links for _ in range(num_links)]
@@ -580,8 +634,47 @@ def build_all_conflict_maps():
                 conflict_map_for_tls[i] = conflicts
             tls_conflict_maps[tlsID] = conflict_map_for_tls
         except traci.TraCIException as e:
-            print(f"Error building conflict map for {tlsID}: {e}")
-    print(f"Successfully built conflict maps for {len(tls_conflict_maps)} traffic lights.")
+            print(f"[Start Up] Error building conflict map for {tlsID}: {e}")
+    # print("-----------------------------------------------------\n")
+    # print_conflict_maps_with_details(tls_conflict_maps)
+    # print("-----------------------------------------------------\n")
+    print(f"[Start Up] Successfully built conflict maps for {len(tls_conflict_maps)} traffic lights.")
+
+
+def print_conflict_maps_with_details(maps_dict):
+    """自定义循环，打印包含详细连接信息的冲突地图。"""
+    print("\n" + "=" * 80)
+    print("🚦 交通灯冲突地图详细报告")
+    print("=" * 80)
+
+    for tls_id, conflict_map in maps_dict.items():
+        print(f"\n--- 交通灯 ID: {tls_id} ---")
+
+        try:
+            # 获取连接定义，为索引提供文字说明
+            links = traci.trafficlight.getControlledLinks(tls_id)
+            link_descriptions = {
+                i: f"从 {traci.lane.getEdgeID(l[0][0])} 到 {traci.lane.getEdgeID(l[0][1])}"
+                for i, l in enumerate(links)
+            }
+        except traci.TraCIException:
+            link_descriptions = {}  # 如果查询失败则为空
+
+        if not conflict_map:
+            print("  (此交通灯无冲突地图信息)")
+            continue
+
+        # 按索引排序键，确保输出顺序一致
+        for index in sorted(conflict_map.keys()):
+            conflicts = sorted(list(conflict_map[index]))
+            description = f"({link_descriptions.get(index, '未知连接')})"
+
+            # 使用 f-string 进行对齐，让输出更整齐
+            # {index:<2} 表示左对齐，占2个字符位
+            # {description:<55} 表示左对齐，占55个字符位
+            print(f"  信号流 {index:<2} {description:<55} -> 冲突: {conflicts}")
+    print("\n" + "=" * 80)
+
 
 def build_junction_tls_maps():
     """
@@ -612,24 +705,22 @@ def build_junction_tls_maps():
             if potential_junction_id in all_junction_ids:
                 junction_to_tls_map[potential_junction_id] = tls_id
             else:
-                print(
-                    f"Warning: The Junction ID '{tls_id}'inferred for '{potential_junction_id}' based on rules does not exist in the network and has been skipped.")
+                print(f"[Start Up] Warning: The Junction ID '{tls_id}'inferred for '{potential_junction_id}' based on rules does not exist in the network and has been skipped.")
 
     except traci.TraCIException as e:
-        print(f"TraCI error occurred while building Junction/TLS map: {e}")
+        print(f"[Start Up] TraCI error occurred while building Junction/TLS map: {e}")
 
     if not junction_to_tls_map:
-        print("Warning: Failed to build any Junction ID -> TLS ID mappings. The API may not be able to find traffic lights by Junction ID")
+        print("[Start Up] Warning: Failed to build any Junction ID -> TLS ID mappings. The API may not be able to find traffic lights by Junction ID")
     else:
-        print(f"Successfully built Junction->TLS map for {len(junction_to_tls_map)} junctions.")
+        print(f"[Start Up] Successfully built Junction->TLS map for {len(junction_to_tls_map)} junctions.")
         # For debugging, print the entire map
         # For debugging, print the entire map
         #print("Completed map: ", junction_to_tls_map)
 
 # Checks if all junctions that have a corresponding traffic light in junction_to_tls_map
-
 def verify_official_junction_names():
-    print("Verifying that all controlled junctions have official names...")
+    print("[Start Up] Verifying that all controlled junctions have official names...")
     unnamed_junctions_found = []
 
     # Iterate through all junction IDs that have a mapped traffic light
@@ -642,14 +733,14 @@ def verify_official_junction_names():
             unnamed_junctions_found.append(junction_id)
 
     if unnamed_junctions_found:
-        print("\n--- WARNING: The following controlled junctions were found to be using default names ---")
+        print("\n[Start Up] WARNING: The following controlled junctions were found to be using default names ---")
         for jid in unnamed_junctions_found:
             print(f"  - Junction ID: '{jid}' has the name '{junction_names_map.get(jid)}'")
-        print("This may mean that the corresponding edges in the network file (.net.xml) are missing the 'streetName' attribute.")
+        print("[Start Up] This may mean that the corresponding edges in the network file (.net.xml) are missing the 'streetName' attribute.")
         print("----------------------------------------------------------\n")
     else:
         # If no unnamed junctions are found, print a success message and a detailed list
-        print("\n--- VERIFICATION PASSED: All controlled junctions have been successfully named ---")
+        print("[Start Up] VERIFICATION PASSED: All controlled junctions have been successfully named ---")
         # Iterate through the mapped junctions and print their IDs and official names
         # for junction_id, tls_id in junction_to_tls_map.items():
         #     junction_name = junction_names_map.get(junction_id)
@@ -659,4 +750,4 @@ def verify_official_junction_names():
 if __name__ == "__main__":
     # Use uvicorn to run the FastAPI application
     # reload=True means the server will automatically restart after code changes are saved
-    uvicorn.run("withRedis:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("withRedis:app", host="0.0.0.0", port=8000, reload=False)
