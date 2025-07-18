@@ -17,7 +17,6 @@ public class EmergencyVehicleService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final EmergencyVehicleMapper emergencyVehicleMapper;
-    // ### 修改：注入 EventService 而不是 TraCIEventDispatcher ###
     private final EventService eventService;
 
     private static final String SIMULATION_TIME_KEY = "sumo:simulation_time";
