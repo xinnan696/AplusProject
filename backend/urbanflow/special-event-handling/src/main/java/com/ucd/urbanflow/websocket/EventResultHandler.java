@@ -4,19 +4,20 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ucd.urbanflow.service.EventService;
 import com.ucd.urbanflow.service.EmergencyVehicleService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-
-
+import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
-
 import java.net.http.WebSocket;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component // 将其声明为Spring组件
+@RequiredArgsConstructor
 public class EventResultHandler extends TextWebSocketHandler {
     private static final Logger logger = LoggerFactory.getLogger(EventResultHandler.class);
 

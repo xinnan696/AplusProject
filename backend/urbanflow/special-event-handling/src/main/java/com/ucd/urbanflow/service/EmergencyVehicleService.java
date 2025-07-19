@@ -28,11 +28,14 @@ public class EmergencyVehicleService {
             return List.of(); // 返回空列表，避免NullPointerException
         }
         long currentTime = (long) Double.parseDouble(simTimeStr);
+        log.info("[Service] 从Redis获取到当前仿真时间: {}", currentTime);
         return emergencyVehicleMapper.findPendingEventsByTriggerTime(currentTime);
     }
 
     public String processAllEmergencyEvents() {
+        log.info("[Service] 开始处理紧急车辆事件...");
         List<EmergencyVehicleEvent> pendingEvents = getPendingEmergencyEvents();
+        log.info("[Service] 查询数据库，找到 {} 个状态为'pending'的待处理事件。", pendingEvents.size());
 
         if (pendingEvents.isEmpty()) {
             return "No pending events to process";
@@ -42,6 +45,7 @@ public class EmergencyVehicleService {
         int failCount = 0;
 
         for (EmergencyVehicleEvent event : pendingEvents) {
+            log.info("[Service] 正在处理事件ID: {}, 触发时间: {}", event.getEventId(), event.getTriggerTime());
             try {
                 // 1. 将数据库实体转换为用于发送的DTO
                 EmergencyVehicleEventDto eventDTO = convertToDto(event);
@@ -65,6 +69,24 @@ public class EmergencyVehicleService {
 
         return String.format("Processed %d emergency vehicle events: %d successful, %d failed",
                 pendingEvents.size(), successCount, failCount);
+    }
+
+    /**
+     * 【新增方法，支持Controller】
+     * 通用的事件状态更新方法。
+     * @param eventId 要更新的事件ID
+     * @param status 新的状态字符串 (e.g., "ignored", "completed")
+     * @return 如果更新成功返回 true，否则返回 false
+     */
+    public boolean updateEventStatus(String eventId, String status) {
+        int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
+        if (updatedRows > 0) {
+            log.info("已将事件 {} 的状态更新为: {}", eventId, status);
+            return true;
+        } else {
+            log.warn("尝试更新事件 {} 状态失败，可能事件ID不存在。", eventId);
+            return false;
+        }
     }
 
     public void handleTriggerResult(String eventId, boolean success) {

@@ -23,7 +23,8 @@
 
     <select id="findPendingEventsByTriggerTime" resultMap="EmergencyVehicleEventResultMap">
         SELECT * FROM emergency_vehicle_events
-        WHERE trigger_time &lt;= #{currentTime} AND event_status = 'pending'
+        WHERE trigger_time &lt;= #{currentTime}
+          AND event_status = 'pending'
         ORDER BY trigger_time ASC
     </select>
 

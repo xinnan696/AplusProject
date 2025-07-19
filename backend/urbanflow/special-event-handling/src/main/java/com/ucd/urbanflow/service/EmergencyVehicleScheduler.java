@@ -28,6 +28,7 @@ public class EmergencyVehicleScheduler {
     public void scheduleEmergencyEventProcessing() {
         // 调用业务服务层的方法来执行实际的事件处理逻辑
         try {
+            log.info("--- [调度器] 正在检查紧急车辆事件... ---");
             String result = emergencyVehicleService.processAllEmergencyEvents();
             if (!result.equals("No pending events to process")) {
                 log.info("Event processing result: {}", result);

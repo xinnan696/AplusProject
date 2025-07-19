@@ -5,6 +5,7 @@ import com.ucd.urbanflow.service.EmergencyVehicleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -43,4 +44,38 @@ public class EmergencyVehicleController {
         // 复用 Service 中已有的逻辑
         return emergencyVehicleService.processAllEmergencyEvents();
     }
+
+    /**
+     * 【新增API】
+     * 用户点击 "Ignore" 时，前端调用此接口。
+     * @param eventId 被忽略的事件ID
+     * @return 操作结果
+     */
+    @PostMapping("/{eventId}/ignore")
+    public ResponseEntity<String> ignoreEvent(@PathVariable String eventId) {
+        log.info("API call: 用户请求忽略事件 {}", eventId);
+        boolean success = emergencyVehicleService.updateEventStatus(eventId, "ignored");
+        if (success) {
+            return ResponseEntity.ok("事件 " + eventId + " 已被成功忽略。");
+        }
+        // 如果更新失败（例如事件ID不存在），返回404 Not Found
+        return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * 【新增API】
+     * 前端完成最后一个路口的干预后，调用此接口来标记事件已完成。
+     * @param eventId 已完成追踪的事件ID
+     * @return 操作结果
+     */
+    @PostMapping("/{eventId}/complete")
+    public ResponseEntity<String> completeEvent(@PathVariable String eventId) {
+        log.info("API call: 用户请求完成事件追踪 {}", eventId);
+        boolean success = emergencyVehicleService.updateEventStatus(eventId, "completed");
+        if (success) {
+            return ResponseEntity.ok("事件 " + eventId + " 已成功标记为完成。");
+        }
+        return ResponseEntity.notFound().build();
+    }
+
 }
