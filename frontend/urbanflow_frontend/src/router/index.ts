@@ -1,10 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Dashboard from '@/views/dashboard/Dashboard.vue'
+import Control from '@/views/control/ControlHome.vue'
 
 const routes = [
 
   {
-    path: '/',
-    redirect: '/login'
+    // path: '/',
+    // redirect: '/login'
+    path: '/', // 根路径
+    name: 'control-home', // 可以给个新名字
+    component: Control
   },
 
 
@@ -46,6 +51,19 @@ const routes = [
       requiresAuth: true,
       roles: ['ADMIN', 'Traffic Manager'],
       title: 'Control - UrbanFlow'
+    }
+  },
+
+  // 紧急车辆追踪页面的路由
+  {
+    path: '/control/tracking',
+    name: 'PriorityVehicleTracking',
+    component: () => import('@/views/control/PriorityVehicleTracking.vue'),
+    meta: {
+      requiresAuth: true,
+      // 权限与主控制页面保持一致
+      roles: ['ADMIN', 'Traffic Manager'],
+      title: 'Vehicle Tracking - UrbanFlow'
     }
   },
 

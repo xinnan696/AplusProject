@@ -14,7 +14,19 @@
         </div>
       </div>
     </div>
+
     <div class="header_right">
+      <!-- ### 新增：紧急车辆通知图标 ### -->
+      <!-- 使用 v-if 控制其显示，当有待处理的紧急事件时出现 -->
+      <div
+        v-if="hasPendingEmergencies"
+        class="iconfont emergency-alert btn-hover-icon blinking-icon"
+        @click="emit('toggle-emergency')"
+      >
+        &#xe683; <!-- 这是一个示例图标，您可以替换成救护车等图标 -->
+        <div class="simple-tooltip">紧急车辆待处理</div>
+      </div>
+
       <div class="switch-wrapper">
         <label class="switch toggle-absolute btn-hover-switch">
           <input
@@ -87,6 +99,9 @@ import { useAuthStore } from '@/stores/auth'
 
 interface Props {
   isRecordPanelVisible?: boolean
+  // ### 新增 Prop ###
+  // 从父组件接收是否有待处理的紧急事件
+  hasPendingEmergencies?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -549,6 +564,22 @@ onBeforeUnmount(() => {
       transform: scale(1.05);
       filter: drop-shadow(0 4px 8px rgba(0, 180, 216, 0.5));
     }
+  }
+
+  /* ### 新增样式 ### */
+  .emergency-alert {
+    position: absolute;
+    top: 0.15rem;
+    right: 3.8rem; /* 定位在 record 图标的左侧 */
+    font-size: 0.33rem;
+    color: #FF4D4F; /* 醒目的红色 */
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.6; }
+  }
+  .blinking-icon {
+    animation: blink 1.2s linear infinite;
   }
 }
 </style>
