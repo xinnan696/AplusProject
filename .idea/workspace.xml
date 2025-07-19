@@ -4,8 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="merge with develop-test, and develop emergency vehicle function of backend code">
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="develop emergency vehicle function of backend code for frontend pages">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/signal-control/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/status-sync/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/traffic-sensing/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/user-authentication/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,7 +47,7 @@
     </favorite-branches>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="feature/emergency-vehicle-yl" />
+        <entry key="$PROJECT_DIR$" value="feature/dashboard-yl" />
         <entry key="$PROJECT_DIR$/backend/traciModel" value="feature/traciModel-cyl" />
       </map>
     </option>
@@ -61,40 +70,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Git.Branch.Popup.ShowAllRemotes&quot;: &quot;true&quot;,
-    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
-    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
-    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
-    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;last_opened_file_path&quot;: &quot;E:/UCD/Summer/AplusProject&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.standard&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.standard&quot;: &quot;&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;run.code.analysis.last.selected.profile&quot;: &quot;pProject Default&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;spring.configuration.checksum&quot;: &quot;4fe10fd2854c291019f8005be5eb8d87&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Git.Branch.Popup.ShowAllRemotes": "true",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "E:/UCD/Summer/AplusProject",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "run.code.analysis.last.selected.profile": "pProject Default",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "spring.configuration.checksum": "166e65920bb1e5298cbbdcb768935f56",
+    "ts.external.directory.path": "E:\\UCD\\Summer\\AplusProject\\frontend\\urbanflow_frontend\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;DatabaseDriversLRU&quot;: [
-      &quot;mysql&quot;
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="E:\UCD\Summer\AplusProject\frontend\urbanflow_frontend\src" />
@@ -108,7 +117,13 @@
       </set>
     </option>
   </component>
-  <component name="RunManager" selected="Docker.urbanflow/docker-compose.yaml: Compose Deployment">
+  <component name="RunManager" selected="Spring Boot.SignalControlApplication">
+    <configuration name="emergency_vehicle_events.sql" type="DatabaseScript" editBeforeRun="true" nameIsGenerated="true">
+      <script-file value="$PROJECT_DIR$/../traciModel/emergency_vehicle_events.sql" />
+      <script-mode>FILE</script-mode>
+      <data-source id="4723155f-af39-4e5d-8954-85e4e4a90590" namespace="schema/&quot;urbanflow&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="logs_table.sql and 1 more" type="DatabaseScript" editBeforeRun="true" nameIsGenerated="true">
       <script-file value="$PROJECT_DIR$/logs_table.sql" />
       <script-file value="$PROJECT_DIR$/lane.sql" />
@@ -191,6 +206,7 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Database Script.emergency_vehicle_events.sql" />
       <item itemvalue="Database Script.logs_table.sql and 1 more" />
       <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
       <item itemvalue="npm.dev" />
@@ -204,6 +220,8 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
+        <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
         <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
         <item itemvalue="Docker.urbanflow/docker-compose.yaml: Compose Deployment" />
       </list>
@@ -234,6 +252,7 @@
       <workItem from="1751829924102" duration="715000" />
       <workItem from="1752702828133" duration="14919000" />
       <workItem from="1752807160280" duration="1657000" />
+      <workItem from="1752891023960" duration="873000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
