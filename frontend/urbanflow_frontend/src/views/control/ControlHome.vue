@@ -110,7 +110,7 @@ const firstPendingVehicle = computed(() => {
 })
 
 onMounted(() => {
-  //emergencyStore.connectWebSocket()
+  emergencyStore.connectWebSocket()
   document.addEventListener('keydown', handleKeyDown)
 })
 
