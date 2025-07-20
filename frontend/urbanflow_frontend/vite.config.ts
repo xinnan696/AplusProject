@@ -44,6 +44,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path,
       },
+      '/api/emergency-vehicles': {
+        target: 'http://localhost:8085', // 您的Java后端地址
+        changeOrigin: true, // 必须设置为 true，以支持跨域
+        rewrite: path => path,
+      },
       '/api/logs': {
         target: 'http://localhost:8086',
         changeOrigin: true,
