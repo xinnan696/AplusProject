@@ -1,10 +1,13 @@
 <template>
   <div class="control-page">
+<!--    :has-pending-emergencies="hasPendingEmergencies"-->
     <ControlHeader
       :isRecordPanelVisible="isRecordVisible"
-      :has-pending-emergencies="hasPendingEmergencies"
+      :show-emergency-icon="showEmergencyIcon"
+      :has-new-requests="hasNewRequests"
       @toggle-nav="toggleNav"
       @toggle-record="toggleRecord"
+      @emergency-icon-clicked="handleEmergencyIconClick"
       @toggle-emergency="toggleEmergency"
       @toggle-priority="togglePriority"
       @mode-changed="handleModeChange"
@@ -30,7 +33,6 @@
       </div>
     </div>
 
-
     <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
 
 <!--    <PriorityVehicleTracking-->
@@ -40,9 +42,9 @@
 
   <!-- ### 新增：紧急车辆请求信息框 (新设计) ### -->
   <transition name="dialog">
-    <div v-if="isEmergencyVisible && firstPendingVehicle" class="tracking-request-dialog">
+    <div v-if="isEmergencyDialogVisible && firstPendingVehicle" class="tracking-request-dialog">
       <div class="dialog-title">
-        Special Vehicle Tracking Request
+        Priority Vehicle Tracking Request
       </div>
       <div class="dialog-content">
         <span class="info-label">Vehicle ID</span>
@@ -53,9 +55,8 @@
 
         <span class="info-label route-label">Estimated Route</span>
         <div class="info-value route-list">
-          <!-- ### 修正：恢复START/DESTINATION标签 ### -->
-          <div v-for="(junction, index) in firstPendingVehicle.signalizedJunctions" :key="junction" class="route-item">
-            <span>{{ junction.replace(/\s*\(.*\)/, '') }}</span>
+          <div v-for="(junctionId, index) in firstPendingVehicle.signalizedJunctions" :key="junctionId" class="route-item">
+            <span>{{ getJunctionName(junctionId) }}</span>
             <span v-if="index === 0" class="tag start">START</span>
             <span v-if="index === firstPendingVehicle.signalizedJunctions.length - 1" class="tag destination">DESTINATION</span>
           </div>
@@ -81,6 +82,7 @@ localStorage.setItem('user', JSON.stringify({
   userName: 'Test Admin'
 }));
 import { useRouter } from 'vue-router'
+import axios from 'axios'
 import { useEmergencyStore } from '@/stores/emergency'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlMap from '@/views/control/ControlMap.vue'
@@ -100,41 +102,106 @@ const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 const isAIMode = ref(false)
+// ### 新增 3: 用于控制紧急事件信息框显示的状态 ###
+const isEmergencyDialogVisible = ref(false)
+
+// 用于存储Junction映射表 ###
+const junctionIdToNameMap = ref<Record<string, string>>({});
 
 // 计算属性，用于判断是否有待处理事件，并传递给Header
 const hasPendingEmergencies = computed(() => emergencyStore.pendingVehicles.length > 0)
 
 // 计算属性，获取待处理列表中的第一个事件用于显示
-const firstPendingVehicle = computed(() => {
-  return hasPendingEmergencies.value ? emergencyStore.pendingVehicles[0] : null
-})
+// const firstPendingVehicle = computed(() => {
+//   return hasPendingEmergencies.value ? emergencyStore.pendingVehicles[0] : null
+// })
+
+// ### 新增 4: 计算属性，用于判断是否有新的待处理事件 (控制图标是否闪烁) ###
+const hasNewRequests = computed(() => emergencyStore.pendingVehicles.length > 0)
+// ### 新增 5: 计算属性，用于判断是否应该显示图标 (有新事件 或 有正在追踪的任务) ###
+const showEmergencyIcon = computed(() => hasNewRequests.value || emergencyStore.hasActiveSession)
+// ### 新增 6: 计算属性，获取待处理列表中的第一个事件用于在信息框中显示 ###
+const firstPendingVehicle = computed(() => hasNewRequests.value ? emergencyStore.pendingVehicles[0] : null)
+
+
+// 数据获取和转换函数
+const fetchJunctions = async () => {
+  try {
+    const response = await axios.get('/api-status/junctions');
+    const junctionData = Object.values(response.data);
+    const nameMap: Record<string, string> = {};
+    junctionData.forEach((j: any) => {
+      nameMap[j.junction_id] = j.junction_name || j.junction_id;
+    });
+    junctionIdToNameMap.value = nameMap;
+    console.log('[ControlHome] Junction ID to Name mappings loaded.');
+  } catch (error) {
+    console.error('[ControlHome] Failed to fetch junctions:', error);
+  }
+};
+
+const getJunctionName = (junctionId: string) => {
+  return junctionIdToNameMap.value[junctionId] || junctionId; // 如果找不到名称，则显示ID
+};
 
 onMounted(() => {
+  fetchJunctions(); // ### 4. 在组件挂载时调用 ###
   emergencyStore.connectWebSocket()
   document.addEventListener('keydown', handleKeyDown)
 })
+
+// ### 新增 8: 新的智能点击处理函数 ###
+function handleEmergencyIconClick() {
+  if (hasNewRequests.value) {
+    // 如果有新的待处理事件，总是优先显示信息框
+    isEmergencyDialogVisible.value = true
+  } else if (emergencyStore.hasActiveSession) {
+    // 如果没有新事件，但有正在追踪的任务，则直接跳转到追踪页面
+    router.push({ name: 'PriorityVehicleTracking' })
+  }
+}
+
+// ### 新增 9: 处理信息框中的 "Approve" 按钮点击 ###
+function handleApprove() {
+  if (firstPendingVehicle.value) {
+    emergencyStore.approveVehicle(firstPendingVehicle.value.vehicleID)
+    isEmergencyDialogVisible.value = false
+    router.push({ name: 'PriorityVehicleTracking' })
+  }
+}
+
+// ### 新增 10: 处理信息框中的 "Reject" 按钮点击 ###
+function handleReject() {
+  if (firstPendingVehicle.value) {
+    emergencyStore.rejectVehicle(firstPendingVehicle.value.vehicleID)
+    // 如果这是最后一个待处理事件，则关闭对话框
+    if (!hasNewRequests.value) {
+      isEmergencyDialogVisible.value = false
+    }
+  }
+}
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeyDown)
 })
 
-function handleApprove() {
-  if (firstPendingVehicle.value) {
-    emergencyStore.approveVehicle(firstPendingVehicle.value.vehicleID)
-    isEmergencyVisible.value = false
-    router.push({ name: 'PriorityVehicleTracking' }) // 确保路由已配置
-  }
-}
+// function handleApprove() {
+//   if (firstPendingVehicle.value) {
+//     emergencyStore.approveVehicle(firstPendingVehicle.value.vehicleID)
+//     isEmergencyVisible.value = false
+//     router.push({ name: 'PriorityVehicleTracking' }) // 确保路由已配置
+//   }
+// }
 
-function handleReject() {
-  if (firstPendingVehicle.value) {
-    emergencyStore.rejectVehicle(firstPendingVehicle.value.vehicleID)
-    // 如果这是最后一个待处理事件，则关闭对话框
-    if (emergencyStore.pendingVehicles.length === 0) {
-      isEmergencyVisible.value = false
-    }
-  }
-}
+// function handleReject() {
+//   if (firstPendingVehicle.value) {
+//     emergencyStore.rejectVehicle(firstPendingVehicle.value.vehicleID)
+//     // 如果这是最后一个待处理事件，则关闭对话框
+//     if (emergencyStore.pendingVehicles.length === 0) {
+//       isEmergencyVisible.value = false
+//     }
+//   }
+// }
 
 const handleHighlight = (fromLanes: string[], toLanes: string[]) => {
   mapRef.value?.setHighlightLanes(fromLanes, toLanes)

@@ -18,13 +18,20 @@
     <div class="header_right">
       <!-- ### 新增：紧急车辆通知图标 ### -->
       <!-- 使用 v-if 控制其显示，当有待处理的紧急事件时出现 -->
+<!--      <div-->
+<!--        v-if="hasPendingEmergencies"-->
+<!--        class="emergency-alert-wrapper btn-hover-icon blinking-icon"-->
+<!--        @click="emit('toggle-emergency')"-->
+<!--      >-->
       <div
-        v-if="hasPendingEmergencies"
-        class="iconfont emergency-alert btn-hover-icon blinking-icon"
-        @click="emit('toggle-emergency')"
+        v-if="showEmergencyIcon"
+        class="emergency-alert-wrapper btn-hover-icon"
+        :class="{ 'blinking-icon': hasNewRequests }"
+        @click="emit('emergency-icon-clicked')"
       >
-        &#xe683; <!-- 这是一个示例图标，您可以替换成救护车等图标 -->
-        <div class="simple-tooltip">紧急车辆待处理</div>
+        <img src="@/assets/images/emergency.png" alt="Emergency Alert Icon">
+<!--        <div class="simple-tooltip">Priority Vehicle Request</div>-->
+        <div class="simple-tooltip">{{ tooltipText }}</div>
       </div>
 
       <div class="switch-wrapper">
@@ -101,18 +108,31 @@ interface Props {
   isRecordPanelVisible?: boolean
   // ### 新增 Prop ###
   // 从父组件接收是否有待处理的紧急事件
-  hasPendingEmergencies?: boolean
+  // hasPendingEmergencies?: boolean
+  // ### 修改 4: 接收两个新的props来控制图标状态 ###
+  showEmergencyIcon?: boolean
+  hasNewRequests?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isRecordPanelVisible: false
+  isRecordPanelVisible: false,
+  // ### 修改 4.1
+  showEmergencyIcon: false,
+  hasNewRequests: false
 })
 
-const emit = defineEmits(['toggle-nav', 'toggle-record', 'toggle-emergency', 'toggle-priority', 'mode-changed', 'sign-out'])
+// const emit = defineEmits(['toggle-nav', 'toggle-record', 'toggle-emergency', 'toggle-priority', 'mode-changed', 'sign-out'])
+// ### 修改 5: 更新 emit 事件名 ###
+const emit = defineEmits(['toggle-nav', 'toggle-record', 'emergency-icon-clicked', 'mode-changed', 'sign-out'])
 
 const authStore = useAuthStore()
 const showPanel = ref(false)
 const isAIMode = ref(false)
+
+// ### 新增 6: 动态的悬浮提示文本 ###
+const tooltipText = computed(() => {
+  return props.hasNewRequests ? 'Priority Vehicle Request' : 'Priority Vehicle Tracking';
+});
 
 const userDisplayInfo = computed(() => {
   const user = authStore.user
@@ -567,12 +587,23 @@ onBeforeUnmount(() => {
   }
 
   /* ### 新增样式 ### */
-  .emergency-alert {
+  .emergency-alert-wrapper {
     position: absolute;
-    top: 0.15rem;
-    right: 3.8rem; /* 定位在 record 图标的左侧 */
-    font-size: 0.33rem;
-    color: #FF4D4F; /* 醒目的红色 */
+    top: 0.18rem; /* 微调垂直位置 */
+    right: 3.8rem;
+    width: 0.33rem;
+    height: 0.33rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    img {
+      height: 0.42rem; /* 控制图片图标的大小 */
+      width: auto;
+      /* 为图片添加红色光晕效果，使其更醒目 */
+      filter: drop-shadow(0 0 5px rgba(255, 77, 79, 0.7));
+    }
   }
 
   @keyframes blink {
