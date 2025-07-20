@@ -4,7 +4,9 @@
     <ControlHeader
       @toggle-nav="toggleNav"
       @sign-out="handleSignOut"
-      :has-pending-emergencies="hasPendingEmergencies"
+      :show-emergency-icon="showEmergencyIcon"
+      :has-new-requests="hasNewRequests"
+      @emergency-icon-clicked="handleEmergencyIconClick"
     />
     <ControlNav :isVisible="isNavVisible" />
 
@@ -118,6 +120,22 @@ const laneIdToEdgeName = ref<Record<string, string>>({})
 const junctionIdToName = ref<Record<string, string>>({})
 
 const hasPendingEmergencies = computed(() => emergencyStore.pendingVehicles.length > 0)
+const hasNewRequests = computed(() => emergencyStore.pendingVehicles.length > 0)
+// 显示图标的条件：有新请求 或 有正在进行的会话 或 有正在追踪的车辆
+const showEmergencyIcon = computed(() => {
+  const hasNew = hasNewRequests.value
+  const hasActive = emergencyStore.hasActiveSession
+  const hasTracking = Object.keys(emergencyStore.vehicleDataMap || {}).length > 0
+  
+  console.log('📊 [Tracking Icon] 显示条件检查:', {
+    hasNewRequests: hasNew,
+    hasActiveSession: hasActive,
+    hasTrackingVehicles: hasTracking,
+    shouldShow: hasNew || hasActive || hasTracking
+  })
+  
+  return hasNew || hasActive || hasTracking
+})
 
 // const isApproachingSignalizedJunction = computed(() => {
 //   return !!emergencyStore.activelyTrackedVehicle?.upcomingJunctionID;
@@ -288,6 +306,15 @@ function handleTrackingComplete(vehicleId?: string) {
   setTimeout(() => {
     router.push({ name: 'Control' });
   }, 3000);
+}
+
+// 智能紧急车辆图标点击处理
+function handleEmergencyIconClick() {
+  console.log("🚨 Emergency icon clicked in PriorityVehicleTracking");
+  
+  // 在追踪页面时，点击紧急图标始终返回到Control页面
+  console.log('📍 从紧急车辆页面返回到Control页面');
+  router.push({ name: 'Control' });
 }
 
 function handleSignOut() {

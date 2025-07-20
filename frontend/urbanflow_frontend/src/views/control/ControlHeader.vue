@@ -16,13 +16,6 @@
     </div>
 
     <div class="header_right">
-      <!-- ### 新增：紧急车辆通知图标 ### -->
-      <!-- 使用 v-if 控制其显示，当有待处理的紧急事件时出现 -->
-<!--      <div-->
-<!--        v-if="hasPendingEmergencies"-->
-<!--        class="emergency-alert-wrapper btn-hover-icon blinking-icon"-->
-<!--        @click="emit('toggle-emergency')"-->
-<!--      >-->
       <div
         v-if="showEmergencyIcon"
         class="emergency-alert-wrapper btn-hover-icon"
@@ -106,23 +99,18 @@ import { useAuthStore } from '@/stores/auth'
 
 interface Props {
   isRecordPanelVisible?: boolean
-  // ### 新增 Prop ###
-  // 从父组件接收是否有待处理的紧急事件
-  // hasPendingEmergencies?: boolean
-  // ### 修改 4: 接收两个新的props来控制图标状态 ###
   showEmergencyIcon?: boolean
   hasNewRequests?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isRecordPanelVisible: false,
-  // ### 修改 4.1
+
   showEmergencyIcon: false,
   hasNewRequests: false
 })
 
-// const emit = defineEmits(['toggle-nav', 'toggle-record', 'toggle-emergency', 'toggle-priority', 'mode-changed', 'sign-out'])
-// ### 修改 5: 更新 emit 事件名 ###
+
 const emit = defineEmits(['toggle-nav', 'toggle-record', 'emergency-icon-clicked', 'mode-changed', 'sign-out'])
 
 const authStore = useAuthStore()

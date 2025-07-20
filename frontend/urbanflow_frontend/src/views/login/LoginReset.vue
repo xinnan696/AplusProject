@@ -29,6 +29,7 @@ import { reactive, ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
+import apiClient from '@/utils/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -40,6 +41,8 @@ const loading = ref(false);
 
 onMounted(() => {
   form.token = route.query.token as string;
+  console.log('🔐 [ResetPassword] Token from URL:', form.token);
+
   if (!form.token) {
     toast.error('Invalid or missing reset token link.');
   }
@@ -65,16 +68,45 @@ const handleResetPassword = async () => {
 
   loading.value = true;
   try {
-    // This is the critical part that calls the backend.
-    const payload = { token: form.token, newPassword: form.newPassword };
-    const response = await authStore.resetPassword(payload);
+    console.log('🚀 [ResetPassword] Sending reset request:', {
+      token: form.token,
+      newPasswordLength: form.newPassword.length
+    });
 
-    toast.success(response.data.message || 'Password reset successfully.');
-    setTimeout(() => router.push({ name: 'Login' }), 2000);
+    const payload = {
+      token: form.token,
+      newPassword: form.newPassword
+    };
+
+    const response = await apiClient.post('/auth/reset-password', payload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+
+      skipAuthHeader: true
+    });
+
+    console.log('[ResetPassword] Reset successful:', response.data);
+
+    const message = response.data?.message || response.data?.data?.message || 'Password reset successfully.';
+    toast.success(message);
+
+    setTimeout(() => {
+      router.push({ name: 'Login' });
+    }, 2000);
 
   } catch (error: any) {
+    console.error('❌ [ResetPassword] Reset failed:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
+
     // If the API call fails, show the error from the backend in a toast.
-    const errorMessage = error.response?.data?.message || 'Failed to reset password. The link may have expired.';
+    const errorMessage = error.response?.data?.message ||
+                        error.response?.data?.error ||
+                        'Failed to reset password. The link may have expired.';
     toast.error(errorMessage);
   } finally {
     loading.value = false;
@@ -87,11 +119,11 @@ const handleResetPassword = async () => {
 .auth-page { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-image: url('@/assets/images/LoginBg.png'); background-size: cover; background-position: center; }
 .auth-box { width: 420px; padding: 40px; background-color: #2c2f48; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); color: #FFFFFF; text-align: center; display: flex; flex-direction: column; }
 .logo-image { width: 1.74rem; height: auto; margin: 0 auto 0; }
-.system-title { font-size: 26px; font-weight: 600; color: #00e3ff; margin-bottom: 15px; }
+.system-title { font-size: 26px; font-weight: 600; color: #00b4d8; margin-bottom: 15px; }
 .page-description { font-size: 16px; color: #FFFFFF; margin-bottom: 30px; }
 .input-group { position: relative; width: 100%; margin-bottom: 35px; }
 .input-icon { position: absolute; left: 18px; top: 14px; width: 20px; height: 20px; opacity: 0.6; }
-.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00e3ff; background-color: transparent; color: #FFFFFF; font-size: 16px; outline: none; }
-.submit-button { width: 100%; padding: 14px; background-color: #00e3ff; color: #FFFFFF; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
+.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00b4d8; background-color: transparent; color: #FFFFFF; font-size: 16px; outline: none; }
+.submit-button { width: 100%; padding: 14px; background-color: #00b4d8; color: #FFFFFF; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
 </style>
