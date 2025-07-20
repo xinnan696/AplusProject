@@ -62,6 +62,9 @@ const junctionAreaMap = ref<Record<string, string>>({})
 const animatedValues = ref<Record<string, number>>({})
 
 let socket: WebSocket | null = null
+let reconnectAttempts = 0
+const maxReconnectAttempts = 5
+let reconnectTimer: NodeJS.Timeout | null = null
 
 const fetchJunctionMappings = async () => {
   try {
@@ -118,6 +121,67 @@ const handleLocationClick = (junctionId: string) => {
   emit('select-junction-by-name', junctionId)
 }
 
+const connectWebSocket = () => {
+  try {
+    socket = new WebSocket('ws://localhost:8087/api/status/ws')
+
+    socket.onopen = () => {
+      // WebSocket连接成功
+      reconnectAttempts = 0
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+
+        if (data.congested && Array.isArray(data.congested)) {
+          const processedData: CongestedItem[] = data.congested.map((item: any) => {
+            const junctionId = item.j || item.junctionId
+            const junctionName = junctionNameMap.value[junctionId] || junctionId
+            const congestionCount = item.q || item.congestionCount || 0
+            return {
+              junctionId,
+              junctionName,
+              congestionCount,
+              area: junctionAreaMap.value[junctionId]
+            }
+          })
+
+          processedData.forEach((item: CongestedItem) => {
+            const oldValue = animatedValues.value[item.junctionId] || 0
+            const newValue = item.congestionCount
+            if (oldValue !== newValue) {
+              animateNumber(item.junctionId, oldValue, newValue)
+            }
+          })
+
+          allCongestedData.value = processedData
+        }
+      } catch (e) {
+        console.error('WebSocket JSON parse error:', e)
+      }
+    }
+
+    socket.onerror = (err) => {
+      // WebSocket连接错误
+    }
+
+    socket.onclose = () => {
+      // WebSocket连接断开
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++
+        reconnectTimer = setTimeout(connectWebSocket, 3000)
+      }
+    }
+  } catch (error) {
+    // WebSocket创建失败
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++
+      reconnectTimer = setTimeout(connectWebSocket, 3000)
+    }
+  }
+}
+
 onMounted(async () => {
   try {
     const { mapCenterX, junctionCoordMap } = await fetchJunctionMappings()
@@ -168,51 +232,8 @@ onMounted(async () => {
     console.error('Failed to fetch junction data:', err)
   }
 
-  socket = new WebSocket('ws://localhost:8087/api/status/ws')
-
-  socket.onopen = () => {
-    console.log('WebSocket connected.')
-  }
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data)
-
-      if (data.congested && Array.isArray(data.congested)) {
-        const processedData: CongestedItem[] = data.congested.map((item: any) => {
-          const junctionId = item.j || item.junctionId
-          const junctionName = junctionNameMap.value[junctionId] || junctionId
-          const congestionCount = item.q || item.congestionCount || 0
-          return {
-            junctionId,
-            junctionName,
-            congestionCount,
-            area: junctionAreaMap.value[junctionId]
-          }
-        })
-
-        processedData.forEach((item: CongestedItem) => {
-          const oldValue = animatedValues.value[item.junctionId] || 0
-          const newValue = item.congestionCount
-          if (oldValue !== newValue) {
-            animateNumber(item.junctionId, oldValue, newValue)
-          }
-        })
-
-        allCongestedData.value = processedData
-      }
-    } catch (e) {
-      console.error('WebSocket JSON parse error:', e)
-    }
-  }
-
-  socket.onerror = (err) => {
-    console.error('WebSocket error:', err)
-  }
-
-  socket.onclose = () => {
-    console.log('WebSocket disconnected.')
-  }
+  // 连接 WebSocket
+  connectWebSocket()
 })
 
 const animateNumber = (key: string, from: number, to: number) => {
@@ -232,6 +253,9 @@ const animateNumber = (key: string, from: number, to: number) => {
 }
 
 onUnmounted(() => {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+  }
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.close()
   }

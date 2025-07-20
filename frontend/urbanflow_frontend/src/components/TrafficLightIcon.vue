@@ -6,7 +6,8 @@
       'partially-selected': isPartiallySelected,
       'all-lights-on': isAllLightsOn,
       'controllable': isControllable,
-      'readonly': !isControllable
+      'readonly': !isControllable,
+      'emergency-upcoming': isEmergencyUpcoming
     }"
     @click="$emit('click')"
   >
@@ -55,6 +56,7 @@ interface Props {
   isPartiallySelected?: boolean // 新增：表示只选中了 junction，还没选择 direction
   isControllable?: boolean
   showAllLights?: boolean
+  isEmergencyUpcoming?: boolean // 新增：是否有紧急车辆即将到达
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -62,7 +64,8 @@ const props = withDefaults(defineProps<Props>(), {
   isSelected: false,
   isPartiallySelected: false,
   isControllable: true,
-  showAllLights: false
+  showAllLights: false,
+  isEmergencyUpcoming: false
 })
 
 defineEmits<{
@@ -281,6 +284,66 @@ const showGreenLight = computed(() => {
     inset 0 1px 3px rgba(255, 255, 255, 0.1),
     0 2px 10px rgba(0, 0, 0, 0.3),
     0 0 12px rgba(0, 180, 216, 0.4);
+}
+
+// 紧急车辆即将到达的路口样式
+.emergency-upcoming {
+  .light-housing {
+    border-color: rgba(255, 107, 0, 0.9) !important;
+    background: linear-gradient(145deg, #4a2a1a, #3a1a0a);
+    box-shadow:
+      inset 0 1px 3px rgba(255, 107, 0, 0.2),
+      0 2px 12px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(255, 107, 0, 0.6),
+      0 0 30px rgba(255, 107, 0, 0.3) !important;
+    animation: emergencyPulse 2s ease-in-out infinite;
+  }
+  
+  // 紧急状态下所有灯都闪烁
+  .light {
+    animation: emergencyFlash 1s ease-in-out infinite alternate;
+  }
+  
+  // 增强悬停效果
+  &:hover {
+    transform: scale(1.3) !important;
+    
+    .light-housing {
+      box-shadow:
+        inset 0 1px 3px rgba(255, 107, 0, 0.3),
+        0 2px 16px rgba(0, 0, 0, 0.5),
+        0 0 25px rgba(255, 107, 0, 0.8),
+        0 0 40px rgba(255, 107, 0, 0.4) !important;
+    }
+  }
+}
+
+@keyframes emergencyPulse {
+  0%, 100% {
+    border-color: rgba(255, 107, 0, 0.9);
+    box-shadow:
+      inset 0 1px 3px rgba(255, 107, 0, 0.2),
+      0 2px 12px rgba(0, 0, 0, 0.4),
+      0 0 20px rgba(255, 107, 0, 0.6),
+      0 0 30px rgba(255, 107, 0, 0.3);
+  }
+  50% {
+    border-color: rgba(255, 107, 0, 1);
+    box-shadow:
+      inset 0 1px 3px rgba(255, 107, 0, 0.3),
+      0 2px 16px rgba(0, 0, 0, 0.5),
+      0 0 30px rgba(255, 107, 0, 0.8),
+      0 0 40px rgba(255, 107, 0, 0.5);
+  }
+}
+
+@keyframes emergencyFlash {
+  0% {
+    filter: brightness(1) saturate(1);
+  }
+  100% {
+    filter: brightness(1.5) saturate(1.3);
+  }
 }
 
 

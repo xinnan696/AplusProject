@@ -203,17 +203,17 @@ const filteredGroupedLogs = computed(() => {
 // 将所有日志展开为一个平面数组，按时间排序
 const allFilteredLogs = computed(() => {
   const logs: Array<{ log: UserLog; date: string; timestamp: string }> = []
-  
+
   filteredGroupedLogs.value.forEach(dateGroup => {
     dateGroup.logs.forEach(log => {
-      logs.push({ 
-        log, 
+      logs.push({
+        log,
         date: dateGroup.date,
         timestamp: log.timestamp
       })
     })
   })
-  
+
   // 按时间戳排序，最新的在前
   return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 })
@@ -232,17 +232,17 @@ const paginatedLogs = computed(() => {
   const start = (currentPage.value - 1) * logsPerPage
   const end = start + logsPerPage
   const currentPageLogs = allFilteredLogs.value.slice(start, end)
-  
+
   // 按日期重新分组
   const groupedByDate = new Map<string, UserLog[]>()
-  
+
   currentPageLogs.forEach(({ log, date }) => {
     if (!groupedByDate.has(date)) {
       groupedByDate.set(date, [])
     }
     groupedByDate.get(date)!.push(log)
   })
-  
+
   // 转换为数组格式并排序
   const result: DateGroupedLogs[] = []
   groupedByDate.forEach((logs, date) => {
@@ -250,7 +250,7 @@ const paginatedLogs = computed(() => {
     const sortedLogs = logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     result.push({ date, logs: sortedLogs })
   })
-  
+
   // 按日期排序（最新的在前）
   return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
@@ -299,27 +299,24 @@ const fetchUserLogs = async () => {
     loading.value = true
     error.value = ''
 
-    console.log('🚀 开始获取用户日志数据...');
 
     const params: UserLogQueryParams = {}
 
 
     const response = await UserLogApiService.getUserLogs(params)
 
-    console.log('📊 API响应:', response);
-    console.log('📊 响应代码:', response.code);
-    console.log('📊 数据长度:', response.data?.length);
+
 
     if (response.code === 200) {
       originalLogs.value = response.data
       currentPage.value = 1
-      
+
       console.log('📊 Loaded logs:', {
         totalDateGroups: response.data.length,
         totalLogs: response.data.reduce((total, group) => total + group.logs.length, 0),
         firstFewDates: response.data.slice(0, 3).map(g => g.date)
       })
-      
+
       console.log('First few logs from each date:')
       response.data.slice(0, 3).forEach(dateGroup => {
         console.log(`${dateGroup.date}: ${dateGroup.logs.length} logs`)
@@ -329,14 +326,14 @@ const fetchUserLogs = async () => {
       })
     } else {
       error.value = 'Failed to fetch user logs'
-      console.error('❌ API Error:', response.code)
+      console.error('API Error:', response.code)
     }
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch user logs'
     console.error( err)
   } finally {
     loading.value = false
-    console.log('🏁 获取用户日志完成，loading:', loading.value, 'error:', error.value);
+    console.log(loading.value, 'error:', error.value);
   }
 }
 
@@ -344,21 +341,48 @@ const exportLogs = async () => {
   try {
     loading.value = true
 
-    const params: UserLogQueryParams = {}
+    // Get the filtered logs data that's currently displayed
+    const logsToExport: UserLog[] = []
 
+    filteredGroupedLogs.value.forEach(dateGroup => {
+      dateGroup.logs.forEach(log => {
+        logsToExport.push(log)
+      })
+    })
 
-    if (searchTerm.value.trim()) {
-      params.searchTerm = searchTerm.value.trim()
+    if (logsToExport.length === 0) {
+      error.value = 'No logs to export'
+      return
     }
 
-    if (startDate.value) {
-      params.startDate = startDate.value
-    }
-    if (endDate.value) {
-      params.endDate = endDate.value
-    }
+    // Create CSV content
+    const headers = ['Date', 'Time', 'Account Number', 'User Name', 'Action', 'Module', 'Details']
+    const csvContent = []
 
-    const blob = await UserLogApiService.exportUserLogs(params)
+    // Add headers
+    csvContent.push(headers.join(','))
+
+    // Add data rows
+    logsToExport.forEach(log => {
+      const date = new Date(log.timestamp)
+      const dateStr = date.toISOString().split('T')[0]
+      const timeStr = date.toLocaleTimeString('en-US', { hour12: false })
+
+      const row = [
+        dateStr,
+        timeStr,
+        `"${log.accountNumber || ''}"`,
+        `"${log.userName || ''}"`,
+        `"${formatAction(log.action)}"`,
+        `"${formatModule(log.module)}"`,
+        `"${log.detail || ''}"`
+      ]
+      csvContent.push(row.join(','))
+    })
+
+    // Create and download CSV file
+    const csvString = csvContent.join('\n')
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -367,6 +391,9 @@ const exportLogs = async () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
+
+    console.log(`Exported ${logsToExport.length} logs to CSV`)
+
   } catch (err: any) {
     error.value = err.message || 'Failed to export user logs'
     console.error('Error exporting user logs:', err)
@@ -377,21 +404,12 @@ const exportLogs = async () => {
 
 const formatDisplayDate = (dateStr: string) => {
   const date = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-
-  if (dateStr === today.toISOString().split('T')[0]) {
-    return `Today (${date.toLocaleDateString()})`
-  } else if (dateStr === yesterday.toISOString().split('T')[0]) {
-    return `Yesterday (${date.toLocaleDateString()})`
-  } else {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 }
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp)
@@ -580,8 +598,8 @@ const handleSignOut = () => {
   display: flex;
   align-items: center;
   gap: 0.12rem;
-  padding: 0.08rem;
-  background-color: #2B2B3C;
+  padding: 0.08rem 0.08rem 0.08rem 0;
+  background-color: #1E1E2F;
   border-radius: 0.08rem;
 }
 
@@ -637,18 +655,20 @@ const handleSignOut = () => {
 .search-group {
   display: flex;
   align-items: center;
-  gap: 0.08rem;
+  gap: 0.1rem;
+  margin-left: 0.3rem;
 }
 
 .search-input {
   padding: 0.08rem 0.12rem;
   background-color: #2B2B3C;
   border: 1px solid #2B2B3C;
-  border-radius: 0.04rem;
+  border-radius: 0.2rem;
   color: #FFFFFF;
   font-size: 0.14rem;
-  width: 2rem;
+  width: 2.36rem;
   height: 0.4rem;
+  box-sizing: border-box;
   transition: all 0.3s ease;
 
   &::placeholder {
@@ -668,15 +688,14 @@ const handleSignOut = () => {
   }
 }
 
-.search-btn, .export-btn {
+.search-btn {
   background-color: #1E1E2F;
   padding: 0.08rem 0.12rem;
   border: none;
   border-radius: 0.04rem;
   color: #FFFFFF;
-  font-size: 0.14rem;
+  font-size: 0.3rem;
   cursor: pointer;
-  height: 0.4rem;
   transition: all 0.3s ease;
 
   &:hover:not(:disabled) {
@@ -688,6 +707,35 @@ const handleSignOut = () => {
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
+.export-btn{
+  background-color: #1E1E2F;
+  padding: 0.08rem 0.12rem;
+  border: none;
+  border-radius: 0.04rem;
+  color: #FFFFFF;
+  font-size: 0.14rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    background-color: #0096c7;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.search-btn {
+  width: 0.3rem;
+  height: 0.3rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .export-btn {
@@ -797,11 +845,6 @@ const handleSignOut = () => {
   gap: 0.16rem;
   padding: 0.12rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background-color 0.2s ease;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.02);
-  }
 
   .cell-time, .cell-account, .cell-name, .cell-action, .cell-module, .cell-details {
     display: flex;
@@ -917,12 +960,12 @@ const handleSignOut = () => {
   font-size: 0.14rem;
   gap: 0.3rem;
   padding: 0.16rem 0;
-  margin-top: auto; // 推到底部
+  margin-top: auto;
   border-top: 1px solid #3A3A4D;
   background-color: #1E1E2F;
   position: relative;
-  flex-shrink: 0; // 防止被压缩
-  transform: translateX(-0.2rem); // 左移0.2rem
+  flex-shrink: 0;
+  transform: translateX(-0.2rem);
 }
 
 .page-info {
@@ -1080,13 +1123,13 @@ const handleSignOut = () => {
   font-size: 0.14rem !important;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem; // 增加行间距从0.08rem到0.15rem
-  padding: 0.2rem 0; // 增加顶部和底部的padding
+  gap: 0.15rem;
+  padding: 0.2rem 0;
 }
 
 .log-row {
   position: relative !important;
-  height: 40px !important;
+  height: 0.37rem !important;
   color: #FFFFFF !important;
   font-size: 0.14rem !important;
   transition: all 0.3s ease !important;
@@ -1094,10 +1137,8 @@ const handleSignOut = () => {
   grid-template-columns: unset !important;
   gap: unset !important;
   padding: 0 !important;
-
-  &:hover {
-    transform: translateX(0.04rem) !important;
-  }
+  margin: 0.02rem 0;
+  border-radius: 0.04rem;
 
   .cell-time, .cell-account, .cell-name, .cell-action, .cell-module, .cell-details {
     display: flex !important;

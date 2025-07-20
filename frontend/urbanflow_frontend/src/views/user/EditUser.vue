@@ -46,7 +46,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.accountNumber || '-' }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -147,7 +146,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ getRoleDisplay(editData.role) }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -359,10 +357,24 @@ const loadAreasInfo = async () => {
       occupiedAreas.value.clear()
   
       response.data.forEach(area => {
-        if (area.userId.toString() !== userData.value.id) {
-          const managerInfo = `${area.userName} (${area.accountNumber})`
-          occupiedAreas.value.set(area.areaName, managerInfo)
-          console.log(`Area ${area.areaName} occupied by ${managerInfo}`)
+        // Only consider areas as occupied if they have a userId AND it's different from current user
+        if (area && area.userId !== null && area.userId !== undefined && area.userId !== '') {
+          const areaUserId = String(area.userId)
+          const currentUserId = String(userData.value.id)
+          
+          if (areaUserId !== currentUserId) {
+            const userName = area.userName || 'Unknown User'
+            const accountNumber = area.accountNumber || 'Unknown Account'
+            const managerInfo = `${userName} (${accountNumber})`
+            const areaName = area.areaName || 'Unknown Area'
+            
+            occupiedAreas.value.set(areaName, managerInfo)
+            console.log(`Area ${areaName} occupied by ${managerInfo}`)
+          } else {
+            console.log(`Area ${area.areaName} is managed by current user`)
+          }
+        } else {
+          console.log(`Area ${area.areaName || 'Unknown'} is available (no userId)`)
         }
       })
       

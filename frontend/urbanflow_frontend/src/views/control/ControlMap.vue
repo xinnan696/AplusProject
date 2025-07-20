@@ -88,15 +88,21 @@ import View from 'ol/View'
 import VectorLayer from 'ol/layer/Vector'
 import VectorSource from 'ol/source/Vector'
 import GeoJSON from 'ol/format/GeoJSON'
-import { Style, Stroke } from 'ol/style'
+import { Style, Stroke, Fill, Circle } from 'ol/style'
 import { getCenter } from 'ol/extent'
 import Overlay from 'ol/Overlay'
 import OLView from 'ol/View'
+import { Feature } from 'ol'
+import { Point, LineString } from 'ol/geom'
 import { useAreaPermissions, getAreaByCoordinates, isJunctionInArea } from '@/composables/useAreaPermissions'
 import { useAuthStore } from '@/stores/auth'
+import { useEmergencyStore } from '@/stores/emergency'
 import TrafficLightStatusBar from '@/components/TrafficLightStatusBar.vue'
 import TrafficLightIcon from '@/components/TrafficLightIcon.vue'
+import EmergencyVehicleMarker from '@/components/EmergencyVehicleMarker.vue'
 import { createApp } from 'vue'
+import { emergencyVehicleApi, type EmergencyVehicleEvent } from '@/services/emergencyVehicleApi'
+import { EmergencyVehicleTracker } from '@/services/specialEventApi'
 defineProps<{ isSidebarOpen: boolean }>()
 
 const emit = defineEmits<{
@@ -123,6 +129,10 @@ const lastManualControl = ref<{
   appliedTime: Date
 } | null>(null)
 let ws: WebSocket | null = null
+let emergencyTracker: EmergencyVehicleTracker | null = null
+let reconnectAttempts = 0
+const maxReconnectAttempts = 5
+let reconnectTimer: NodeJS.Timeout | null = null
 
 const getStatusBarPosition = (): Record<string, string> => {
   statusBarPositionKey.value
@@ -242,6 +252,8 @@ const setupViewWatchers = () => {
     if (showTrafficStatus.value && selectedJunctionForStatus.value) {
       updateStatusBarPosition()
     }
+    // 在视图变化时更新紧急车辆标记
+    updateEmergencyVehicleMarkers()
   }
 
   const centerListener = updatePosition
@@ -498,9 +510,15 @@ let lastNextSwitchTime = -1
 
 const connectWebSocket = () => {
   try {
-    ws = new WebSocket('ws://localhost:8087/api/status/ws')
+    // 连接status-sync的WebSocket (用于交通灯和边缘数据)
+    const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+    const wsUrl = `${wsProtocol}//localhost:8087/api/status/ws`
+
+    ws = new WebSocket(wsUrl)
 
     ws.onopen = () => {
+      // WebSocket连接成功
+      reconnectAttempts = 0
     }
 
     ws.onmessage = (event) => {
@@ -580,22 +598,37 @@ const connectWebSocket = () => {
           vehicleCountMap.value = newMap
           vectorLayer?.changed()
         }
+
+        // 不再处理紧急车辆数据，这些数据来自special-event模块
       } catch (error) {
       }
     }
 
     ws.onerror = (error) => {
+      // WebSocket连接错误
     }
 
     ws.onclose = () => {
-      setTimeout(() => {
-        if (!ws || ws.readyState === WebSocket.CLOSED) {
-          connectWebSocket()
-        }
-      }, 5000)
+      // WebSocket连接断开
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++
+        reconnectTimer = setTimeout(connectWebSocket, 3000)
+      }
     }
   } catch (error) {
+    // WebSocket创建失败
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++
+      reconnectTimer = setTimeout(connectWebSocket, 3000)
+    }
   }
+}
+
+// 连接紧急车辆追踪WebSocket (这个现在由emergency store处理)
+const connectEmergencyTracker = () => {
+  console.log('🔗 [Map] Emergency tracker现在由emergency store管理，无需单独连接')
+  // emergencyTracker = new EmergencyVehicleTracker()
+  // 数据通过emergency store的watch机制自动更新到地图
 }
 
 const fetchTrafficLightData = async (junctionId: string) => {
@@ -689,6 +722,7 @@ const viewModeDescription = computed(() => {
 
 let allCoordinates: number[][] = []
 const authStore = useAuthStore()
+const emergencyStore = useEmergencyStore()
 
 const viewMode = ref<'restricted' | 'full'>('restricted')
 
@@ -749,6 +783,7 @@ const mapRef = ref<HTMLElement | null>(null)
 let map: OLMap | null = null
 let view: OLView | null = null
 let vectorLayer: VectorLayer | null = null
+let emergencyRouteLayer: VectorLayer | null = null
 let hasFitted = false
 
 const currentLocation = ref('Click on a lane or signal light')
@@ -769,9 +804,37 @@ const filteredSuggestions = computed(() => {
 
 const markerOverlays: Overlay[] = []
 const tlsOverlays: Overlay[] = []
+const emergencyVehicleOverlays: Overlay[] = []  // 新增：紧急车辆覆盖层数组
 
 const vehicleCountMap = ref<Record<string, number>>({})
 const laneToEdgeMap = new Map<string, string>()
+const emergencyRoutes = ref<EmergencyVehicleEvent[]>([])
+const emergencyVehicles = ref<Record<string, any>>({})
+const highlightedUpcomingJunctions = ref<Set<string>>(new Set())  // 新增：高亮的即将到达路口
+
+// ✅ 监听emergency store的车辆数据变化
+watch(() => emergencyStore.vehicleDataMap, (newVehicles, oldVehicles) => {
+  const newVehicleIds = Object.keys(newVehicles)
+  const oldVehicleIds = oldVehicles ? Object.keys(oldVehicles) : []
+
+  console.log('🔄 [Map] Emergency store数据变化检测')
+  console.log('  新车辆数量:', newVehicleIds.length, '车辆ID:', newVehicleIds)
+  console.log('  旧车辆数量:', oldVehicleIds.length, '车辆ID:', oldVehicleIds)
+
+  // 检查是否有变化
+  const hasChanges = newVehicleIds.length !== oldVehicleIds.length ||
+    !newVehicleIds.every(id => oldVehicleIds.includes(id))
+
+  if (hasChanges) {
+    console.log('🆕 [Map] 车辆数据发生变化，更新地图显示')
+    updateEmergencyVehicleMarkers()  // 更新地图标记
+    updateHighlightedJunctions()     // 更新高亮路口
+    updateEmergencyRoutesDisplay()   // 更新路线显示
+  } else {
+    console.log('📍 [Map] 车辆位置可能更新，刷新标记')
+    updateEmergencyVehicleMarkers()  // 即使车辆数量没变，位置可能更新了
+  }
+}, { deep: true })
 
 const getUserManagedAreas = (): string[] => {
   if (!authStore.isTrafficManager()) return []
@@ -1034,6 +1097,17 @@ const getTlsStyle = (junctionName: string): { color: string, isControllable: boo
   const isControllable = isJunctionControllable(junctionName)
   const isSelected = selectedJunctionName.value === junctionName
 
+  // 检查是否是紧急车辆即将到达的路口
+  const junction = junctionMap.get(junctionName)
+  const isEmergencyUpcoming = junction && highlightedUpcomingJunctions.value.has(junction.junction_id)
+
+  if (isEmergencyUpcoming) {
+    return {
+      color: '#FF6B00',  // 紧急警告色（橙红色）
+      isControllable: true
+    }
+  }
+
   if (isSelected) {
     return {
       color: '#FFD700',
@@ -1112,6 +1186,9 @@ const rerenderTlsOverlays = () => {
     const isControllable = isJunctionControllable(junctionName)
     const junctionId = junction.junction_id
 
+    // 检查是否是紧急车辆即将到达的路口
+    const isEmergencyUpcoming = highlightedUpcomingJunctions.value.has(junctionId)
+
 
     const isFullySelected = isJunctionSelected(junctionId)
     const isJunctionOnly = selectedJunctionForStatus.value?.junction_id === junctionId &&
@@ -1131,7 +1208,8 @@ const rerenderTlsOverlays = () => {
       isSelected: isFullySelected,
       isPartiallySelected: isJunctionOnly,
       isControllable: isControllable,
-      showAllLights: showAllLights
+      showAllLights: showAllLights,
+      isEmergencyUpcoming: isEmergencyUpcoming
     })
 
     app.mount(containerEl)
@@ -1154,11 +1232,179 @@ const rerenderTlsOverlays = () => {
   })
 }
 
+// 更新高亮的即将到达路口
+const updateHighlightedJunctions = () => {
+  const newHighlightedJunctions = new Set<string>()
+
+  // 从emergency store获取车辆数据
+  const vehicleData = emergencyStore.vehicleDataMap
+  console.log('🔆 [Map] 检查即将到达的路口，车辆数据:', vehicleData)
+
+  // 遍历所有紧急车辆，收集即将到达的路口
+  Object.values(vehicleData).forEach((vehicleInfo: any) => {
+    if (vehicleInfo.upcomingJunctionID && vehicleInfo.upcomingJunctionID.trim() !== '') {
+      newHighlightedJunctions.add(vehicleInfo.upcomingJunctionID)
+      console.log('🚨 [Map] 紧急车辆即将到达路口:', vehicleInfo.upcomingJunctionID, '车辆:', vehicleInfo.vehicleID)
+    }
+  })
+
+  console.log('📊 [Map] 信号灯闪烁逻辑说明:')
+  console.log('  1. 从emergency store获取车辆数据：', Object.keys(vehicleData).length, '辆车')
+  console.log('  2. 检查每辆车的upcomingJunctionID字段')
+  console.log('  3. 如果有值，将该路口ID添加到高亮列表')
+  console.log('  4. 高亮路口的交通灯会显示橙红色脉冲+闪烁效果')
+  console.log('  5. 当前即将到达的路口:', Array.from(newHighlightedJunctions))
+
+  // 只有当高亮路口发生变化时才重新渲染
+  const currentHighlighted = Array.from(highlightedUpcomingJunctions.value).sort()
+  const newHighlighted = Array.from(newHighlightedJunctions).sort()
+
+  if (JSON.stringify(currentHighlighted) !== JSON.stringify(newHighlighted)) {
+    highlightedUpcomingJunctions.value = newHighlightedJunctions
+    console.log('🔆 [Map] 更新高亮路口:', Array.from(newHighlightedJunctions))
+    // 重新渲染交通灯覆盖层以显示高亮效果
+    rerenderTlsOverlays()
+  } else {
+    console.log('📍 [Map] 高亮路口无变化，跳过重新渲染')
+  }
+}
+
+// 更新紧急车辆标记
+const updateEmergencyVehicleMarkers = () => {
+  console.log('🔄 [Map] 开始更新紧急车辆标记...')
+  
+  // 清除之前的标记
+  emergencyVehicleOverlays.forEach(overlay => {
+    map?.removeOverlay(overlay)
+  })
+  emergencyVehicleOverlays.length = 0
+  console.log('🧹 [Map] 已清除之前的车辆标记')
+
+  // 从emergency store获取车辆数据
+  const vehicleData = emergencyStore.vehicleDataMap
+  console.log('🚗 [Map] 从emergency store获取到车辆数据:', vehicleData)
+  
+  if (!vehicleData || Object.keys(vehicleData).length === 0) {
+    console.log('⚪ [Map] 没有车辆数据需要显示')
+    return
+  }
+
+  // 为每个紧急车辆创建标记
+  Object.entries(vehicleData).forEach(([vehicleId, vehicleInfo]) => {
+    console.log(`🔍 [Map] 处理车辆 ${vehicleId}:`, vehicleInfo)
+    if (vehicleInfo.position && vehicleInfo.position.x && vehicleInfo.position.y) {
+      const coordinate = [vehicleInfo.position.x, vehicleInfo.position.y]
+      console.log(`📍 [Map] 车辆 ${vehicleId} 位置:`, coordinate)
+
+      // 检查车辆是否在当前视图范围内
+      if (map) {
+        const currentView = map.getView()
+        if (currentView) {
+          const extent = currentView.calculateExtent()
+          const [minX, minY, maxX, maxY] = extent
+
+          // 如果车辆不在视图范围内，跳过
+          if (coordinate[0] < minX || coordinate[0] > maxX ||
+              coordinate[1] < minY || coordinate[1] > maxY) {
+            return
+          }
+        }
+      }
+
+      // 创建车辆标记容器
+      const vehicleContainer = document.createElement('div')
+      vehicleContainer.style.position = 'relative'
+      vehicleContainer.style.pointerEvents = 'auto'
+      vehicleContainer.dataset['vehicleId'] = vehicleId
+
+      // 使用 Vue 组件创建紧急车辆标记
+      const vehicleApp = createApp(EmergencyVehicleMarker, {
+        vehicleData: vehicleInfo,
+        mapPixelPosition: [0, 0], // 这个会被 CSS 定位覆盖
+        showInfo: false,
+        onVehicleClick: (data: any) => {
+          handleEmergencyVehicleClick(data)
+        }
+      })
+
+      vehicleApp.mount(vehicleContainer)
+      console.log(`✅ [Map] 已创建车辆 ${vehicleId} 的标记组件`)
+
+      // 添加点击事件
+      vehicleContainer.addEventListener('click', (e) => {
+        e.stopPropagation()
+        handleEmergencyVehicleClick(vehicleInfo)
+      })
+
+      // 创建覆盖层
+      const overlay = new Overlay({
+        element: vehicleContainer,
+        positioning: 'center-center',
+        stopEvent: false,
+        offset: [0, 0],
+        position: coordinate
+      })
+
+      map?.addOverlay(overlay)
+      emergencyVehicleOverlays.push(overlay)
+      console.log(`🎯 [Map] 车辆 ${vehicleId} 标记已添加到地图`)
+    } else {
+      console.log(`⚠️ [Map] 车辆 ${vehicleId} 缺少位置信息:`, vehicleInfo.position)
+    }
+  })
+  
+  console.log(`✨ [Map] 紧急车辆标记更新完成，共显示 ${emergencyVehicleOverlays.length} 个标记`)
+}
+
+// 处理紧急车辆点击事件
+const handleEmergencyVehicleClick = (vehicleData: any) => {
+  console.log('🚑 紧急车辆被点击:', vehicleData)
+
+  // 更新位置显示，包含即将到达的路口信息
+  let locationText = `Emergency Vehicle: ${vehicleData.vehicleID} (${vehicleData.organization})`
+  if (vehicleData.upcomingJunctionID && vehicleData.upcomingJunctionID.trim() !== '') {
+    // 查找路口名称
+    const upcomingJunctionName = Array.from(junctionMap.entries())
+      .find(([name, junction]) => junction.junction_id === vehicleData.upcomingJunctionID)?.[0]
+
+    if (upcomingJunctionName) {
+      locationText += ` → Next: ${upcomingJunctionName}`
+    } else {
+      locationText += ` → Next: ${vehicleData.upcomingJunctionID}`
+    }
+
+    if (vehicleData.upcomingTlsCountdown > 0) {
+      locationText += ` (${vehicleData.upcomingTlsCountdown.toFixed(1)}s)`
+    }
+  }
+
+  currentLocation.value = locationText
+
+  // 可以在这里添加更多交互逻辑，比如显示详细信息、追踪路线等
+  // 例如：缩放到车辆位置
+  if (map && vehicleData.position) {
+    const currentView = map.getView()
+    if (currentView) {
+      currentView.animate({
+        center: [vehicleData.position.x, vehicleData.position.y],
+        zoom: Math.max(currentView.getZoom() || 15, 16),
+        duration: 1000
+      })
+    }
+  }
+}
+
 const clearAllMarkers = () => {
   for (const overlay of markerOverlays) {
     map?.removeOverlay(overlay)
   }
   markerOverlays.length = 0
+
+  // 清除紧急车辆标记
+  for (const overlay of emergencyVehicleOverlays) {
+    map?.removeOverlay(overlay)
+  }
+  emergencyVehicleOverlays.length = 0
 }
 
 const searchJunction = () => {
@@ -1245,6 +1491,278 @@ const handleKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Escape') {
     showSuggestions.value = false
   }
+}
+
+// 加载紧急车辆路线数据（从status-sync模块获取预定路线）
+const loadEmergencyRoutes = async () => {
+  try {
+    console.log('📋 [Map] 开始加载预定紧急车辆路线...')
+    
+    // ✅ 从status-sync模块获取真实的预定路线数据
+    const response = await emergencyVehicleApi.getEmergencyRoutes()
+    if (response.data && response.data.length > 0) {
+      emergencyRoutes.value = response.data
+      console.log('📋 [Map] 成功加载预定路线数据:', emergencyRoutes.value)
+      
+      // ✅ 显示所有预定路线（不管是否有活跃车辆）
+      const allVehicleIds = response.data.map(r => r.vehicle_id)
+      console.log('🛣️ [Map] 显示预定路线，车辆ID:', allVehicleIds)
+      await drawEmergencyRoutes(allVehicleIds, true) // true表示显示预定路线
+    } else {
+      console.log('⚪ [Map] 没有找到预定路线数据')
+      // 清空路线显示
+      clearEmergencyRoutes()
+    }
+
+  } catch (error) {
+    console.error('❌ [Map] 加载预定路线失败:', error)
+    // 如果API失败，清空路线显示
+    clearEmergencyRoutes()
+  }
+}
+
+// 绘制紧急车辆路线 - 支持预定路线和活跃车辆路线
+const drawEmergencyRoutes = async (vehicleIds: string[] = [], isPlannedRoute: boolean = false) => {
+  if (!emergencyRouteLayer || emergencyRoutes.value.length === 0) {
+    console.log('⚠️ [Map] 缺少路线图层或路线数据')
+    return
+  }
+
+  const source = emergencyRouteLayer.getSource()
+  if (!source) return
+
+  // 清除之前的数据
+  source.clear()
+  
+  let routesToDraw: any[] = []
+  
+  if (isPlannedRoute) {
+    // ✅ 预定路线模式：显示所有指定的路线（不管是否有活跃车辆）
+    routesToDraw = emergencyRoutes.value.filter(event => vehicleIds.includes(event.vehicle_id))
+    console.log('📋 [Map] 预定路线模式，显示', routesToDraw.length, '条路线')
+  } else {
+    // 活跃车辆模式：只显示有活跃车辆的路线
+    routesToDraw = emergencyRoutes.value.filter(event =>
+      vehicleIds.includes(event.vehicle_id) || event.event_status === 'triggered'
+    )
+    console.log('🎯 [Map] 活跃车辆模式，显示', routesToDraw.length, '条活跃路线')
+  }
+
+  if (routesToDraw.length === 0) {
+    console.log('🚫 [Map] 没有需要显示的路线')
+    return
+  }
+
+  console.log('🛣️ [Map] 开始绘制', routesToDraw.length, '条路线:', routesToDraw.map(r => r.vehicle_id))
+
+  // 获取lane-mappings数据来获取坐标
+  const laneMappingsResponse = await emergencyVehicleApi.getEdgeCoordinates([])
+  const laneMappings = laneMappingsResponse.data
+
+  // 创建edgeId到坐标的映射
+  const edgeToCoordinatesMap = new Map<string, [number, number][]>()
+
+  laneMappings.forEach((lane: any) => {
+    const edgeId = lane.edgeId
+    const coordinates = lane.laneShape.trim().split(' ').map((p: string) => p.split(',').map(Number))
+
+    if (!edgeToCoordinatesMap.has(edgeId)) {
+      edgeToCoordinatesMap.set(edgeId, coordinates)
+    }
+  })
+
+  // 只为指定的紧急车辆事件绘制路线
+  routesToDraw.forEach((event, index) => {
+    console.log(`📋 [Map] 绘制路线 ${index + 1}/${routesToDraw.length}: ${event.vehicle_id}`)
+    drawSingleEmergencyRoute(event, edgeToCoordinatesMap, isPlannedRoute)
+  })
+}
+
+// 绘制单个紧急车辆路线
+const drawSingleEmergencyRoute = (event: EmergencyVehicleEvent, edgeToCoordinatesMap: Map<string, [number, number][]>, isPlannedRoute: boolean = false) => {
+  if (!emergencyRouteLayer) {
+    console.warn('⚠️ [Map] Emergency route layer not initialized')
+    return
+  }
+
+  const source = emergencyRouteLayer.getSource()
+  if (!source) {
+    console.warn('⚠️ [Map] Emergency route layer source not available')
+    return
+  }
+
+  console.log(`🛣️ [Map] Drawing route for vehicle ${event.vehicle_id}:`, {
+    eventId: event.event_id,
+    vehicleType: event.vehicle_type,
+    organization: event.organization,
+    status: event.event_status,
+    routeEdges: event.route_edges.length,
+    isPlannedRoute
+  })
+
+  // 构建完整路线坐标
+  const routeCoordinates: [number, number][] = []
+
+  event.route_edges.forEach((edgeId) => {
+    const coordinates = edgeToCoordinatesMap.get(edgeId)
+    if (coordinates && coordinates.length > 0) {
+      routeCoordinates.push(...coordinates)
+    } else {
+      console.warn(`⚠️ [Map] No coordinates found for edge: ${edgeId}`)
+    }
+  })
+
+  if (routeCoordinates.length === 0) {
+    console.warn(`⚠️ [Map] No valid coordinates for route ${event.vehicle_id}`)
+    return
+  }
+
+  // ✅ 检查是否是活跃车辆（从emergency store获取）
+  const isActiveVehicle = Object.keys(emergencyStore.vehicleDataMap).includes(event.vehicle_id)
+  
+  console.log(`🎯 [Map] Vehicle ${event.vehicle_id} active status:`, {
+    isActive: isActiveVehicle,
+    isPlanned: isPlannedRoute,
+    status: event.event_status
+  })
+
+  // 创建主路线Feature
+  const routeFeature = new Feature({
+    geometry: new LineString(routeCoordinates),
+    eventId: event.event_id,
+    vehicleId: event.vehicle_id,
+    vehicleType: event.vehicle_type,
+    organization: event.organization,
+    status: event.event_status,
+    routeType: 'main',
+    isActive: isActiveVehicle,  // ✅ 活跃状态标记
+    isPlanned: isPlannedRoute   // ✅ 预定路线标记
+  })
+
+  // 创建起点标记
+  const startCoordinates = edgeToCoordinatesMap.get(event.start_edge_id)
+  if (startCoordinates && startCoordinates.length > 0) {
+    const startFeature = new Feature({
+      geometry: new Point(startCoordinates[0]),
+      eventId: event.event_id,
+      vehicleId: event.vehicle_id,
+      vehicleType: event.vehicle_type,
+      routeType: 'start',
+      isActive: isActiveVehicle,
+      isPlanned: isPlannedRoute
+    })
+    source.addFeature(startFeature)
+  }
+
+  // 创建终点标记
+  const endCoordinates = edgeToCoordinatesMap.get(event.end_edge_id)
+  if (endCoordinates && endCoordinates.length > 0) {
+    const endFeature = new Feature({
+      geometry: new Point(endCoordinates[endCoordinates.length - 1]),
+      eventId: event.event_id,
+      vehicleId: event.vehicle_id,
+      vehicleType: event.vehicle_type,
+      routeType: 'end',
+      isActive: isActiveVehicle,
+      isPlanned: isPlannedRoute
+    })
+    source.addFeature(endFeature)
+  }
+
+  // 添加主路线Feature
+  source.addFeature(routeFeature)
+  console.log(`✅ [Map] Successfully added route feature for vehicle ${event.vehicle_id}`)
+}
+
+// 创建紧急车辆路线样式 - 区分活跃和非活跃状态
+const createEmergencyRouteStyle = (feature: Feature) => {
+  const routeType = feature.get('routeType')
+  const vehicleType = feature.get('vehicleType')
+  const status = feature.get('status')
+  const isActive = feature.get('isActive')  // ✅ 获取活跃状态
+
+  if (routeType === 'start') {
+    // 起点标记 - 绿色（活跃时更亮）
+    return new Style({
+      image: new Circle({
+        radius: isActive ? 10 : 6,
+        fill: new Fill({ color: isActive ? '#22C55E' : '#6B7280' }),
+        stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+      })
+    })
+  } else if (routeType === 'end') {
+    // 终点标记 - 红色（活跃时更亮）
+    return new Style({
+      image: new Circle({
+        radius: isActive ? 10 : 6,
+        fill: new Fill({ color: isActive ? '#EF4444' : '#6B7280' }),
+        stroke: new Stroke({ color: '#FFFFFF', width: 2 })
+      })
+    })
+  } else {
+    // 路线样式 - 根据活跃状态和事件状态确定样式
+    const getRouteStyle = (status: string, isActive: boolean) => {
+      if (!isActive) {
+        // 非活跃路线：灰色虚线，半透明
+        return new Style({
+          stroke: new Stroke({
+            color: 'rgba(107, 114, 128, 0.4)',  // 灰色半透明
+            width: 2,
+            lineDash: [10, 10],  // 虚线
+            opacity: 0.5
+          })
+        })
+      }
+
+      // 活跃路线：根据状态显示不同颜色
+      switch (status) {
+        case 'pending':
+          return new Style({
+            stroke: new Stroke({
+              color: '#FFA500',    // 橙色 - 待处理
+              width: 4,
+              lineDash: [8, 4]     // 虚线表示待处理
+            })
+          })
+        case 'triggered':
+          return new Style({
+            stroke: new Stroke({
+              color: '#FF4757',    // 红色 - 已触发（实线）
+              width: 5
+            })
+          })
+        case 'completed':
+          return new Style({
+            stroke: new Stroke({
+              color: '#10B981',    // 绿色 - 已完成
+              width: 4
+            })
+          })
+        default:
+          return new Style({
+            stroke: new Stroke({
+              color: '#6B7280',    // 灰色 - 其他
+              width: 3,
+              lineDash: [5, 5]
+            })
+          })
+      }
+    }
+
+    return getRouteStyle(status, isActive)
+  }
+}
+
+// 初始化紧急车辆路线图层
+const initEmergencyRouteLayer = () => {
+  const emergencyRouteSource = new VectorSource()
+  emergencyRouteLayer = new VectorLayer({
+    source: emergencyRouteSource,
+    style: createEmergencyRouteStyle,
+    zIndex: 400
+  })
+
+  map?.addLayer(emergencyRouteLayer)
 }
 
 const loadLaneData = async () => {
@@ -1616,6 +2134,31 @@ const loadLaneData = async () => {
   })
 }
 
+// ✅ 新增：根据实际车辆数据更新路线显示
+const updateEmergencyRoutesDisplay = () => {
+  const activeVehicleIds = Object.keys(emergencyStore.vehicleDataMap)
+  console.log('🔄 [Map] 更新紧急车辆路线显示，活跃车辆:', activeVehicleIds)
+
+  if (activeVehicleIds.length > 0) {
+    // 有活跃车辆时显示对应路线
+    drawEmergencyRoutes(activeVehicleIds)
+  } else {
+    // 没有活跃车辆时清除所有路线
+    clearEmergencyRoutes()
+  }
+}
+
+// ✅ 新增：清除紧急车辆路线
+const clearEmergencyRoutes = () => {
+  if (!emergencyRouteLayer) return
+
+  const source = emergencyRouteLayer.getSource()
+  if (source) {
+    source.clear()
+    console.log('🧹 已清除所有紧急车辆路线')
+  }
+}
+
 onMounted(async () => {
   if (!map) {
     map = new OLMap({ target: mapRef.value!, layers: [], controls: [] })
@@ -1637,7 +2180,15 @@ onMounted(async () => {
   }
 
   await loadLaneData()
+
+  // 初始化紧急车辆路线图层
+  initEmergencyRouteLayer()
+
+  // ✅ 只加载路线配置数据，不自动显示
+  await loadEmergencyRoutes()
+
   connectWebSocket()
+  connectEmergencyTracker()
 
   setTimeout(() => {
     setupViewWatchers()
@@ -1654,12 +2205,32 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (map) map.setTarget(undefined)
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+  }
   if (ws) {
     ws.close()
+  }
+  if (emergencyTracker) {
+    emergencyTracker.disconnect()
   }
   if (statusBarUpdateTimer) {
     clearTimeout(statusBarUpdateTimer)
   }
+
+  // 清理紧急车辆路线图层
+  if (emergencyRouteLayer) {
+    map?.removeLayer(emergencyRouteLayer)
+  }
+
+  // 清理紧急车辆标记
+  emergencyVehicleOverlays.forEach(overlay => {
+    map?.removeOverlay(overlay)
+  })
+  emergencyVehicleOverlays.length = 0
+
+  // 清理高亮状态
+  highlightedUpcomingJunctions.value.clear()
 
   mapEventListeners.forEach(cleanup => cleanup())
   mapEventListeners = []
@@ -2556,6 +3127,90 @@ input:checked + .slider:after {
   }
   50% {
     opacity: 0.5;
+  }
+}
+
+// 紧急车辆路线样式
+:global(.emergency-route-line) {
+  animation: routeFlow 2s linear infinite;
+}
+
+@keyframes routeFlow {
+  0% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 15;
+  }
+}
+
+:global(.emergency-start-marker) {
+  animation: startMarkerPulse 2s ease-in-out infinite;
+}
+
+@keyframes startMarkerPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+:global(.emergency-end-marker) {
+  animation: endMarkerPulse 2s ease-in-out infinite;
+}
+
+@keyframes endMarkerPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+// 紧急车辆实时标记样式优化
+:global(.emergency-vehicle-overlay) {
+  z-index: 1500 !important;
+  pointer-events: auto;
+
+  .emergency-vehicle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    // 确保在所有元素之上
+    z-index: 1500;
+
+    // 响应式大小调整
+    @media (max-width: 768px) {
+      transform: scale(0.8);
+    }
+  }
+
+  // 悬停时显示详细信息
+  &:hover {
+    .vehicle-info {
+      display: block;
+      animation: fadeInUp 0.3s ease-out;
+    }
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
 </style>

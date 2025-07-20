@@ -40,6 +40,11 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
 
     private void broadcastStatus() {
         try {
+            // 检查 redisTemplate 是否为空
+            if (redisTemplate == null) {
+                return;
+            }
+
             // === 原始 edge 和 tls 数据 ===
             Map<String, String> edgeData = new HashMap<>();
             Map<String, String> tlsData = new HashMap<>();
@@ -65,8 +70,7 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     String junctionName = node.get("junction_name").asText();
                     junctionIdToName.put(junctionId, junctionName);
                 } catch (Exception e) {
-                    System.err.println("[WebSocket] 解析 TLS JSON 出错: " + jsonStr);
-                    e.printStackTrace();
+                    // 解析 TLS JSON 出错
                 }
             }
 
@@ -94,8 +98,48 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[WebSocket] 处理 congested 数据出错");
-                e.printStackTrace();
+                // 处理 congested 数据出错
+            }
+
+            Map<String, Object> emergencyVehicles = new HashMap<>();
+            try {
+                Map<Object, Object> emergencyMap = redisTemplate.opsForHash().entries("sumo:emergency_vehicles");
+                
+                for (Map.Entry<Object, Object> entry : emergencyMap.entrySet()) {
+                    String vehicleId = entry.getKey().toString();
+                    String vehicleDataJson = entry.getValue().toString();
+                    
+                    try {
+                        JsonNode vehicleNode = objectMapper.readTree(vehicleDataJson);
+
+                        Map<String, Object> vehicleInfo = new HashMap<>();
+                        vehicleInfo.put("eventID", vehicleNode.get("eventID").asText());
+                        vehicleInfo.put("vehicleID", vehicleNode.get("vehicleID").asText());
+                        vehicleInfo.put("organization", vehicleNode.get("organization").asText());
+                        vehicleInfo.put("currentEdgeID", vehicleNode.get("currentEdgeID").asText());
+                        vehicleInfo.put("upcomingJunctionID", vehicleNode.get("upcomingJunctionID").asText(""));
+                        vehicleInfo.put("nextEdgeID", vehicleNode.get("nextEdgeID").asText(""));
+                        vehicleInfo.put("upcomingTlsID", vehicleNode.get("upcomingTlsID").asText(""));
+                        vehicleInfo.put("upcomingTlsState", vehicleNode.get("upcomingTlsState").asText(""));
+                        vehicleInfo.put("upcomingTlsCountdown", vehicleNode.get("upcomingTlsCountdown").asDouble(0.0));
+
+                        JsonNode positionNode = vehicleNode.get("position");
+                        if (positionNode != null) {
+                            Map<String, Object> position = new HashMap<>();
+                            position.put("x", positionNode.get("x").asDouble());
+                            position.put("y", positionNode.get("y").asDouble());
+                            position.put("timestamp", positionNode.get("timestamp").asDouble());
+                            vehicleInfo.put("position", position);
+                        }
+                        
+                        emergencyVehicles.put(vehicleId, vehicleInfo);
+                        
+                    } catch (Exception e) {
+                        // 解析车辆数据出错
+                    }
+                }
+            } catch (Exception e) {
+                // 紧急车辆数据处理出错
             }
 
             // === 构造广播内容 ===
@@ -103,6 +147,7 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
             message.put("edges", edgeData);
             message.put("trafficLights", tlsData);
             message.put("congested", congestedResults);
+            message.put("emergencyVehicles", emergencyVehicles);
 
             String json = objectMapper.writeValueAsString(message);
 
@@ -113,8 +158,7 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
             }
 
         } catch (Exception e) {
-            System.err.println("[WebSocket] 广播异常：");
-            e.printStackTrace();
+            // WebSocket 广播出错
         }
     }
 }

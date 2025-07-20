@@ -5,6 +5,9 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+const HTTP_LOCALHOST = 'http://localhost'
+const WS_LOCALHOST = 'ws://localhost'
+
 export default defineConfig({
   plugins: [vue(), vueJsx(), vueDevTools()],
   resolve: {
@@ -15,37 +18,52 @@ export default defineConfig({
   server: {
     proxy: {
       '/api-status': {
-        target: 'http://localhost:8087',
+        target: `${HTTP_LOCALHOST}:8087`,
         changeOrigin: true,
         rewrite: path => path,
       },
+      '/api/events': {
+        target: `${HTTP_LOCALHOST}:8085`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/emergency-vehicles': {
+        target: `${HTTP_LOCALHOST}:8085`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/ws/tracking': {
+        target: `${WS_LOCALHOST}:8085`,
+        ws: true,
+        changeOrigin: true,
+      },
       '/api/signalcontrol': {
-        target: 'http://localhost:8082',
+        target: `${HTTP_LOCALHOST}:8082`,
         changeOrigin: true,
         rewrite: path => path,
       },
       '/api/auth': {
-        target: 'http://localhost:8081',
+        target: `${HTTP_LOCALHOST}:8081`,
         changeOrigin: true,
         rewrite: path => path,
       },
       '/api/area-permission': {
-        target: 'http://localhost:8081',
+        target: `${HTTP_LOCALHOST}:8081`,
         changeOrigin: true,
         rewrite: path => path,
       },
       '/api/areas': {
-        target: 'http://localhost:8081',
+        target: `${HTTP_LOCALHOST}:8081`,
         changeOrigin: true,
         rewrite: path => path,
       },
       '/api/users': {
-        target: 'http://localhost:8081',
+        target: `${HTTP_LOCALHOST}:8081`,
         changeOrigin: true,
         rewrite: path => path,
       },
       '/api/logs': {
-        target: 'http://localhost:8086',
+        target: `${HTTP_LOCALHOST}:8086`,
         changeOrigin: true,
         rewrite: path => path,
         configure: (proxy, options) => {

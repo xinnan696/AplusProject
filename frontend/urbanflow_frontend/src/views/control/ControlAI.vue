@@ -12,9 +12,14 @@
       <Transition name="fade" mode="out-in">
         <div v-if="hasValidSuggestion" key="suggestion">
           <p class="placeholder-text">
-            Suggest changing the light at <strong>{{ suggestionData?.junctionName }}</strong>
-            from <strong>{{ suggestionData?.fromEdge }}</strong> to <strong>{{ suggestionData?.toEdge }}</strong>
-            to <strong>{{ mappedState }}</strong> for <strong>{{ suggestionData?.duration }}s </strong>.
+            Set <strong>{{ displayData.junctionName }}</strong>
+            light from <strong>{{ displayData.fromEdgeName }}</strong> to <strong>{{ displayData.toEdgeName }}</strong>
+            to <strong>{{ displayData.stateName }}</strong> for <strong>{{ suggestionData?.duration }}s</strong>.
+          </p>
+        </div>
+        <div v-else-if="isLoading" key="loading">
+          <p class="placeholder-text">
+            Loading suggestion data...
           </p>
         </div>
         <div v-else key="no-suggestion">
@@ -29,7 +34,7 @@
       <button
         ref="applyBtnRef"
         class="apply-btn"
-        :disabled="!hasValidSuggestion || isApplying"
+        :disabled="!hasValidSuggestion || isApplying || isLoading"
         @click="handleApply"
       >
         <div v-if="isApplying" class="loading-spinner"></div>
@@ -37,7 +42,7 @@
       </button>
       <button
         class="ignore-btn"
-        :disabled="!hasValidSuggestion || isApplying"
+        :disabled="!hasValidSuggestion || isApplying || isLoading"
         @click="handleIgnore"
       >
         IGNORE
@@ -51,8 +56,53 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import axios from 'axios'
 import apiClient from '@/utils/api'
 import { toast } from '@/utils/ToastService'
-import { suggestionList, type Suggestion } from '@/mocks/mockSuggestions'
 import { useOperationStore } from '@/stores/operationStore'
+
+interface AISuggestion {
+  junctionId: string
+  fromlaneid: string
+  tolaneid: string
+  state: string
+  duration: number
+}
+
+interface DisplayData {
+  junctionName: string
+  fromEdgeName: string
+  toEdgeName: string
+  stateName: string
+  lightIndex?: number
+}
+
+interface Junction {
+  tlsID: string
+  junction_id: string
+  junction_name: string
+  timestamp: number
+  phase: number
+  state: string
+  duration: number
+  connection: string[][][]
+  spendTime: number
+  nextSwitchTime: number
+}
+
+interface Edge {
+  edgeID: string
+  edgeName: string
+  timestamp: number
+  laneNumber: number
+  speed: number
+  vehicleCount: number
+  vehicleIDs: string[]
+  waitTime: number
+  waitingVehicleCount: number
+}
+
+interface LaneMapping {
+  laneId: string
+  edgeId: string
+}
 
 interface Props {
   isAIMode?: boolean
@@ -63,34 +113,158 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const operationStore = useOperationStore()
-const suggestionData = ref<null | Suggestion>(null)
-const availableSuggestions = ref<Suggestion[]>([...suggestionList])
-const ignoredSuggestions = ref<Suggestion[]>([])
+const suggestionData = ref<AISuggestion | null>(null)
+const displayData = ref<DisplayData & { lightIndex: number }>({
+  junctionName: '',
+  fromEdgeName: '',
+  toEdgeName: '',
+  stateName: '',
+  lightIndex: 0
+})
+
 const isApplying = ref(false)
 const isChanging = ref(false)
+const isLoading = ref(false)
 const countdownProgress = ref(100)
 const remainingTime = ref(5000)
+
+
+const junctionsCache = ref<Map<string, Junction>>(new Map())
+const edgesCache = ref<Map<string, Edge>>(new Map())
+const laneMappingsCache = ref<Map<string, string>>(new Map())
 
 let timer: ReturnType<typeof setTimeout> | null = null
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 let autoApplyTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasValidSuggestion = computed(() => {
-  const s = suggestionData.value
-  return !!(s && s.state && s.junctionName && s.fromEdge && s.toEdge && s.duration)
+  return !!(suggestionData.value &&
+    displayData.value.junctionName &&
+    displayData.value.fromEdgeName &&
+    displayData.value.toEdgeName &&
+    suggestionData.value.duration)
 })
 
-const getNextSuggestion = (): Suggestion | null => {
-  if (availableSuggestions.value.length > 0) {
-    const next = availableSuggestions.value.shift()!
-    return next
-  } else if (ignoredSuggestions.value.length > 0) {
-    availableSuggestions.value = [...ignoredSuggestions.value]
-    ignoredSuggestions.value = []
-    return getNextSuggestion()
-  } else {
-    return null
+
+const stateMap: Record<string, string> = {
+'G': 'Green',
+'g': 'Green',
+'R': 'Red',
+'r': 'Red',
+'Y': 'Yellow',
+'y': 'Yellow'
+}
+
+const findLightIndex = (junction: Junction | undefined, fromlaneid: string, tolaneid: string): number => {
+  if (!junction || !junction.connection) {
+    console.warn(`Junction ${junction?.junction_id} fail`)
+    return 0
   }
+
+  for (let i = 0; i < junction.connection.length; i++) {
+    const connectionGroup = junction.connection[i]
+
+    for (let j = 0; j < connectionGroup.length; j++) {
+      const conn = connectionGroup[j]
+      if (conn.length >= 2 && conn[0] === fromlaneid && conn[1] === tolaneid) {
+        console.log(`找到匹配的lightIndex: ${i}, 方向: ${fromlaneid} -> ${tolaneid}`)
+        return i
+      }
+    }
+  }
+
+  return 0
+}
+
+const initializeCache = async (): Promise<boolean> => {
+  try {
+
+    const [junctionsRes, edgesRes, laneMappingsRes] = await Promise.all([
+      apiClient.get('/api-status/junctions'),
+      apiClient.get('/api-status/edges'),
+      apiClient.get('/api-status/lane-mappings')
+    ])
+
+    if (junctionsRes.data) {
+      Object.values(junctionsRes.data).forEach((junction: any) => {
+        junctionsCache.value.set(junction.junction_id, junction)
+      })
+    }
+
+    if (edgesRes.data) {
+      Object.values(edgesRes.data).forEach((edge: any) => {
+        edgesCache.value.set(edge.edgeID, edge)
+      })
+    }
+
+    if (laneMappingsRes.data && Array.isArray(laneMappingsRes.data)) {
+      laneMappingsRes.data.forEach((mapping: LaneMapping) => {
+        laneMappingsCache.value.set(mapping.laneId, mapping.edgeId)
+      })
+    }
+
+    console.log( {
+      junctions: junctionsCache.value.size,
+      edges: edgesCache.value.size,
+      laneMappings: laneMappingsCache.value.size
+    })
+
+    return true
+  } catch (error) {
+    console.error( error)
+    toast.error('fail')
+    return false
+  }
+}
+
+const convertSuggestionToDisplay = async (suggestion: AISuggestion): Promise<DisplayData & { lightIndex: number }> => {
+  try {
+    const junction = junctionsCache.value.get(suggestion.junctionId)
+    const junctionName = junction?.junction_name || `Junction_${suggestion.junctionId}`
+
+    const fromEdgeId = laneMappingsCache.value.get(suggestion.fromlaneid)
+    const fromEdge = fromEdgeId ? edgesCache.value.get(fromEdgeId) : null
+    const fromEdgeName = fromEdge?.edgeName || suggestion.fromlaneid
+
+
+    const toEdgeId = laneMappingsCache.value.get(suggestion.tolaneid)
+    const toEdge = toEdgeId ? edgesCache.value.get(toEdgeId) : null
+    const toEdgeName = toEdge?.edgeName || suggestion.tolaneid
+
+    const stateName = stateMap[suggestion.state] || suggestion.state
+
+    const lightIndex = findLightIndex(junction, suggestion.fromlaneid, suggestion.tolaneid)
+
+    return {
+      junctionName,
+      fromEdgeName,
+      toEdgeName,
+      stateName,
+      lightIndex
+    }
+  } catch (error) {
+    console.error('转换建议数据失败:', error)
+    return {
+      junctionName: `Junction_${suggestion.junctionId}`,
+      fromEdgeName: suggestion.fromlaneid,
+      toEdgeName: suggestion.tolaneid,
+      stateName: suggestion.state,
+      lightIndex: 0
+    }
+  }
+}
+
+const getNextSuggestion = async (): Promise<AISuggestion | null> => {
+  // TODO:
+  // try {
+  //   const response = await apiClient.get('/your-ai-endpoint')
+  //   return response.data
+  // } catch (error) {
+  //   console.error( error)
+  //   return null
+  // }
+
+  return null
 }
 
 const clearAllTimers = () => {
@@ -132,26 +306,48 @@ const startAutoApplyCountdown = () => {
 
 const showSuggestion = async (isTimeout = true) => {
   clearAllTimers()
-
-
   isChanging.value = true
+  isLoading.value = true
 
   await new Promise(resolve => setTimeout(resolve, 100))
 
-  if (isTimeout && suggestionData.value) {
-    ignoredSuggestions.value.push(suggestionData.value)
+  try {
+    const next = await getNextSuggestion()
+    suggestionData.value = next
+
+    if (next) {
+      // 转换为显示数据
+      displayData.value = await convertSuggestionToDisplay(next)
+    } else {
+      // 清空显示数据
+      displayData.value = {
+        junctionName: '',
+        fromEdgeName: '',
+        toEdgeName: '',
+        stateName: '',
+        lightIndex: 0
+      }
+    }
+  } catch (error) {
+    console.error('获取建议失败:', error)
+    suggestionData.value = null
+    displayData.value = {
+      junctionName: '',
+      fromEdgeName: '',
+      toEdgeName: '',
+      stateName: '',
+      lightIndex: 0
+    }
+  } finally {
+    isLoading.value = false
+
+    setTimeout(() => {
+      isChanging.value = false
+    }, 300)
   }
 
-  const next = getNextSuggestion()
-  suggestionData.value = next
-
-  setTimeout(() => {
-    isChanging.value = false
-  }, 300)
-
-  if (next) {
+  if (suggestionData.value) {
     if (props.isAIMode) {
-
       startAutoApplyCountdown()
     } else {
       timer = setTimeout(() => {
@@ -189,23 +385,24 @@ const handleApply = async (isAutoApply = false) => {
 
   isApplying.value = true
   const suggestion = suggestionData.value
+
+  // TODO: 需要根据实际后端接口调整payload结构
   const payload = {
     junctionId: suggestion.junctionId,
-    lightIndex: suggestion.lightIndex,
+    lightIndex: displayData.value.lightIndex,
     state: suggestion.state,
     duration: suggestion.duration,
     source: isAutoApply ? "ai" : "manual"
   }
 
-  const lightColor = mappedState.value
-  const description = `${isAutoApply ? '[AI]' : '[Manual]'} Set ${suggestion.junctionName} light from ${suggestion.fromEdge} to ${suggestion.toEdge} to ${lightColor} for ${suggestion.duration}s`
+  const description = `${isAutoApply ? '[AI]' : '[Manual]'} Set ${displayData.value.junctionName} light from ${displayData.value.fromEdgeName} to ${displayData.value.toEdgeName} to ${displayData.value.stateName} for ${suggestion.duration}s`
 
   const recordId = operationStore.addRecord({
     description,
     source: isAutoApply ? 'ai' : 'manual',
     junctionId: suggestion.junctionId,
-    junctionName: suggestion.junctionName,
-    lightIndex: suggestion.lightIndex,
+    junctionName: displayData.value.junctionName,
+    lightIndex: displayData.value.lightIndex, // 使用计算出的lightIndex
     state: suggestion.state,
     duration: suggestion.duration
   })
@@ -216,7 +413,6 @@ const handleApply = async (isAutoApply = false) => {
 
     if (isAutoApply) {
       console.log('AI suggestion auto-applied successfully')
-
     } else {
       toast.success('Traffic light settings updated successfully!')
     }
@@ -240,28 +436,18 @@ const handleIgnore = () => {
   showSuggestion(false)
 }
 
-onMounted(() => {
-  showSuggestion()
+onMounted(async () => {
+  const cacheInitialized = await initializeCache()
+  if (cacheInitialized) {
+    showSuggestion()
+  }
 })
 
 onBeforeUnmount(() => {
   clearAllTimers()
 })
 
-type StateChar = 'G' | 'g' | 'R' | 'r'
 
-const stateMap: Record<StateChar, string> = {
-  G: "Green",
-  g: "green",
-  R: "Red",
-  r: "red"
-}
-
-const mappedState = computed(() => {
-  const s = suggestionData.value?.state
-  if (!s) return ''
-  return stateMap[s as StateChar] || s.toUpperCase()
-})
 </script>
 
 <style scoped lang="scss">

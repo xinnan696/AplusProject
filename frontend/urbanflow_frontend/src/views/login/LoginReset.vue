@@ -85,13 +85,13 @@ const handleResetPassword = async () => {
 <style scoped>
 /* Using the same consistent styles as the other auth pages */
 .auth-page { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-image: url('@/assets/images/LoginBg.png'); background-size: cover; background-position: center; }
-.auth-box { width: 420px; padding: 40px; background-color: #2c2f48; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); color: #fff; text-align: center; display: flex; flex-direction: column; }
-.logo-image { width: 80px; height: auto; margin: 0 auto 20px; }
+.auth-box { width: 420px; padding: 40px; background-color: #2c2f48; border-radius: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); color: #FFFFFF; text-align: center; display: flex; flex-direction: column; }
+.logo-image { width: 1.74rem; height: auto; margin: 0 auto 0; }
 .system-title { font-size: 26px; font-weight: 600; color: #00e3ff; margin-bottom: 15px; }
-.page-description { font-size: 16px; color: rgba(255, 255, 255, 0.7); margin-bottom: 30px; }
+.page-description { font-size: 16px; color: #FFFFFF; margin-bottom: 30px; }
 .input-group { position: relative; width: 100%; margin-bottom: 35px; }
 .input-icon { position: absolute; left: 18px; top: 14px; width: 20px; height: 20px; opacity: 0.6; }
-.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00e3ff; background-color: transparent; color: #fff; font-size: 16px; outline: none; }
-.submit-button { width: 100%; padding: 14px; background-color: #00e3ff; color: #1E1E2F; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
+.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00e3ff; background-color: transparent; color: #FFFFFF; font-size: 16px; outline: none; }
+.submit-button { width: 100%; padding: 14px; background-color: #00e3ff; color: #FFFFFF; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
 </style>

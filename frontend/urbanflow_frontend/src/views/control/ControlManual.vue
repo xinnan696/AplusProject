@@ -272,7 +272,17 @@ const canSelectDirection = computed(() => {
 })
 
 const canModifyLights = computed(() => {
-  if (!currentJunction.value || !currentJunction.value.junctionX || !currentJunction.value.junctionY) {
+  if (!currentJunction.value) {
+    return false
+  }
+
+  // 检查是否有路口坐标
+  if (!currentJunction.value.junctionX || !currentJunction.value.junctionY) {
+    return false
+  }
+
+  // 如果 mapCenterX 还没有初始化（为0），等待初始化完成
+  if (mapCenterX.value === 0) {
     return false
   }
 
@@ -721,6 +731,27 @@ defineExpose({
   clearSelection: () => {
 
     resetForm()
+  },
+
+  // 新增：获取路口名称的方法
+  getJunctionNameById: (id: string) => {
+    const junction = junctionDataList.value.find(j => j.junction_id === id)
+    return junction ? (junction.junction_name || junction.junction_id) : null
+  },
+
+  // 新增：选择路口的方法
+  selectJunctionById: (id: string) => {
+    const index = junctionDataList.value.findIndex(j => j.junction_id === id)
+    if (index !== -1) {
+      selectJunction(index)
+      console.log(`🎯 [Manual] Auto-selected junction: ${junctionDataList.value[index].junction_name || id}`)
+    }
+  },
+
+  // 新增：强制刷新权限检查
+  forceRefreshPermissions: () => {
+    // 触发所有计算属性的重新计算
+    console.log('🔄 [Manual] Force refreshing permissions, mapCenterX:', mapCenterX.value)
   }
 })
 </script>

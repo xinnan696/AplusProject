@@ -46,7 +46,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.username }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -60,7 +59,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.name }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -74,7 +72,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.department || '-' }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -91,7 +88,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.email }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -105,7 +101,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ userData.phoneNumber || '-' }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -119,7 +114,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ getRoleDisplay(userData.role) }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
@@ -133,7 +127,6 @@
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
                     <span class="readonly-value">{{ getManagedAreasDisplay() }}</span>
-                    <div class="readonly-indicator">READ ONLY</div>
                   </div>
                 </div>
               </div>
