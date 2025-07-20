@@ -1175,6 +1175,8 @@ const rerenderTlsOverlays = () => {
   })
   tlsOverlays.length = 0
 
+  console.log('🎭 [DEBUG] 开始重新渲染交通灯，高亮路口:', Array.from(highlightedUpcomingJunctions.value))
+
   Array.from(junctionMap.entries()).forEach(([junctionName, junction]) => {
     if (authStore.isTrafficManager() && viewMode.value === 'restricted') {
       const isInArea = isJunctionInManagedArea(junction.junctionX, junction.junctionY)
@@ -1188,6 +1190,15 @@ const rerenderTlsOverlays = () => {
 
     // 检查是否是紧急车辆即将到达的路口
     const isEmergencyUpcoming = highlightedUpcomingJunctions.value.has(junctionId)
+    
+    // 添加调试日志
+    if (isEmergencyUpcoming) {
+      console.log('🚨 [DEBUG] 渲染紧急高亮路口:', {
+        junctionName,
+        junctionId,
+        isEmergencyUpcoming: true
+      })
+    }
 
 
     const isFullySelected = isJunctionSelected(junctionId)
@@ -1230,6 +1241,8 @@ const rerenderTlsOverlays = () => {
     map?.addOverlay(overlay)
     tlsOverlays.push(overlay)
   })
+  
+  console.log('🎭 [DEBUG] 交通灯渲染完成，共渲染', tlsOverlays.length, '个交通灯')
 }
 
 // 更新高亮的即将到达路口
@@ -1238,22 +1251,29 @@ const updateHighlightedJunctions = () => {
 
   // 从emergency store获取车辆数据
   const vehicleData = emergencyStore.vehicleDataMap
-  console.log('🔆 [Map] 检查即将到达的路口，车辆数据:', vehicleData)
+  console.log('🔆 [DEBUG] 检查即将到达的路口，车辆数据:', vehicleData)
 
   // 遍历所有紧急车辆，收集即将到达的路口
   Object.values(vehicleData).forEach((vehicleInfo: any) => {
+    console.log('🚗 [DEBUG] 检查车辆:', {
+      vehicleID: vehicleInfo.vehicleID,
+      upcomingJunctionID: vehicleInfo.upcomingJunctionID,
+      hasUpcoming: !!(vehicleInfo.upcomingJunctionID && vehicleInfo.upcomingJunctionID.trim() !== '')
+    })
+    
     if (vehicleInfo.upcomingJunctionID && vehicleInfo.upcomingJunctionID.trim() !== '') {
       newHighlightedJunctions.add(vehicleInfo.upcomingJunctionID)
-      console.log('🚨 [Map] 紧急车辆即将到达路口:', vehicleInfo.upcomingJunctionID, '车辆:', vehicleInfo.vehicleID)
+      console.log('🚨 [DEBUG] 紧急车辆即将到达路口:', vehicleInfo.upcomingJunctionID, '车辆:', vehicleInfo.vehicleID)
     }
   })
 
-  console.log('📊 [Map] 信号灯闪烁逻辑说明:')
+  console.log('📊 [DEBUG] 信号灯闪烁逻辑说明:')
   console.log('  1. 从emergency store获取车辆数据：', Object.keys(vehicleData).length, '辆车')
   console.log('  2. 检查每辆车的upcomingJunctionID字段')
   console.log('  3. 如果有值，将该路口ID添加到高亮列表')
   console.log('  4. 高亮路口的交通灯会显示橙红色脉冲+闪烁效果')
   console.log('  5. 当前即将到达的路口:', Array.from(newHighlightedJunctions))
+  console.log('  6. 现有高亮路口:', Array.from(highlightedUpcomingJunctions.value))
 
   // 只有当高亮路口发生变化时才重新渲染
   const currentHighlighted = Array.from(highlightedUpcomingJunctions.value).sort()
@@ -1261,11 +1281,11 @@ const updateHighlightedJunctions = () => {
 
   if (JSON.stringify(currentHighlighted) !== JSON.stringify(newHighlighted)) {
     highlightedUpcomingJunctions.value = newHighlightedJunctions
-    console.log('🔆 [Map] 更新高亮路口:', Array.from(newHighlightedJunctions))
+    console.log('🔆 [DEBUG] 更新高亮路口:', Array.from(newHighlightedJunctions))
     // 重新渲染交通灯覆盖层以显示高亮效果
     rerenderTlsOverlays()
   } else {
-    console.log('📍 [Map] 高亮路口无变化，跳过重新渲染')
+    console.log('📍 [DEBUG] 高亮路口无变化，跳过重新渲染')
   }
 }
 
