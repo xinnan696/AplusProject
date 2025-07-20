@@ -4,7 +4,7 @@
 
     <insert id="insert" parameterType="com.ucd.urbanflow.domain.pojo.CongestedDurationRanking">
         INSERT INTO congestion_duration_ranking (time_bucket, junction_name, total_congestion_duration_seconds)
-        VALUES (#{timeBucket}, #{junction_name}, #{total_congestion_duration_seconds})
+        VALUES (#{timeBucket}, #{junctionName}, #{totalCongestionDurationSeconds})
     </insert>
 
 </mapper>

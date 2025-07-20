@@ -18,5 +18,6 @@ public class EnrichedTrafficEvent {
     private double waitTime;
     private boolean congested;
     private int waitingVehicleCount;
+    private float occupancy;
 
 }

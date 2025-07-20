@@ -61,7 +61,7 @@ public class TrafficService {
 
     @Scheduled(fixedRateString = "${traffic.cache.update-rate-ms}")
     public void updateCongestionCache() {
-        log.info("Running scheduled task: Calculating and caching congested junctions...");
+//        log.info("Running scheduled task: Calculating and caching congested junctions...");
         try {
             // 1. 执行核心计算
             List<JunctionCongestionDTO> topJunctions = this.calculateTopCongestedJunctions();
@@ -72,7 +72,7 @@ public class TrafficService {
             // 3. 将JSON字符串存入指定的Redis Key中
             redisTemplate.opsForValue().set(CACHE_KEY_CONGESTED_JUNCTIONS, jsonCacheData);
 
-            log.info("Successfully updated congested junctions cache. Found {} junctions.", topJunctions.size());
+//            log.info("Successfully updated congested junctions cache. Found {} junctions.", topJunctions.size());
 
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize congestion data to JSON for caching.", e);

@@ -9,7 +9,7 @@ import com.ucd.urbanflow.mapper.CongestedDurationRankingMapper;
 import com.ucd.urbanflow.mapper.CongestionRoadCountMapper;
 import com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper;
 import com.ucd.urbanflow.mapper.TrafficFlowMapper;
-import com.ucd.urbanflow.respository.TrafficDataPointRepository;
+import com.ucd.urbanflow.repository.TrafficDataPointRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,8 +37,8 @@ public class AnalysisService {
     private final CongestedDurationRankingMapper congestedDurationRankingMapper;
 
     // A stateful, atomic counter for the last processed simulation step.
-//    private final AtomicLong lastProcessedStep = new AtomicLong(0);
-    private final AtomicLong lastProcessedStep = new AtomicLong(259);
+    private final AtomicLong lastProcessedStep = new AtomicLong(0);
+//    private final AtomicLong lastProcessedStep = new AtomicLong(259);
 
 
     // The configurable initial time for the aggregation buckets.

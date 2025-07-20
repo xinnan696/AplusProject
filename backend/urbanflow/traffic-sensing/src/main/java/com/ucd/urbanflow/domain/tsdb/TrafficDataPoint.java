@@ -2,8 +2,10 @@ package com.ucd.urbanflow.domain.tsdb;
 
 import com.influxdb.annotations.Column;
 import com.influxdb.annotations.Measurement;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
@@ -12,6 +14,8 @@ import java.time.Instant;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Measurement(name = "traffic_events")
 public class TrafficDataPoint {
 

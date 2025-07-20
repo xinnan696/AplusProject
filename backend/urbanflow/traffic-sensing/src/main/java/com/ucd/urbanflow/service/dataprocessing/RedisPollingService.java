@@ -39,7 +39,7 @@ public class RedisPollingService {
     private final Sinks.Many<EnrichedTrafficEvent> sink = Sinks.many().multicast().onBackpressureBuffer();
 
     /**
-     * [MODIFIED] The single, constant key for the Redis Hash containing all edge data.
+     * The single, constant key for the Redis Hash containing all edge data.
      * Please change this value if your actual Redis hash key is different.
      */
     private static final String REDIS_EDGE_HASH_KEY = "sumo:edge";
@@ -77,7 +77,7 @@ public class RedisPollingService {
     }
 
     /**
-     * [MODIFIED] Polls Redis efficiently by fetching all edge data at once.
+     * Polls Redis efficiently by fetching all edge data at once.
      */
     @Scheduled(fixedDelay = 1000) // Poll every 1 second
     public void pollRedisForChanges() {
@@ -86,6 +86,8 @@ public class RedisPollingService {
         if (allCurrentEdgeData.isEmpty()) {
             return;
         }
+        log.info("Successfully fetched {} records from Redis hash '{}'.", allCurrentEdgeData.size(), REDIS_EDGE_HASH_KEY);
+
 
         // Step 2: Calculate the set of congested junctions using the in-memory data.
         Set<String> congestedJunctions = getCongestedJunctions(allCurrentEdgeData);
@@ -93,6 +95,10 @@ public class RedisPollingService {
         // Step 3: Process each data point from the fetched in-memory map.
         for (RedisEdgeData edgeData : allCurrentEdgeData.values()) {
             if (isNewData(edgeData)) {
+                log.info(">>>> [NEW DATA DETECTED] Edge: {}, Timestamp: {}, LastSeen: {}",
+                        edgeData.getEdgeId(),
+                        edgeData.getTimestamp(),
+                        lastSeenTimestamps.getOrDefault(edgeData.getEdgeId(), -1.0));
                 lastSeenTimestamps.put(edgeData.getEdgeId(), edgeData.getTimestamp());
 
                 findJunctionIdForEdge(edgeData.getEdgeId()).ifPresent(junctionId -> {
@@ -116,7 +122,7 @@ public class RedisPollingService {
     }
 
     /**
-     * [NEW] Helper method to fetch all fields from the edge data hash at once.
+     * Helper method to fetch all fields from the edge data hash at once.
      * This corresponds to the HGETALL command in Redis.
      * @return A Map where the key is the edgeId and the value is the parsed RedisEdgeData object.
      */
@@ -135,7 +141,7 @@ public class RedisPollingService {
     }
 
     /**
-     * [MODIFIED] Calculates congested junctions using the pre-fetched data map for efficiency.
+     * Calculates congested junctions using the pre-fetched data map for efficiency.
      * @param allEdgeData A map containing all current edge data from Redis for this cycle.
      * @return A set of congested junction IDs for the current time step.
      */
@@ -151,7 +157,7 @@ public class RedisPollingService {
     }
 
     /**
-     * [MODIFIED] Checks if a junction is congested by looking up its edges in the pre-fetched data map.
+     * Checks if a junction is congested by looking up its edges in the pre-fetched data map.
      * @param incomingEdgeIds A list of incoming edge IDs for the junction.
      * @param allEdgeData The map of all available edge data for this cycle.
      * @return true if the junction is congested, false otherwise.
@@ -188,9 +194,16 @@ public class RedisPollingService {
      * @return true if the data is new, false otherwise.
      */
     private boolean isNewData(RedisEdgeData data) {
-        if (data == null || data.getTimestamp() == null) return false;
+        if (data == null || data.getEdgeId() == null || data.getTimestamp() == null) {
+            return false;
+        }
         double previous = lastSeenTimestamps.getOrDefault(data.getEdgeId(), -1.0);
-        return data.getTimestamp() > previous;
+        boolean isNew = data.getTimestamp() > previous;
+
+        log.info(">>>> isNewData Check for edge '{}': incoming_ts={}, last_seen_ts={}, is_new={}",
+                data.getEdgeId(), data.getTimestamp(), previous, isNew);
+
+        return isNew;
     }
 
     /**
