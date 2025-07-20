@@ -201,6 +201,7 @@ router.beforeEach((to, from) => {
       const hasPermission = (to.meta.roles as string[]).includes(user.role)
 
       if (!hasPermission) {
+        // @ts-ignore
         console.log(`Access denied: ${user.role} cannot access ${to.name}`)
 
         const defaultPage = getDefaultPageForRole(user.role)

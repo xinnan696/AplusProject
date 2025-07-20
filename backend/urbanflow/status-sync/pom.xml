@@ -63,6 +63,12 @@
             <optional>true</optional>
         </dependency>
 
+        <dependency>
+            <groupId>com.ucd</groupId>
+            <artifactId>common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
 
     </dependencies>
 
