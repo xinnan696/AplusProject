@@ -278,10 +278,10 @@ function handleTrackingComplete(vehicleId?: string) {
   // 步骤 2: 调用 store action 清理全局状态和localStorage
   emergencyStore.completeTracking();
 
-  // 步骤 3: 延迟3秒后，自动跳转回主页
+  // 步骤 3: 延迟4秒后，自动跳转回主页
   setTimeout(() => {
     router.push({ name: 'Control' });
-  }, 3000);
+  }, 4000);
 }
 
 function handleSignOut() {

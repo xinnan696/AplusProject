@@ -5,11 +5,11 @@ import Control from '@/views/control/ControlHome.vue'
 const routes = [
 
   {
-    // path: '/',
-    // redirect: '/login'
-    path: '/', // 根路径
-    name: 'control-home', // 可以给个新名字
-    component: Control
+    path: '/',
+    redirect: '/login'
+    // path: '/', // 根路径
+    // name: 'control-home', // 可以给个新名字
+    // component: Control
   },
 
 

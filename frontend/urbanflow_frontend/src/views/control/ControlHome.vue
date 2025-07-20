@@ -40,7 +40,7 @@
 <!--      @close="togglePriority"-->
 <!--    />-->
 
-  <!-- ### 新增：紧急车辆请求信息框 (新设计) ### -->
+  <!-- 紧急车辆请求信息框  -->
   <transition name="dialog">
     <div v-if="isEmergencyDialogVisible && firstPendingVehicle" class="tracking-request-dialog">
       <div class="dialog-title">
@@ -75,12 +75,12 @@
 </template>
 
 <script setup lang="ts">
-console.log(" MOCK: Setting mock authentication for testing purposes.");
-localStorage.setItem('authToken', 'mock-auth-token-for-testing');
-localStorage.setItem('user', JSON.stringify({
-  role: 'ADMIN',
-  userName: 'Test Admin'
-}));
+// console.log(" MOCK: Setting mock authentication for testing purposes.");
+// localStorage.setItem('authToken', 'mock-auth-token-for-testing');
+// localStorage.setItem('user', JSON.stringify({
+//   role: 'ADMIN',
+//   userName: 'Test Admin'
+// }));
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { useEmergencyStore } from '@/stores/emergency'
@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid rgba(74, 85, 104, 0.5);
 }
 .dialog-content {
-  padding: 0.24rem;
+  padding: 0.20rem;
   display: grid;
   grid-template-columns: 120px 1fr;
   gap: 0.16rem;
