@@ -17,6 +17,7 @@ public class EmergencyVehicleEvent {
     private String endEdgeId;
     // MyBatis通常能自动处理JSON类型，如果不行则需要自定义TypeHandler
     private List<String> routeEdges;
+    private List<String> junctionsOnPath;
     private List<String> signalizedJunctions;
     private String eventStatus;
     private Instant createdAt;

@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
+import com.ucd.urbanflow.dto.EmergencyVehicleStaticDataDto; // 导入新的DTO
+import java.util.Optional;
 
 import java.util.List;
 
@@ -76,6 +78,20 @@ public class EmergencyVehicleController {
             return ResponseEntity.ok("事件 " + eventId + " 已成功标记为完成。");
         }
         return ResponseEntity.notFound().build();
+    }
+
+    /**
+     * ### 修改：现在返回只包含静态数据的DTO ###
+     * 根据事件ID获取其静态详细信息 (机构和路径)。
+     * @param eventId 事件的唯一ID
+     * @return 包含静态详情的JSON对象，如果找不到则返回404
+     */
+    @GetMapping("/{eventId}")
+    public ResponseEntity<EmergencyVehicleStaticDataDto> getEventDetails(@PathVariable String eventId) {
+        log.info("API call: 获取事件静态详情 {}", eventId);
+        Optional<EmergencyVehicleStaticDataDto> eventDetails = emergencyVehicleService.getEventDetails(eventId);
+        return eventDetails.map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 }

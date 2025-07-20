@@ -65,7 +65,7 @@ public class TraCIEventDispatcher {
 
     public void sendEvent(Object event) {
         if (!isConnected()) {
-            logger.warn("WebSocket nit connected!");
+            logger.warn("WebSocket not connected!");
             return;
         }
         try {

@@ -15,10 +15,16 @@
         <result property="startEdgeId" column="start_edge_id"/>
         <result property="endEdgeId" column="end_edge_id"/>
         <result property="routeEdges" column="route_edges" javaType="java.util.List" jdbcType="VARCHAR" typeHandler="com.ucd.urbanflow.util.JsonStringListTypeHandler"/>
+        <result property="junctionsOnPath" column="junctions_on_path" javaType="java.util.List" jdbcType="VARCHAR" typeHandler="com.ucd.urbanflow.util.JsonStringListTypeHandler"/>
         <result property="signalizedJunctions" column="signalized_junctions" javaType="java.util.List" jdbcType="VARCHAR" typeHandler="com.ucd.urbanflow.util.JsonStringListTypeHandler"/>
         <result property="eventStatus" column="event_status"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="EmergencyVehicleStaticDataResultMap" type="com.ucd.urbanflow.dto.EmergencyVehicleStaticDataDto">
+        <result property="organization" column="organization"/>
+        <result property="signalizedJunctions" column="signalized_junctions" javaType="java.util.List" jdbcType="VARCHAR" typeHandler="com.ucd.urbanflow.util.JsonStringListTypeHandler"/>
     </resultMap>
 
     <select id="findPendingEventsByTriggerTime" resultMap="EmergencyVehicleEventResultMap">
@@ -26,6 +32,15 @@
         WHERE trigger_time &lt;= #{currentTime}
           AND event_status = 'pending'
         ORDER BY trigger_time ASC
+    </select>
+
+    <!-- 根据事件ID查找单个事件的静态数据 -->
+    <select id="findByEventId" resultMap="EmergencyVehicleStaticDataResultMap">
+        SELECT
+            organization,
+            signalized_junctions
+        FROM emergency_vehicle_events
+        WHERE event_id = #{eventId}
     </select>
 
     <update id="updateEventStatus">

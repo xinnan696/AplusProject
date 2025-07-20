@@ -20,4 +20,6 @@ public class EmergencyVehicleEventDto {
     private List<String> routeEdges;
     @JsonProperty("junctions_on_path")
     private List<String> junctionsOnPath;
+    @JsonProperty("signalized_junctions")
+    private List<String> signalizedJunctions;
 }

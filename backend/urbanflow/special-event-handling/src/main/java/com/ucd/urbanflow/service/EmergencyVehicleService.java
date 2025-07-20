@@ -8,7 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.ucd.urbanflow.cache.EventStatusCache;
+import com.ucd.urbanflow.dto.EmergencyVehicleStaticDataDto;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -20,6 +23,7 @@ public class EmergencyVehicleService {
     private final EventService eventService;
 
     private static final String SIMULATION_TIME_KEY = "sumo:simulation_time";
+    private final EventStatusCache eventStatusCache;
 
 
     public List<EmergencyVehicleEvent> getPendingEmergencyEvents() {
@@ -78,10 +82,24 @@ public class EmergencyVehicleService {
      * @param status 新的状态字符串 (e.g., "ignored", "completed")
      * @return 如果更新成功返回 true，否则返回 false
      */
+//    public boolean updateEventStatus(String eventId, String status) {
+//        int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
+//        if (updatedRows > 0) {
+//            log.info("已将事件 {} 的状态更新为: {}", eventId, status);
+//            return true;
+//        } else {
+//            log.warn("尝试更新事件 {} 状态失败，可能事件ID不存在。", eventId);
+//            return false;
+//        }
+//    }
+
     public boolean updateEventStatus(String eventId, String status) {
         int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
         if (updatedRows > 0) {
-            log.info("已将事件 {} 的状态更新为: {}", eventId, status);
+            log.info("已将事件 {} 的数据库状态更新为: {}", eventId, status);
+            // 同步更新缓存
+            eventStatusCache.setStatus(eventId, status);
+            log.info("已将事件 {} 的缓存状态更新为: {}", eventId, status);
             return true;
         } else {
             log.warn("尝试更新事件 {} 状态失败，可能事件ID不存在。", eventId);
@@ -107,7 +125,18 @@ public class EmergencyVehicleService {
         dto.setEventType(event.getEventType());
         dto.setOrganization(event.getOrganization());
         dto.setRouteEdges(event.getRouteEdges());
-        dto.setJunctionsOnPath(event.getSignalizedJunctions());
+        dto.setJunctionsOnPath(event.getJunctionsOnPath());
+        dto.setSignalizedJunctions(event.getSignalizedJunctions());
         return dto;
+    }
+
+    /**
+     * ### 修改：现在返回只包含静态数据的DTO ###
+     * 根据事件ID获取事件的静态详细信息 (机构和路径)。
+     * @param eventId 事件的唯一ID
+     * @return 包含事件静态详情的Optional对象
+     */
+    public Optional<EmergencyVehicleStaticDataDto> getEventDetails(String eventId) {
+        return emergencyVehicleMapper.findByEventId(eventId);
     }
 }
