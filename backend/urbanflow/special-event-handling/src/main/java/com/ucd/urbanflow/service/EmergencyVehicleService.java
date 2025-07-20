@@ -55,13 +55,18 @@ public class EmergencyVehicleService {
                 EmergencyVehicleEventDto eventDTO = convertToDto(event);
 
                 // 2. 调用 EventService 委托发送指令
-                eventService.triggerEmergencyVehicleEvent(eventDTO);
+                boolean sentSuccessfully = eventService.triggerEmergencyVehicleEvent(eventDTO);
 
-                // 3. 乐观地更新数据库状态为 "triggered"，防止重复发送
-                //    注意：这里不等待WebSocket回执，与EventProcessingService的行为保持一致
-                emergencyVehicleMapper.updateEventStatus(event.getEventId(), "triggered");
-                successCount++;
-                log.info("Emergency vehicle event {} processed successfully", event.getEventId());
+                if (sentSuccessfully) {
+                    // 只有当指令成功发送后，才更新状态为 "triggering"
+                    updateEventStatus(event.getEventId(), "triggering");
+                    successCount++;
+                    log.info("已成功请求处理紧急车辆事件 {}", event.getEventId());
+                } else {
+                    // 如果发送失败，不更新状态，任务将在下一周期被自动重试
+                    failCount++;
+                    log.warn("发送事件 {} 指令失败，将在下一周期重试。", event.getEventId());
+                }
 
             } catch (Exception e) {
                 log.error("Failed to process emergency vehicle event {}: {}", event.getEventId(), e.getMessage(), e);
@@ -109,12 +114,7 @@ public class EmergencyVehicleService {
 
     public void handleTriggerResult(String eventId, boolean success) {
         String newStatus = success ? "triggered" : "failed";
-        int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, newStatus);
-        if (updatedRows > 0) {
-            log.info("已根据Traci回执更新紧急事件 {} 的状态为: {}", eventId, newStatus);
-        } else {
-            log.warn("尝试更新紧急事件 {} 状态失败，可能事件ID不存在。", eventId);
-        }
+        updateEventStatus(eventId, newStatus);
     }
 
     private EmergencyVehicleEventDto convertToDto(EmergencyVehicleEvent event) {

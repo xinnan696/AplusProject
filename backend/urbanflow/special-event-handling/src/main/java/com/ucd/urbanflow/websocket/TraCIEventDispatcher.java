@@ -63,17 +63,19 @@ public class TraCIEventDispatcher {
         return connected && client.isOpen();
     }
 
-    public void sendEvent(Object event) {
+    public boolean sendEvent(Object event) {
         if (!isConnected()) {
             logger.warn("WebSocket not connected!");
-            return;
+            return false;
         }
         try {
             String json = objectMapper.writeValueAsString(event);
             client.send(json);
             logger.info("Sent Event: {}", json);
+            return true;
         } catch (Exception e) {
             logger.error("Failed to sent event", e);
+            return false;
         }
     }
 
