@@ -4,27 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="develop emergency vehicle function of configuration code">
-      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/cache/EventStatusCache.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/dto/EmergencyVehicleStaticDataDto.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/assets/images/emergency.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/controller/EmergencyVehicleController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/controller/EmergencyVehicleController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/dto/EmergencyVehicleEventDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/dto/EmergencyVehicleEventDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/entity/EmergencyVehicleEvent.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/entity/EmergencyVehicleEvent.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/mapper/EmergencyVehicleMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/mapper/EmergencyVehicleMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EmergencyVehicleService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/service/EmergencyVehicleService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TraCIEventDispatcher.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TraCIEventDispatcher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TrackingDataPublisher.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/TrackingDataPublisher.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/WebSocketConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/java/com/ucd/urbanflow/websocket/WebSocketConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/resources/mapper/EmergencyVehicleMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/urbanflow/special-event-handling/src/main/resources/mapper/EmergencyVehicleMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/emergency.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/stores/emergency.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHeader.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHeader.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHome.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/ControlHome.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/PriorityVehicleTracking.vue" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/src/views/control/PriorityVehicleTracking.vue" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/urbanflow_frontend/vite.config.ts" afterDir="false" />
+    <list default="true" id="719f4136-32e3-440d-967c-b6ea0e5ad6de" name="Changes" comment="develop emergency vehicle function of backend code">
+      <change beforePath="$PROJECT_DIR$/backend/traciModel/emergency_vehicle_events_test.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/traciModel/event_manager.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/traciModel/event_manager.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/traciModel/withRedis.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/traciModel/withRedis.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -275,7 +258,7 @@
       <workItem from="1752945492554" duration="150000" />
       <workItem from="1752945663872" duration="105000" />
       <workItem from="1752945990316" duration="2933000" />
-      <workItem from="1752948950171" duration="23731000" />
+      <workItem from="1752948950171" duration="24051000" />
     </task>
     <task id="LOCAL-00001" summary="commit newFast.py">
       <created>1750682190182</created>
@@ -326,7 +309,28 @@
       <option name="project" value="LOCAL" />
       <updated>1752891961602</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="develop emergency vehicle function of configuration code">
+      <created>1752973320103</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1752973320103</updated>
+    </task>
+    <task id="LOCAL-00009" summary="develop emergency vehicle function of frontend code">
+      <created>1752973366092</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1752973366092</updated>
+    </task>
+    <task id="LOCAL-00010" summary="develop emergency vehicle function of backend code">
+      <created>1752973391909</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1752973391909</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -366,6 +370,8 @@
     <MESSAGE value="emergency vehicle develop" />
     <MESSAGE value="merge with develop-test, and develop emergency vehicle function of backend code" />
     <MESSAGE value="develop emergency vehicle function of configuration code" />
-    <option name="LAST_COMMIT_MESSAGE" value="develop emergency vehicle function of configuration code" />
+    <MESSAGE value="develop emergency vehicle function of frontend code" />
+    <MESSAGE value="develop emergency vehicle function of backend code" />
+    <option name="LAST_COMMIT_MESSAGE" value="develop emergency vehicle function of backend code" />
   </component>
 </project>

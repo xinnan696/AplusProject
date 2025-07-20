@@ -496,6 +496,7 @@ async def websocket_event_handler(websocket: WebSocket):
         while True:
             # 1. 等待并接收来自后端的消息
             data = await websocket.receive_text()
+            print(f"[WebSocket RAW DATA] 收到原始指令: {data}")
 
             try:
                 # 2. 解析JSON指令

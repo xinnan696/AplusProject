@@ -115,6 +115,9 @@ class EventManager:
         vehicle_id = command.get("vehicle_id")
         route_edges = command.get("route_edges")
 
+        junctions_on_path = command.get("junctions_on_path", [])
+        signalized_junctions = command.get("signalized_junctions", [])
+
         if not all([vehicle_id, route_edges]):
             return {"success": False, "details": {"message": "紧急车辆事件缺少 vehicle_id 或 route_edges"}}
 
@@ -138,7 +141,8 @@ class EventManager:
                     "event_id": event_id,
                     "organization": command.get("organization"),
                     "route_edges": route_edges,
-                    "junctions_on_path": command.get("junctions_on_path", [])
+                    "junctions_on_path": junctions_on_path, # 存储所有交叉口列表
+                    "signalized_junctions": signalized_junctions # 存储信号灯交叉口列表
                 }
 
             return {"success": True, "details": {"message": f"紧急车辆 {vehicle_id} 触发成功。"}}
@@ -158,22 +162,47 @@ class EventManager:
         # 使用 list() 来创建一个副本，以允许在循环中安全地修改原始字典
         for ev_id, ev_info in list(self.active_emergency_vehicles.items()):
             try:
+                # --- 步骤 1: 照常获取所有实时数据 ---
                 current_road_id = traci.vehicle.getRoadID(ev_id)
+                current_lane_id = traci.vehicle.getLaneID(ev_id)  # 先获取原始数据
+
                 if not current_road_id or current_road_id.startswith(':'):
                     continue
 
-                print(f"[调试日志] 正在追踪车辆 '{ev_id}'，当前所在道路: '{current_road_id}'")
                 route_edges = ev_info["route_edges"]
-                junctions_on_path = ev_info["junctions_on_path"]
-                upcoming_junction_id, next_edge_id = None, None
-                upcoming_tls_id, upcoming_tls_state, upcoming_tls_countdown = None, None, None
-
+                all_junctions = ev_info["junctions_on_path"]
+                signalized_junctions_set = set(ev_info["signalized_junctions"])  # 使用set以提高查找效率
+                print(f"[紧急车辆事件调试日志] 正在追踪车辆 '{ev_id}'，当前所在道路: '{current_road_id}'")
                 current_edge_index = route_edges.index(current_road_id)
+
+                # --- 步骤 2: 照常计算下一路段信息和即将到达的信号灯路口 ---
+                next_edge_id, next_lane_id = None, None
                 if current_edge_index < len(route_edges) - 1:
                     next_edge_id = route_edges[current_edge_index + 1]
-                    if current_edge_index < len(junctions_on_path):
-                        upcoming_junction_id = junctions_on_path[current_edge_index]
+                    lane_index = current_lane_id.split('_')[-1]
+                    next_lane_id = f"{next_edge_id}_{lane_index}"  # 先计算原始数据
 
+                upcoming_junction_id = None
+                if current_edge_index < len(all_junctions):
+                    # 1. 直接从“所有交叉口”列表中获取即将到达的交叉口ID
+                    next_junction_on_path = all_junctions[current_edge_index]
+
+                    # 2. 判断这个交叉口是否在“信号灯交叉口”列表中
+                    if next_junction_on_path in signalized_junctions_set:
+                        # 如果是，则将其作为我们的目标
+                        upcoming_junction_id = next_junction_on_path
+                    # 3. 如果不是，upcoming_junction_id 保持为 None (null)
+
+                print(f"[紧急车辆事件调试日志] 正在追踪车辆 '{ev_id}'，即将到达的交叉口: '{upcoming_junction_id}'")
+
+                # --- 步骤 3: 【新增逻辑】根据 upcomingJunctionID 的值，决定是否清空车道信息 ---
+                if upcoming_junction_id is None:
+                    # 如果车辆不是正在接近信号灯路口，则将车道信息设为 null
+                    current_lane_id = None
+                    next_lane_id = None
+
+                # --- 步骤 4: 准备数据包，其中车道信息已根据新逻辑被处理 ---
+                upcoming_tls_id, upcoming_tls_state, upcoming_tls_countdown = None, None, None
                 if upcoming_junction_id:
                     tls_id = junction_to_tls_map.get(upcoming_junction_id)
                     if tls_id and tls_to_cache.get(tls_id):
@@ -182,16 +211,16 @@ class EventManager:
                         upcoming_tls_state = tls_info.get("state")
                         upcoming_tls_countdown = tls_info.get("nextSwitchTime")
 
-                # 获取车辆的(x, y)坐标
                 position = traci.vehicle.getPosition(ev_id)
 
                 ev_data_packet = {
                     "eventID": ev_info["event_id"],
                     "vehicleID": ev_id,
-                    "organization": ev_info["organization"],
                     "currentEdgeID": current_road_id,
+                    "currentLaneID": current_lane_id,
                     "upcomingJunctionID": upcoming_junction_id,
                     "nextEdgeID": next_edge_id,
+                    "nextLaneID": next_lane_id,
                     "upcomingTlsID": upcoming_tls_id,
                     "upcomingTlsState": upcoming_tls_state,
                     "upcomingTlsCountdown": upcoming_tls_countdown,
@@ -203,24 +232,14 @@ class EventManager:
             except (traci.TraCIException, ValueError):
                 # TraCIException: 车辆离开仿真
                 # ValueError: 车辆偏离路线
-                print(f"[调试日志-错误] 车辆 '{ev_id}' 偏离路线！")
-                print(f"    - 车辆当前所在道路: '{current_road_id}'")
-                print(f"    - 这个道路ID在预设的 route_edges 列表中未被找到。")
-                async with self.lock:
-                    if ev_id in self.active_emergency_vehicles:
-                        del self.active_emergency_vehicles[ev_id]
-                keys_to_delete.append(ev_id)
-
-            except traci.TraCIException:
-                # 车辆已离开仿真
-                print(f"[调试日志-信息] 车辆 '{ev_id}' 已离开仿真环境。")
+                print(f"[事件管理器] 车辆 '{ev_id}' 已完成其路线或偏离，追踪结束。")
                 async with self.lock:
                     if ev_id in self.active_emergency_vehicles:
                         del self.active_emergency_vehicles[ev_id]
                 keys_to_delete.append(ev_id)
 
         return vehicles_to_cache, keys_to_delete
-    # ### 新增方法结束 ###
+
 
     async def _clear_event(self, event_id: str, event_data: Dict):
         """内部使用的、根据事件类型执行不同清理操作的函数。"""
