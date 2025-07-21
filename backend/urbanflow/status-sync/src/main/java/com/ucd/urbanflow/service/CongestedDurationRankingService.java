@@ -20,20 +20,15 @@ public class CongestedDurationRankingService {
 
 
     public Map<String, Object> buildDashboardData(String timeRange) {
-//        Date end = new Date();
-        Date end = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            end = sdf.parse("2024-07-07 22:00:00");
-        } catch (Exception e) {
-            e.printStackTrace();
-            end = new Date();
-        }
+        Date end = new Date();
+
         Calendar c = Calendar.getInstance();
         c.setTime(end);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
         c.set(Calendar.MILLISECOND, 0);
+
+        end = c.getTime();
 
         Date start;
 
@@ -61,19 +56,21 @@ public class CongestedDurationRankingService {
 
         List<CongestedDurationRanking> stats = congestedDurationRankingMapper.selectByTimeRange(start, end);
 
-        System.out.println("start = " + start + ", end = " + end);
-        System.out.println("stats.size() = " + stats.size());
-        if (!stats.isEmpty()) {
-            for (CongestedDurationRanking s : stats) {
-                System.out.println(s.getTimeBucket() + " " + s.getJunctionName() + " " + s.getTotalCongestionDurationSeconds());
-            }
-        }
+//        System.out.println("start = " + start + ", end = " + end);
+//        System.out.println("stats.size() = " + stats.size());
+//        if (!stats.isEmpty()) {
+//            for (CongestedDurationRanking s : stats) {
+//                System.out.println(s.getTimeBucket() + " " + s.getJunctionName() + " " + s.getTotalCongestionDurationSeconds());
+//            }
+//        }
 
         Map<String, Double> durationByJunction = new HashMap<>();
-        for (CongestedDurationRanking s : stats) {
-            String name = s.getJunctionName();
-            double val = s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds();
-            durationByJunction.put(name, durationByJunction.getOrDefault(name, 0.0) + val);
+        if(!stats.isEmpty()){
+            for (CongestedDurationRanking s : stats) {
+                String name = s.getJunctionName();
+                double val = s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds();
+                durationByJunction.put(name, durationByJunction.getOrDefault(name, 0.0) + val);
+            }
         }
 
         List<Map.Entry<String, Double>> sorted = new ArrayList<>(durationByJunction.entrySet());

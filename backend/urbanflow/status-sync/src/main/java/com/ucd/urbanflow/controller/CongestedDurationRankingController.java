@@ -13,13 +13,13 @@ import java.util.Date;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/durationranking")
+@RequestMapping("/api/dashboard")
 public class CongestedDurationRankingController {
 
     @Autowired
     private CongestedDurationRankingService congestedDurationRankingService;
 
-    @GetMapping("/dashboard")
+    @GetMapping("/durationranking")
     public Map<String, Object> getCongestedDuration(
             @RequestParam String timeRange
     ) {

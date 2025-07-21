@@ -16,20 +16,15 @@ public class CongestedRoadCountService {
     private CongestedRoadCountMapper congestedRoadCountMapper;
 
     public Map<String, Object> buildDashboardData(String timeRange) {
-//        Date end = new Date();
-        Date end = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            end = sdf.parse("2024-07-07 22:00:00");
-        } catch (Exception e) {
-            e.printStackTrace();
-            end = new Date();
-        }
+        Date end = new Date();
+
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
+
+        end = cal.getTime();
 
         Date start;
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
