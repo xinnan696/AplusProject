@@ -19,7 +19,7 @@ public class TrafficSuggestionController {
     @Autowired
     private AISuggestion aiSuggestion;
 
-    @PostMapping("/suggestion")
+    @GetMapping("/suggestion")
     public ResponseEntity<?> getSuggestion() {
         try {
             List<JunctionStatus> allStatus = redis.getAllJunctionStatus();

@@ -1,5 +1,8 @@
 package com.ucd.urbanflow.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ucd.urbanflow.dto.BatchSuggestionsResponse;
+import com.ucd.urbanflow.dto.SuggestionItem;
 import com.ucd.urbanflow.model.JunctionStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -27,9 +30,22 @@ public class AISuggestion {
                 fastapiUrlBatch, request, String.class
         );
 
-        return response.getBody();
+        String responseBody = response.getBody();
+        ObjectMapper objectMapper = new ObjectMapper();
+        BatchSuggestionsResponse batchSuggestionResponse;
+
+        try{
+            batchSuggestionResponse = objectMapper.readValue(responseBody, BatchSuggestionsResponse.class);
+            for (List<SuggestionItem> list : batchSuggestionResponse.getBatchSuggestions()) {
+                list.removeIf(item -> item.getSuggestionLabel() == 0 || item.getSuggestionLabel() == 4);
+            }
+
+            return objectMapper.writeValueAsString(batchSuggestionResponse);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "{\"error\": \"fail to parse AI response\"}";
+        }
 
     }
-
-
-}
+    }

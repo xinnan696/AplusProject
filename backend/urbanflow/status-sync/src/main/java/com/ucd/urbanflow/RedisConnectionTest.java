@@ -6,7 +6,7 @@ import redis.clients.jedis.Jedis;
 public class RedisConnectionTest {
     public static void main(String[] args) {
         // 替换为主机的 ZeroTier 虚拟 IP 和端口
-        String redisHost = "10.241.72.201";
+        String redisHost = "192.168.83.189";
         int redisPort = 6379;
         // 如果设置了密码，添加 String password = "yourpassword";
 
