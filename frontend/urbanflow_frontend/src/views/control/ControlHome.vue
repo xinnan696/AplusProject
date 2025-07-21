@@ -16,7 +16,7 @@
 
     <div class="main-area">
       <div class="map-contain">
-        <ControlMap ref="mapRef" :isSidebgit add .ideaarOpen="isNavVisible" @signal-light-clicked="handleSignalLightClicked" />
+        <ControlMap ref="mapRef" :isSidebarOpen="isNavVisible" @signal-light-clicked="handleSignalLightClicked" />
       </div>
 
       <div class="control-board">

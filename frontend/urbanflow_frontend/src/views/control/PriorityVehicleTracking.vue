@@ -23,9 +23,9 @@
 
       <!-- 2. 右侧控制面板区域 -->
       <div class="control-board">
-<!--        <div v-if="emergencyStore.activelyTrackedVehicle" class="tracking-panel">-->
+        <!--        <div v-if="emergencyStore.activelyTrackedVehicle" class="tracking-panel">-->
         <div v-if="trackedVehicleSnapshot" class="tracking-panel">
-        <!-- 面板标题 (新样式) -->
+          <!-- 面板标题 (新样式) -->
           <div class="panel-title">
             Priority Vehicle Tracking
           </div>
@@ -35,7 +35,7 @@
             <div class="info-item">
               <label class="info-label">Vehicle ID</label>
               <div class="info-value-box">
-<!--                {{ emergencyStore.activelyTrackedVehicle.vehicleID }}-->
+                <!--                {{ emergencyStore.activelyTrackedVehicle.vehicleID }}-->
                 {{ trackedVehicleSnapshot.vehicleID }}
               </div>
             </div>
@@ -49,23 +49,23 @@
 
             <div class="info-item">
               <label class="info-label">From</label>
-                <div class="info-value-box">
-                  {{ displayFromName }}
-                </div>
+              <div class="info-value-box">
+                {{ displayFromName }}
+              </div>
             </div>
 
             <div class="info-item">
               <label class="info-label">To</label>
-                <div class="info-value-box">
-                  {{ displayToName }}
-                </div>
+              <div class="info-value-box">
+                {{ displayToName }}
+              </div>
             </div>
 
             <div class="info-item">
               <label class="info-label">Status</label>
-                <div class="info-value-box" :class="approachStatusClass">
-                  {{ approachStatusText }}
-                </div>
+              <div class="info-value-box" :class="approachStatusClass">
+                {{ approachStatusText }}
+              </div>
             </div>
           </div>
 
@@ -83,9 +83,9 @@
 
         </div>
 
-<!--        <div v-else class="completion-message">-->
-<!--          <p>{{ completionMessage || '没有正在追踪的紧急车辆。' }}</p>-->
-<!--        </div>-->
+        <!--        <div v-else class="completion-message">-->
+        <!--          <p>{{ completionMessage || '没有正在追踪的紧急车辆。' }}</p>-->
+        <!--        </div>-->
       </div>
     </div>
   </div>
@@ -126,14 +126,14 @@ const showEmergencyIcon = computed(() => {
   const hasNew = hasNewRequests.value
   const hasActive = emergencyStore.hasActiveSession
   const hasTracking = Object.keys(emergencyStore.vehicleDataMap || {}).length > 0
-  
+
   console.log('📊 [Tracking Icon] 显示条件检查:', {
     hasNewRequests: hasNew,
     hasActiveSession: hasActive,
     hasTrackingVehicles: hasTracking,
     shouldShow: hasNew || hasActive || hasTracking
   })
-  
+
   return hasNew || hasActive || hasTracking
 })
 
@@ -311,7 +311,7 @@ function handleTrackingComplete(vehicleId?: string) {
 // 智能紧急车辆图标点击处理
 function handleEmergencyIconClick() {
   console.log("🚨 Emergency icon clicked in PriorityVehicleTracking");
-  
+
   // 在追踪页面时，点击紧急图标始终返回到Control页面
   console.log('📍 从紧急车辆页面返回到Control页面');
   router.push({ name: 'Control' });
