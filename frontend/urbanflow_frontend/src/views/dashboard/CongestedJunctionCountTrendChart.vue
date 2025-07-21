@@ -19,12 +19,25 @@ const props = defineProps<{
 }>()
 
 const chartOption = ref({
-  tooltip: { trigger: 'axis',
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(20, 22, 40, 0.92)',
+    borderColor: '#4a4a70',
+    borderWidth: 1,
+    padding: [8, 12],
+    textStyle: {
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '500',
+      fontFamily: "Inter, 'Segoe UI', Arial, 'Helvetica Neue', Roboto, sans-serif",
+      lineHeight: 16,
+    },
+    extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
     formatter: function (params) {
-      const point = params[0];
+      let point = params[0];
       return `
       ${point.axisValueLabel}<br/>
-      ${point.marker} ${point.seriesName}: <strong>${point.value}</strong> junctions
+      ${point.seriesName}: <strong>${point.value}</strong> junctions
     `;
     }},
   grid: { top: '20px', left: '3%', right: '7%', bottom: '3%', containLabel: true },

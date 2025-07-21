@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import Dashboard from '@/views/dashboard/Dashboard.vue'
+import Control from '@/views/control/ControlHome.vue'
 
 const routes = [
 
@@ -18,6 +20,9 @@ const routes = [
   {
     path: '/',
     redirect: '/login'
+    // path: '/', // 根路径
+    // name: 'dashboard-home',
+    // component: Dashboard
   },
 
 

@@ -10,7 +10,7 @@ import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
 //import { getTopCongestedTimes } from '@/mocks/mockDashboardData'
-import {getTopCongestedTimes} from '@/services/dashboard_api.ts'
+import {getTopCongestedTimes} from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -20,13 +20,12 @@ const props = defineProps<{
 
 const gradientColors = ref<string[]>([]);
 
-// --- CHANGE: 修正了这里的逻辑 ---
 /**
  * 生成颜色渐变数组
- * @param startColor 起始颜色 (HEX, e.g., '#ff0000')
- * @param endColor 结束颜色 (HEX, e.g., '#00ff00')
+ * @param startColor 起始颜色
+ * @param endColor 结束颜色
  * @param steps 渐变的步数 (柱子的数量)
- * @returns 返回一个
+ * @returns 返回一个包含HEX颜色字符串的数组
  */
 function generateGradientColors(startColor: string, endColor: string, steps: number): string[] {
   // NEW: 处理 steps 为 0 或 1 的边界情况
@@ -36,7 +35,6 @@ function generateGradientColors(startColor: string, endColor: string, steps: num
   if (steps === 1) {
     return [startColor];
   }
-  // END NEW
 
   const startRGB = parseInt(startColor.slice(1), 16);
   const startR = (startRGB >> 16) & 255;
@@ -63,11 +61,20 @@ function generateGradientColors(startColor: string, endColor: string, steps: num
 
 const chartOption = ref({
   tooltip: {
-    rigger: 'axis',
+    trigger: 'axis',
     axisPointer: { type: 'shadow' },
+    backgroundColor: 'rgba(20, 22, 40, 0.92)',
+    borderColor: '#4a4a70',
+    borderWidth: 1,
+    padding: [8, 12],
     textStyle: {
-      fontSize: 14
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '500',
+      fontFamily: "Inter, 'Segoe UI', Arial, 'Helvetica Neue', Roboto, sans-serif",
+      lineHeight: 16,
     },
+    extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
   },
   grid: { top: '20px', left: '3%', right: '4%', bottom: '1%', containLabel: true },
   xAxis: {

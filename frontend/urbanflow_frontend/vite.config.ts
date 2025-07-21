@@ -77,7 +77,15 @@ export default defineConfig({
             console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
           });
         }
-      }
+      },
+      '/api/traffic':{
+        target: 'http://192.168.83.41:8083',
+        changeOrigin: true,
+      },
+      '/api/dashboard':{
+        target: 'http://192.168.83.41:8087',
+        changeOrigin: true,
+      },
     },
   },
 })
