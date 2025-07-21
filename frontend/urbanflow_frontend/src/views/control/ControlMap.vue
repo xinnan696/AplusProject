@@ -157,7 +157,7 @@ const getStatusBarPosition = (): Record<string, string> => {
     const bufferY = (maxY - minY) * 0.05
 
     if (coordinate[0] < minX - bufferX || coordinate[0] > maxX + bufferX ||
-        coordinate[1] < minY - bufferY || coordinate[1] > maxY + bufferY) {
+      coordinate[1] < minY - bufferY || coordinate[1] > maxY + bufferY) {
       return { display: 'none' }
     }
 
@@ -564,8 +564,8 @@ const connectWebSocket = () => {
               }
 
               if (parsedData &&
-                  typeof parsedData.state === 'string' &&
-                  typeof parsedData.nextSwitchTime === 'number') {
+                typeof parsedData.state === 'string' &&
+                typeof parsedData.nextSwitchTime === 'number') {
 
                 const stateChanged = currentTrafficState !== parsedData.state
                 const nextSwitchTimeChanged = lastNextSwitchTime !== parsedData.nextSwitchTime
@@ -637,8 +637,8 @@ const fetchTrafficLightData = async (junctionId: string) => {
 
     const tlsJunction = tlsResponse.data.find((tls: any) => {
       return tls.junctionId === junctionId ||
-             tls.junction_id === junctionId ||
-             tls.tlsId === junctionId
+        tls.junction_id === junctionId ||
+        tls.tlsId === junctionId
     })
 
     if (!tlsJunction) {
@@ -1030,7 +1030,7 @@ const setMapViewForManagedAreas = (allCoordinates: number[][]) => {
 const getCurrentTrafficLight = (junctionId: string): string => {
 
   if (selectedJunctionForStatus.value?.junction_id === junctionId &&
-      selectedDirectionIndex.value !== null) {
+    selectedDirectionIndex.value !== null) {
 
     if (currentTrafficLightData.value) {
       const state = currentTrafficLightData.value.state
@@ -1058,7 +1058,7 @@ const getCurrentTrafficLight = (junctionId: string): string => {
     if (tlsId && allTrafficLightData.value.has(tlsId)) {
       const data = allTrafficLightData.value.get(tlsId)
       if (data && data.state && typeof data.state === 'string' &&
-          selectedDirectionIndex.value < data.state.length) {
+        selectedDirectionIndex.value < data.state.length) {
         const char = data.state[selectedDirectionIndex.value]
         const lowerChar = char.toLowerCase()
 
@@ -1190,7 +1190,7 @@ const rerenderTlsOverlays = () => {
 
     // 检查是否是紧急车辆即将到达的路口
     const isEmergencyUpcoming = highlightedUpcomingJunctions.value.has(junctionId)
-    
+
     // 添加调试日志
     if (isEmergencyUpcoming) {
       console.log('🚨 [DEBUG] 渲染紧急高亮路口:', {
@@ -1203,7 +1203,7 @@ const rerenderTlsOverlays = () => {
 
     const isFullySelected = isJunctionSelected(junctionId)
     const isJunctionOnly = selectedJunctionForStatus.value?.junction_id === junctionId &&
-                          (selectedDirectionIndex.value === null || selectedDirectionIndex.value === undefined)
+      (selectedDirectionIndex.value === null || selectedDirectionIndex.value === undefined)
 
     const currentLight = getCurrentTrafficLight(junctionId)
     const showAllLights = shouldShowAllLights(junctionId)
@@ -1241,7 +1241,7 @@ const rerenderTlsOverlays = () => {
     map?.addOverlay(overlay)
     tlsOverlays.push(overlay)
   })
-  
+
   console.log('🎭 [DEBUG] 交通灯渲染完成，共渲染', tlsOverlays.length, '个交通灯')
 }
 
@@ -1260,7 +1260,7 @@ const updateHighlightedJunctions = () => {
       upcomingJunctionID: vehicleInfo.upcomingJunctionID,
       hasUpcoming: !!(vehicleInfo.upcomingJunctionID && vehicleInfo.upcomingJunctionID.trim() !== '')
     })
-    
+
     if (vehicleInfo.upcomingJunctionID && vehicleInfo.upcomingJunctionID.trim() !== '') {
       newHighlightedJunctions.add(vehicleInfo.upcomingJunctionID)
       console.log('🚨 [DEBUG] 紧急车辆即将到达路口:', vehicleInfo.upcomingJunctionID, '车辆:', vehicleInfo.vehicleID)
@@ -1292,7 +1292,7 @@ const updateHighlightedJunctions = () => {
 // 更新紧急车辆标记
 const updateEmergencyVehicleMarkers = () => {
   console.log('🔄 [Map] 开始更新紧急车辆标记...')
-  
+
   // 清除之前的标记
   emergencyVehicleOverlays.forEach(overlay => {
     map?.removeOverlay(overlay)
@@ -1303,7 +1303,7 @@ const updateEmergencyVehicleMarkers = () => {
   // 从emergency store获取车辆数据
   const vehicleData = emergencyStore.vehicleDataMap
   console.log('🚗 [Map] 从emergency store获取到车辆数据:', vehicleData)
-  
+
   if (!vehicleData || Object.keys(vehicleData).length === 0) {
     console.log('⚪ [Map] 没有车辆数据需要显示')
     return
@@ -1325,7 +1325,7 @@ const updateEmergencyVehicleMarkers = () => {
 
           // 如果车辆不在视图范围内，跳过
           if (coordinate[0] < minX || coordinate[0] > maxX ||
-              coordinate[1] < minY || coordinate[1] > maxY) {
+            coordinate[1] < minY || coordinate[1] > maxY) {
             return
           }
         }
@@ -1372,7 +1372,7 @@ const updateEmergencyVehicleMarkers = () => {
       console.log(`⚠️ [Map] 车辆 ${vehicleId} 缺少位置信息:`, vehicleInfo.position)
     }
   })
-  
+
   console.log(`✨ [Map] 紧急车辆标记更新完成，共显示 ${emergencyVehicleOverlays.length} 个标记`)
 }
 
@@ -1517,13 +1517,13 @@ const handleKeydown = (event: KeyboardEvent) => {
 const loadEmergencyRoutes = async () => {
   try {
     console.log('📋 [Map] 开始加载预定紧急车辆路线...')
-    
+
     // ✅ 从status-sync模块获取真实的预定路线数据
     const response = await emergencyVehicleApi.getEmergencyRoutes()
     if (response.data && response.data.length > 0) {
       emergencyRoutes.value = response.data
       console.log('📋 [Map] 成功加载预定路线数据:', emergencyRoutes.value)
-      
+
       // ✅ 显示所有预定路线（不管是否有活跃车辆）
       const allVehicleIds = response.data.map(r => r.vehicle_id)
       console.log('🛣️ [Map] 显示预定路线，车辆ID:', allVehicleIds)
@@ -1553,9 +1553,9 @@ const drawEmergencyRoutes = async (vehicleIds: string[] = [], isPlannedRoute: bo
 
   // 清除之前的数据
   source.clear()
-  
+
   let routesToDraw: any[] = []
-  
+
   if (isPlannedRoute) {
     // ✅ 预定路线模式：显示所有指定的路线（不管是否有活跃车辆）
     routesToDraw = emergencyRoutes.value.filter(event => vehicleIds.includes(event.vehicle_id))
@@ -1639,7 +1639,7 @@ const drawSingleEmergencyRoute = (event: EmergencyVehicleEvent, edgeToCoordinate
 
   // ✅ 检查是否是活跃车辆（从emergency store获取）
   const isActiveVehicle = Object.keys(emergencyStore.vehicleDataMap).includes(event.vehicle_id)
-  
+
   console.log(`🎯 [Map] Vehicle ${event.vehicle_id} active status:`, {
     isActive: isActiveVehicle,
     isPlanned: isPlannedRoute,
@@ -1983,8 +1983,8 @@ const loadLaneData = async () => {
 
   junctions.forEach((tlsJunction, index) => {
     const junctionName = tlsJunction.junctionName ||
-                        junctionNameMap.get(tlsJunction.junctionId) ||
-                        tlsJunction.junctionId
+      junctionNameMap.get(tlsJunction.junctionId) ||
+      tlsJunction.junctionId
 
     const junctionData = {
       tlsId: tlsJunction.tlsId,
@@ -2582,7 +2582,7 @@ const toggleFullscreen = () => {
   overflow: hidden;
   z-index: 1000;
   box-shadow: 0 0.08rem 0.24rem rgba(0, 180, 216, 0.15),
-              0 0.04rem 0.12rem rgba(0, 0, 0, 0.3);
+  0 0.04rem 0.12rem rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(0.1rem);
   animation: slideDown 0.2s ease-out;
 }

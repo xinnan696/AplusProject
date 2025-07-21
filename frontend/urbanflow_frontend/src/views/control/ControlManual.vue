@@ -10,8 +10,8 @@
         <div class="custom-select" :class="{ 'open': isJunctionDropdownOpen }">
           <div class="select-display">
             {{ selectedJunctionIndex !== null && junctionDataList[selectedJunctionIndex]
-               ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
-               : 'Please Select a Junction' }}
+            ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
+            : 'Please Select a Junction' }}
           </div>
           <div class="select-arrow" :class="{ 'rotated': isJunctionDropdownOpen }">
             <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
@@ -54,8 +54,8 @@
         <div class="custom-select" :class="{ 'open': isDirectionDropdownOpen }">
           <div class="select-display">
             {{ selectedDirectionIndex !== null && currentDirections[selectedDirectionIndex]
-               ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
-               : 'Select Traffic Light Direction' }}
+            ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
+            : 'Select Traffic Light Direction' }}
           </div>
           <div class="select-arrow" :class="{ 'rotated': isDirectionDropdownOpen }">
             <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
