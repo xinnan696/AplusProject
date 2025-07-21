@@ -94,7 +94,7 @@ async function fetchData() {
     chartOption.value.yAxis.interval = response.yAxisConfig.interval;
 
     // 更新图表数据
-    chartOption.value.series[0].data = response.data.map((d: any) => d.flowRateHourly);
+    chartOption.value.series[0].data = response.data;
   } else {
     // 如果接口出错或返回数据不规范，清空图表
     chartOption.value.xAxis.data = [];

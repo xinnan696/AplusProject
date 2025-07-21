@@ -81,7 +81,15 @@ const chartOption = ref({
     type: 'category',
     data: [],
     fontSize: 14,
-    axisLabel: { color: '#A0A0A0', rotate: 25 },
+    axisLabel: { color: '#A0A0A0', rotate: 0,interval: 0,
+      formatter: function (value) {
+        const maxLength = 8; // 设置最大显示长度
+        if (value.length > maxLength) {
+          return value.substring(0, maxLength) + '...';
+        }
+        return value;
+      }},
+
   },
   yAxis: {
     type: 'value',
@@ -102,6 +110,8 @@ const chartOption = ref({
     }
   }],
 });
+
+const allLabels = ref<string[]>([]);
 
 async function fetchData() {
   const response = await getTopCongestedTimes({ time_range: props.filters.timeRange });
@@ -124,6 +134,7 @@ async function fetchData() {
     const startColor = '#6a11cb';
     const endColor = '#2af598';
     gradientColors.value = generateGradientColors(startColor, endColor, response.data.length);
+    allLabels.value = response.xAxisLabels;
     chartOption.value.xAxis.data = response.xAxisLabels;
 
     // 更新Y轴配置
