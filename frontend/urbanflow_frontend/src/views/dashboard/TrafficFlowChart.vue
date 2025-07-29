@@ -9,8 +9,8 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-import { getTrafficFlow } from '@/mocks/mockDashboardData'
-//import { getTrafficFlow } from '@/services/dashboard_api'
+//import { getTrafficFlow } from '@/mocks/mockDashboardData'
+import { getTrafficFlow } from '@/services/dashboard_api'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -18,6 +18,7 @@ const props = defineProps<{
   filters: {
     junctionId: string
     timeRange: string
+    managedAreas?: string | null
   }
 }>()
 
@@ -83,36 +84,38 @@ const chartOption = ref({
 async function fetchData() {
   const params = {
     junction_id: props.filters.junctionId,
-    time_range: props.filters.timeRange
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
   };
 
   const response = await getTrafficFlow(params);
+  console.log('📦 Received mock response for Traffic Flow:', response);
 
-  if (response && response.data && response.labels) {
-    chartOption.value.xAxis.data = response.labels;
-    // NOTE: Backend returns the full data object, we extract the value here.
-    chartOption.value.series[0].data = response.data.map((d: any) => d.flow_rate_hourly);
-  } else {
-    chartOption.value.xAxis.data = [];
-    chartOption.value.series[0].data = [];
-  }
-
-  // if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
-  //   // 更新X轴标签
-  //   chartOption.value.xAxis.data = response.xAxisLabels;
-  //
-  //   // 更新Y轴配置
-  //   chartOption.value.yAxis.min = response.yAxisConfig.min;
-  //   chartOption.value.yAxis.max = response.yAxisConfig.max;
-  //   chartOption.value.yAxis.interval = response.yAxisConfig.interval;
-  //
-  //   // 更新图表数据
-  //   chartOption.value.series[0].data = response.data;
+  // if (response && response.data && response.labels) {
+  //   chartOption.value.xAxis.data = response.labels;
+  //   // NOTE: Backend returns the full data object, we extract the value here.
+  //   chartOption.value.series[0].data = response.data.map((d: any) => d.flow_rate_hourly);
   // } else {
-  //   // 如果接口出错或返回数据不规范，清空图表
   //   chartOption.value.xAxis.data = [];
   //   chartOption.value.series[0].data = [];
   // }
+
+  if (response && response.data && response.xAxisLabels && response.yAxisConfig) {
+    // 更新X轴标签
+    chartOption.value.xAxis.data = response.xAxisLabels;
+
+    // 更新Y轴配置
+    chartOption.value.yAxis.min = response.yAxisConfig.min;
+    chartOption.value.yAxis.max = response.yAxisConfig.max;
+    chartOption.value.yAxis.interval = response.yAxisConfig.interval;
+
+    // 更新图表数据
+    chartOption.value.series[0].data = response.data;
+  } else {
+    // 如果接口出错或返回数据不规范，清空图表
+    chartOption.value.xAxis.data = [];
+    chartOption.value.series[0].data = [];
+  }
 }
 
 watch(() => props.filters, fetchData, { deep: true });

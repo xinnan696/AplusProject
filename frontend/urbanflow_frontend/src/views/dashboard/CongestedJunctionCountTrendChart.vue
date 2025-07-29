@@ -15,7 +15,10 @@ import { getCongestedJunctionCountTrend } from '@/services/dashboard_api.ts'
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent, MarkLineComponent]);
 
 const props = defineProps<{
-  filters: { timeRange: string }
+  filters: {
+    timeRange: string
+    managedAreas?: string | null
+  }
 }>()
 
 const chartOption = ref({
@@ -77,14 +80,15 @@ const chartOption = ref({
 })
 
 async function fetchData() {
-  const response = await getCongestedJunctionCountTrend({ time_range: props.filters.timeRange });
+  const response = await getCongestedJunctionCountTrend({
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
+  });
 
   // if (response && response.data && response.labels) {
   //   chartOption.value.xAxis.data = response.labels;
   //   chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
-  //   // ========================================================================
-  //   // <<< 3. 新增核心逻辑：为"24hours"视图添加信号灯修改的假数据标记 >>>
-  //   // ========================================================================
+  //   // <<< 3. 新增核心逻辑：为"24hours"视图添加信号灯修改的假数据标记
   //   if (props.filters.timeRange === '24hours' && chartOption.value.xAxis.data.length >= 2) {
   //     // (a). 获取X轴倒数第二个时间点作为标记位置
   //     const targetXAxisPoint = chartOption.value.xAxis.data[chartOption.value.xAxis.data.length - 2];
@@ -141,9 +145,7 @@ async function fetchData() {
     // 更新图表数据
     chartOption.value.series[0].data = response.data.map((d: any) => d.congested_junction_count);
 
-    // ========================================================================
-    // <<< 3. 新增核心逻辑：为"24hours"视图添加信号灯修改的假数据标记 >>>
-    // ========================================================================
+    // 为"24hours"视图添加信号灯修改的假数据标记
     if (props.filters.timeRange === '24hours' && chartOption.value.xAxis.data.length >= 2) {
       // (a). 获取X轴倒数第二个时间点作为标记位置
       const targetXAxisPoint = chartOption.value.xAxis.data[chartOption.value.xAxis.data.length - 2];

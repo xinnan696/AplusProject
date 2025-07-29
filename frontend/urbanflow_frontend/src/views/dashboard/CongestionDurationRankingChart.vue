@@ -16,7 +16,10 @@ import { getCongestionDurationRanking } from '@/services/dashboard_api'
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
 const props = defineProps<{
-  filters: { timeRange: string }
+  filters: {
+    timeRange: string
+    managedAreas?: string | null
+  }
 }>()
 
 /**
@@ -102,7 +105,10 @@ const chartOption = ref({
 })
 
 async function fetchData() {
-  const response = await getCongestionDurationRanking({ time_range: props.filters.timeRange });
+  const response = await getCongestionDurationRanking({
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
+  });
 
   // if (response && response.data && response.labels) {
   //   // For horizontal bar chart, reverse the data so the highest value is at the top

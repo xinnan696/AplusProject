@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
 import DashboardCard from '@/views/dashboard/DashboardCard.vue'
@@ -98,26 +98,43 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
+import { useAuthStore } from '@/stores/auth'
 //import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
 import { getJunctions } from '@/services/dashboard_api'
 
+// 修改点：初始化 Store 并获取 managedAreas
+const authStore = useAuthStore()
+// 使用 computed 确保当 store 中的状态变化时，这里的值也能响应式更新
+const managedAreas = computed(() => authStore.getManagedAreas())
+//模拟测试
+//const managedAreas = ['Left']
+
+// 修改点：将 managedAreas 添加到所有 filters 对象中
 // Filters State
 const trafficFlowFilters = reactive({
   // 1. 将 junctionId 初始值设置为空
   junctionId: null,
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0], // 模拟测试代码
 })
 
 const topSegmentsFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const junctionCountFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const durationRankingFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 // Filter Options
@@ -142,7 +159,12 @@ const durationRankingTimeRangeOptions = ref([
 
 // Fetch initial data for filters
 onMounted(async () => {
-  const junctions = await getJunctions()
+  // 修改点：在获取路口列表时，传入管辖区域参数
+  //const junctions = await getJunctions()
+  //修改后代码
+  const junctions = await getJunctions({ managedAreas: managedAreas.value[0] })
+  //模拟测试代码
+  //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
   // 3. 核心逻辑：获取数据后，设置默认值并填充选项
   if (junctions && junctions.length > 0) {
@@ -155,6 +177,18 @@ onMounted(async () => {
       label: j.junctionName
     }))
   }
+
+  //模拟
+  // if (junctions && junctions.length > 0) {
+  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+  //   trafficFlowFilters.junctionId = junctions[0].junction_id
+  //
+  //   // 使用获取到的路口列表，完整地构建下拉框的选项
+  //   junctionOptions.value = junctions.map(j => ({
+  //     value: j.junction_id,
+  //     label: j.junction_name
+  //   }))
+  // }
 })
 </script>
 
