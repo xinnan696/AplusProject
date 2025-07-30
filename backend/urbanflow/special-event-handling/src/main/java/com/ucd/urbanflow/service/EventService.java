@@ -18,9 +18,8 @@ public class EventService {
     public void triggerEvent(EventSchedulerEvent event) {
         dispatcher.sendEvent(event);
     }
-    public void triggerEmergencyVehicleEvent(EmergencyVehicleEventDto event) {
-        // 底层同样调用通用的 dispatcher.sendEvent 方法
-        dispatcher.sendEvent(event);
+    public boolean triggerEmergencyVehicleEvent(EmergencyVehicleEventDto event) {
+        return dispatcher.sendEvent(event);
     }
 
 //    receive results

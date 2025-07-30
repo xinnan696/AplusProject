@@ -14,14 +14,13 @@ import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    // 注入用于处理前端连接的Handler
     private final TrackingWebSocketHandler trackingWebSocketHandler;
     private final EventResultHandler eventResultHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(eventResultHandler, "/ws/result").setAllowedOrigins("*");
-        // 注册用于向前端推送实时追踪数据的端点
+        // Register the endpoint for pushing real-time tracking data to the frontend
         registry.addHandler(trackingWebSocketHandler, "/ws/tracking")
                 .setAllowedOrigins("*");
     }

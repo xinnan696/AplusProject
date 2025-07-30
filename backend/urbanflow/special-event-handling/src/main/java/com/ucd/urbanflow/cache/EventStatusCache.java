@@ -6,8 +6,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 一个简单的、线程安全的内存缓存，用于存储事件的状态。
- * 避免了在实时推送任务中频繁查询数据库。
+ * A simple, thread-safe in-memory cache for storing the status of events.
+ * This avoids frequent database queries in real-time push tasks.
  */
 @Component
 public class EventStatusCache {
@@ -15,26 +15,26 @@ public class EventStatusCache {
     private final Map<String, String> statusCache = new ConcurrentHashMap<>();
 
     /**
-     * 获取一个事件的状态。
-     * @param eventId 事件ID
-     * @return 包含状态的Optional，如果缓存中不存在则为空
+     * Retrieves the status of an event.
+     * @param eventId The ID of the event.
+     * @return an Optional containing the status, or an empty Optional if it's not in the cache.
      */
     public Optional<String> getStatus(String eventId) {
         return Optional.ofNullable(statusCache.get(eventId));
     }
 
     /**
-     * 设置或更新一个事件的状态。
-     * @param eventId 事件ID
-     * @param status 新的状态
+     * Sets or updates the status of an event.
+     * @param eventId The ID of the event.
+     * @param status The new status.
      */
     public void setStatus(String eventId, String status) {
         statusCache.put(eventId, status);
     }
 
     /**
-     * 当事件结束时，从缓存中移除。
-     * @param eventId 事件ID
+     * Removes an event from the cache when it has concluded.
+     * @param eventId The ID of the event.
      */
     public void removeStatus(String eventId) {
         statusCache.remove(eventId);
