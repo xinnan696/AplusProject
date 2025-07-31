@@ -21,7 +21,7 @@
         :class="[
           'sub-menu-item',
           {
-            'active': (item === 'Users' && props.currentRoute === 'UserList') ||
+            'active': (item === 'Users' && ['UserList', 'AddUser', 'UserDetails', 'EditUser'].includes(props.currentRoute || '')) ||
                      (item === 'User Logs' && props.currentRoute === 'UserLog')
           }
         ]"
@@ -51,7 +51,11 @@ const itemsToShow = ref<string[]>([])
 
 // 检查是否有子菜单项处于激活状态
 const hasActiveItem = computed(() => {
-  return (props.currentRoute === 'UserList') || (props.currentRoute === 'UserLog')
+  // 检查所有用户相关的路由
+  const userRoutes = ['UserList', 'AddUser', 'UserDetails', 'EditUser']
+  const userLogRoutes = ['UserLog']
+  
+  return userRoutes.includes(props.currentRoute || '') || userLogRoutes.includes(props.currentRoute || '')
 })
 
 // 监听路由变化，如果有激活的子菜单项，保持展开状态
@@ -193,31 +197,6 @@ function toggleMenu() {
       background: linear-gradient(135deg, #00B4D8, #0096C7);
       color: white;
       box-shadow: 0 3px 8px rgba(0, 180, 216, 0.25);
-      border-left: 2px solid #00E3FF;
-
-      &::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        right: 6px;
-        width: 3px;
-        height: 3px;
-        background-color: #00E3FF;
-        border-radius: 50%;
-        transform: translateY(-50%);
-        animation: pulse-small 2s infinite;
-      }
-    }
-  }
-
-  @keyframes pulse-small {
-    0%, 100% {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: translateY(-50%) scale(1.3);
     }
   }
 

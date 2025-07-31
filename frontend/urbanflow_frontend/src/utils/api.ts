@@ -2,11 +2,10 @@ import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
 const apiClient = axios.create({
-
-baseURL: import.meta.env.DEV ? '/api' : 'http://localhost:8081/api',
-headers: {
-'Content-Type': 'application/json',
-},
+  baseURL: import.meta.env.DEV ? '/api' : 'http://localhost:8081/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // Axios Request Interceptor

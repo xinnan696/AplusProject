@@ -42,6 +42,12 @@ public class AuthController {
         return ApiResponse.success("Password reset successfully.");
     }
 
+    // 临时用于调试的端点
+    @GetMapping("/debug/user-areas/{userId}")
+    public ApiResponse<Object> debugUserAreas(@PathVariable Long userId) {
+        return authService.debugUserAreas(userId);
+    }
+
     // test data
     @GetMapping("/hash/{password}")
     public String getHashedPassword(@PathVariable String password) {
