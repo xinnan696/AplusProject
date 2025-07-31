@@ -1,4 +1,3 @@
-/*
 package com.ucd.urbanflow.websocket;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -41,7 +40,10 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
 
     private void broadcastStatus() {
         try {
-            // === 原始 edge 和 tls 数据 ===
+            if (redisTemplate == null) {
+                return;
+            }
+
             Map<String, String> edgeData = new HashMap<>();
             Map<String, String> tlsData = new HashMap<>();
 
@@ -66,12 +68,9 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     String junctionName = node.get("junction_name").asText();
                     junctionIdToName.put(junctionId, junctionName);
                 } catch (Exception e) {
-                    System.err.println("[WebSocket] 解析 TLS JSON 出错: " + jsonStr);
-                    e.printStackTrace();
                 }
             }
 
-            // === 拥堵数据处理 ===
             List<Map<String, Object>> congestedResults = new ArrayList<>();
             try {
                 String congestedJson = redisTemplate.opsForValue().get("traffic:cache:top6_congested_junctions");
@@ -82,10 +81,10 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     );
 
                     for (Map<String, Object> item : congestedList) {
-                        String junctionId = item.get("junctionId").toString();       // 原样使用
+                        String junctionId = item.get("junctionId").toString();
                         int count = Integer.parseInt(item.get("congestionCount").toString());
 
-                        // name 查不到时 fallback 为 id 自己
+
                         String name = junctionIdToName.getOrDefault(junctionId, junctionId);
 
                         Map<String, Object> resultItem = new HashMap<>();
@@ -95,15 +94,52 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             } catch (Exception e) {
-                System.err.println("[WebSocket] 处理 congested 数据出错");
-                e.printStackTrace();
             }
 
-            // === 构造广播内容 ===
+            Map<String, Object> emergencyVehicles = new HashMap<>();
+            try {
+                Map<Object, Object> emergencyMap = redisTemplate.opsForHash().entries("sumo:emergency_vehicles");
+                
+                for (Map.Entry<Object, Object> entry : emergencyMap.entrySet()) {
+                    String vehicleId = entry.getKey().toString();
+                    String vehicleDataJson = entry.getValue().toString();
+                    
+                    try {
+                        JsonNode vehicleNode = objectMapper.readTree(vehicleDataJson);
+
+                        Map<String, Object> vehicleInfo = new HashMap<>();
+                        vehicleInfo.put("eventID", vehicleNode.get("eventID").asText());
+                        vehicleInfo.put("vehicleID", vehicleNode.get("vehicleID").asText());
+                        vehicleInfo.put("organization", vehicleNode.get("organization").asText());
+                        vehicleInfo.put("currentEdgeID", vehicleNode.get("currentEdgeID").asText());
+                        vehicleInfo.put("upcomingJunctionID", vehicleNode.get("upcomingJunctionID").asText(""));
+                        vehicleInfo.put("nextEdgeID", vehicleNode.get("nextEdgeID").asText(""));
+                        vehicleInfo.put("upcomingTlsID", vehicleNode.get("upcomingTlsID").asText(""));
+                        vehicleInfo.put("upcomingTlsState", vehicleNode.get("upcomingTlsState").asText(""));
+                        vehicleInfo.put("upcomingTlsCountdown", vehicleNode.get("upcomingTlsCountdown").asDouble(0.0));
+
+                        JsonNode positionNode = vehicleNode.get("position");
+                        if (positionNode != null) {
+                            Map<String, Object> position = new HashMap<>();
+                            position.put("x", positionNode.get("x").asDouble());
+                            position.put("y", positionNode.get("y").asDouble());
+                            position.put("timestamp", positionNode.get("timestamp").asDouble());
+                            vehicleInfo.put("position", position);
+                        }
+                        
+                        emergencyVehicles.put(vehicleId, vehicleInfo);
+                        
+                    } catch (Exception e) {
+                    }
+                }
+            } catch (Exception e) {
+            }
+
             Map<String, Object> message = new HashMap<>();
             message.put("edges", edgeData);
             message.put("trafficLights", tlsData);
             message.put("congested", congestedResults);
+            message.put("emergencyVehicles", emergencyVehicles);
 
             String json = objectMapper.writeValueAsString(message);
 
@@ -114,9 +150,6 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
             }
 
         } catch (Exception e) {
-            System.err.println("[WebSocket] 广播异常：");
-            e.printStackTrace();
         }
     }
 }
-*/

@@ -1,38 +1,86 @@
 <template>
   <div class="manual-control">
-    <div class="panel-title">Manual Control</div>
+    <div class="panel-title">
+      <span>Manual Control</span>
+    </div>
 
-    <!-- Junction 选择 -->
-    <!-- Junction 选择 -->
-<div class="form-row">
-  <label class="label">Junction</label>
-  <select class="common-box" v-model="selectedJunctionIndex">
-    <option disabled value="">Please Select a Junction</option> <!-- 新增默认选项 -->
-    <option
-      v-for="(junction, index) in junctionDataList"
-      :key="index"
-      :value="index"
-    >
-      {{ junction.junction_name || junction.junction_id }}
-    </option>
-  </select>
-</div>
+    <div class="form-row">
+      <label class="label">Junction</label>
+      <div class="select-wrapper" :class="{ 'dropdown-open': isJunctionDropdownOpen }" @click="toggleJunctionDropdown">
+        <div class="custom-select" :class="{ 'open': isJunctionDropdownOpen }">
+          <div class="select-display">
+            {{ selectedJunctionIndex !== null && junctionDataList[selectedJunctionIndex]
+               ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
+               : 'Please Select a Junction' }}
+          </div>
+          <div class="select-arrow" :class="{ 'rotated': isJunctionDropdownOpen }">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+              <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="dropdown-panel" v-show="isJunctionDropdownOpen">
+          <div class="dropdown-search">
+            <input
+              type="text"
+              v-model="junctionSearchQuery"
+              placeholder="Search junctions..."
+              class="search-input"
+              @click.stop
+            >
+          </div>
+          <div class="dropdown-options">
+            <div
+              class="dropdown-option"
+              v-for="(junction, index) in filteredJunctions"
+              :key="`${junction.junction_id}-${junction.originalIndex}`"
+              :class="{ 'selected': selectedJunctionIndex === junction.originalIndex }"
+              @click.stop="selectJunction(junction.originalIndex)"
+            >
+              {{ junction.junction_name || junction.junction_id }}
+            </div>
+            <div v-if="filteredJunctions.length === 0" class="no-results">
+              No junctions found
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
 
-    <!-- Traffic Light 方向选择 -->
     <div class="form-row">
       <label class="label">Traffic Light</label>
-      <select class="common-box" v-model="selectedDirectionIndex">
-  <option
-    v-for="(dir, idx) in currentDirections"
-    :key="idx"
-    :value="idx"
-    :title="dir.fromEdgeName + ' → ' + dir.toEdgeName"
-  >
-    {{ dir.fromEdgeName }} → {{ dir.toEdgeName }}
-  </option>
-</select>
-
+      <div class="select-wrapper" :class="{ 'dropdown-open': isDirectionDropdownOpen }" @click="toggleDirectionDropdown">
+        <div class="custom-select" :class="{ 'open': isDirectionDropdownOpen }">
+          <div class="select-display">
+            {{ selectedDirectionIndex !== null && currentDirections[selectedDirectionIndex]
+               ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
+               : 'Select Traffic Light Direction' }}
+          </div>
+          <div class="select-arrow" :class="{ 'rotated': isDirectionDropdownOpen }">
+            <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+              <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+        <div class="dropdown-panel" v-show="isDirectionDropdownOpen">
+          <div class="dropdown-options">
+            <div
+              class="dropdown-option"
+              v-for="(dir, idx) in currentDirections"
+              :key="idx"
+              :class="{ 'selected': selectedDirectionIndex === idx }"
+              @click.stop="selectDirection(idx)"
+              :title="dir.fromEdgeName + ' → ' + dir.toEdgeName"
+            >
+              <span class="direction-text">{{ dir.fromEdgeName }} → {{ dir.toEdgeName }}</span>
+            </div>
+            <div v-if="currentDirections.length === 0" class="no-results">
+              Please select a junction first
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 灯光状态 -->
@@ -53,47 +101,85 @@
     </div>
 
     <!-- Duration -->
-    <div class="form-row">
-  <label class="label">Duration</label>
-  <div class="duration-custom">
-    <input
-      type="text"
-      class="custom-input"
-      v-model="durationDisplay"
-      @input="validateDuration"
-      @keypress="onlyAllowNumbers"
-      @blur="handleBlur"
-      placeholder="Duration (s)"
-    />
-    <div class="triangle-buttons">
-      <button class="triangle-btn" @click="increaseDuration">▲</button>
-      <button class="triangle-btn" @click="decreaseDuration">▼</button>
+    <div class="form-row-duration">
+      <div class="form-row">
+        <label class="label">Duration</label>
+        <div class="duration-custom">
+          <input
+            type="text"
+            class="custom-input"
+            v-model="durationDisplay"
+            @input="validateDuration"
+            @keypress="onlyAllowNumbers"
+            @blur="handleBlur"
+            placeholder="Duration (s)"
+          />
+          <div class="triangle-buttons">
+            <button class="triangle-btn" @click="increaseDuration">▲</button>
+            <button class="triangle-btn" @click="decreaseDuration">▼</button>
+          </div>
+        </div>
+      </div>
+      <!-- 错误提示区域 - 固定高度的容器 -->
+      <div class="duration-error-container">
+        <div class="duration-error" v-if="durationError">⚠ The value must be between 5 and 300.</div>
+      </div>
     </div>
-  </div>
-  <!-- 错误提示区域 -->
-  <div class="duration-error" v-if="durationError">The value must be between 5 and 300.</div>
-</div>
 
 
-    <!-- 操作按钮 -->
     <div class="action-buttons">
-      <button class="apply-btn" :disabled="!isFormComplete" @click="onApply">APPLY</button>
+      <button
+        class="apply-btn"
+        :disabled="!isFormComplete || !canModifyLights"
+        @click="onApply"
+        :title="getApplyButtonTooltip()"
+      >
+        <div v-if="isApplying" class="loading-spinner"></div>
+        <span>{{ isApplying ? 'APPLYING...' : 'APPLY' }}</span>
+      </button>
       <button class="cancel-btn" @click="resetForm">CANCEL</button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, watchEffect, defineEmits } from 'vue'
+import { ref, computed, onMounted, watch, watchEffect, defineEmits, onBeforeUnmount } from 'vue'
 import axios from 'axios'
+import apiClient from '@/utils/api'
 import { toast } from '@/utils/ToastService'
-import vSelect from 'vue-select'
-import 'vue-select/dist/vue-select.css'
+import { useOperationStore } from '@/stores/operationStore'
+import { useAuthStore } from '@/stores/auth'
+import { useTrafficLightPermissions } from '@/composables/useTrafficLightPermissions'
+import { getJunctionPermissionStatus, isJunctionInUserManagedArea, PERMISSION_MESSAGES } from '@/utils/permissionUtils'
+import PermissionIndicator from '@/components/PermissionIndicator.vue'
 
 
 const emit = defineEmits<{
   (e: 'highlight', fromLanes: string[], toLanes: string[]): void
+  (e: 'trafficLightSelected', junctionId: string, directionIndex: number, options?: { disableZoom?: boolean }): void
+  (e: 'trafficLightCleared'): void
+  (e: 'junctionSelected', junctionName: string, junctionId: string): void
+  (e: 'manualControlApplied', data: { junctionName: string, directionInfo: string, lightColor: string, duration: number }): void
 }>()
+
+const authStore = useAuthStore()
+const operationStore = useOperationStore()
+const { canModifyTrafficLight, canApplyManualControl, getOperationPermissionStatus } = useTrafficLightPermissions()
+
+
+const mapCenterX = ref(0)
+
+
+const selectedJunctionPermission = ref<{
+  status: 'controllable' | 'readonly' | 'forbidden'
+  description: string
+} | null>(null)
+
+
+const isJunctionDropdownOpen = ref(false)
+const isDirectionDropdownOpen = ref(false)
+const junctionSearchQuery = ref('')
+const isApplying = ref(false)
 
 type LaneConnectionGroup = string[][]
 
@@ -102,6 +188,8 @@ interface RawJunctionData {
   junction_id: string
   junction_name: string
   connection: LaneConnectionGroup[]
+  junctionX?: number
+  junctionY?: number
 }
 
 interface LaneShapeInfo {
@@ -150,6 +238,116 @@ const currentDirections = computed(() => {
   return directions
 })
 
+const filteredJunctions = computed(() => {
+  if (!junctionSearchQuery.value.trim()) {
+    return junctionDataList.value.map((junction, index) => ({
+      ...junction,
+      originalIndex: index
+    }))
+  }
+
+  const query = junctionSearchQuery.value.toLowerCase()
+  return junctionDataList.value
+    .map((junction, index) => ({ ...junction, originalIndex: index }))
+    .filter(junction => {
+      const name = junction.junction_name || junction.junction_id || ''
+      const id = junction.junction_id || ''
+      return name.toLowerCase().includes(query) || id.toLowerCase().includes(query)
+    })
+})
+
+const selectedJunctionPermissionStatus = computed(() => {
+  if (!currentJunction.value || !currentJunction.value.junctionX || !currentJunction.value.junctionY) {
+    return null
+  }
+  return getJunctionPermissionStatus(
+    currentJunction.value.junctionX,
+    currentJunction.value.junctionY,
+    mapCenterX.value
+  )
+})
+
+const canSelectDirection = computed(() => {
+  return selectedJunctionIndex.value !== null && currentDirections.value.length > 0
+})
+
+const canModifyLights = computed(() => {
+  if (!currentJunction.value) {
+    return false
+  }
+
+  // 检查是否有路口坐标
+  if (!currentJunction.value.junctionX || !currentJunction.value.junctionY) {
+    return false
+  }
+
+  // 如果 mapCenterX 还没有初始化（为0），等待初始化完成
+  if (mapCenterX.value === 0) {
+    return false
+  }
+
+  const result = canModifyTrafficLight(currentJunction.value.junctionX, currentJunction.value.junctionY, mapCenterX.value)
+
+  return result
+})
+
+
+const canViewLights = computed(() => {
+  if (!currentJunction.value) {
+    return false
+  }
+
+  return authStore.isAuthenticated
+})
+
+const showPermissionWarning = computed(() => {
+  return selectedJunctionIndex.value !== null && !canModifyLights.value && canViewLights.value
+})
+
+const permissionWarningMessage = computed(() => {
+  if (!showPermissionWarning.value) return ''
+
+  if (authStore.isTrafficPlanner()) {
+    return 'Traffic Planners have view-only access. You can select junctions and directions to view traffic light status.'
+  }
+
+  if (authStore.isTrafficManager()) {
+    const managedAreas = authStore.getManagedAreas()
+    return `You can view all areas but only modify traffic lights in: ${managedAreas.join(', ')} area(s). Select any junction and direction to view status.`
+  }
+
+  return 'You have view-only access in this area. You can select and view traffic light status but cannot make changes.'
+})
+
+const getJunctionPermission = (junction: RawJunctionData) => {
+  if (!junction.junctionX || !junction.junctionY) {
+    return { canControl: false, canView: true, areaName: 'Unknown', statusText: 'No Data' }
+  }
+  return getJunctionPermissionStatus(junction.junctionX, junction.junctionY, mapCenterX.value)
+}
+
+const getJunctionArea = (junction: RawJunctionData): string => {
+  if (!junction.junctionX) return 'Unknown'
+  return junction.junctionX < mapCenterX.value ? 'Left' : 'Right'
+}
+
+const getJunctionAreaClass = (junction: RawJunctionData): string => {
+  const area = getJunctionArea(junction)
+  const permission = getJunctionPermission(junction)
+  return `area-${area.toLowerCase()} ${permission.canControl ? 'controllable' : 'readonly'}`
+}
+
+const getApplyButtonTooltip = (): string => {
+  if (!canModifyLights.value) {
+    return permissionWarningMessage.value
+  }
+  if (!isFormComplete.value) {
+    return 'Please complete all required fields'
+  }
+  return 'Apply traffic light changes'
+}
+
+
 watchEffect(() => {
   const connGroups = currentJunction.value?.connection || []
   const lanePairs: { from: string[]; to: string[] }[] = []
@@ -167,10 +365,34 @@ watchEffect(() => {
   directionLanes.value = lanePairs
 })
 
+
+watch(selectedJunctionIndex, () => {
+  if (selectedJunctionIndex.value !== null && currentJunction.value) {
+    const permission = getOperationPermissionStatus({
+      junctionX: currentJunction.value.junctionX || 0,
+      junctionY: currentJunction.value.junctionY || 0
+    }, mapCenterX.value)
+
+    selectedJunctionPermission.value = {
+      status: permission.status,
+      description: permission.description
+    }
+  } else {
+    selectedJunctionPermission.value = null
+  }
+})
+
 watch(selectedDirectionIndex, () => {
   const idx = selectedDirectionIndex.value
+
   if (idx !== null && directionLanes.value[idx]) {
     emit('highlight', directionLanes.value[idx].from, directionLanes.value[idx].to)
+
+    if (currentJunction.value) {
+      const junctionId = currentJunction.value.junction_id
+      // 选择方向时禁用zoom，因为已经在选择路口时zoom过了
+      emit('trafficLightSelected', junctionId, idx, { disableZoom: true })
+    }
   }
 })
 
@@ -178,14 +400,33 @@ const isFormComplete = computed(() =>
   selectedJunctionIndex.value !== null &&
   selectedDirectionIndex.value !== null &&
   selectedLight.value !== '' &&
-  duration.value !== null&&
+  duration.value !== null &&
   duration.value >= 5 &&
   duration.value <= 300 &&
-  !durationError.value
+  !durationError.value &&
+  !isApplying.value &&
+  canModifyLights.value
+)
+
+const isFormReadyForViewing = computed(() =>
+  selectedJunctionIndex.value !== null &&
+  selectedDirectionIndex.value !== null &&
+  canViewLights.value
 )
 
 const selectLight = (color: string) => {
+  if (!canModifyLights.value) {
+    toast.warning(PERMISSION_MESSAGES.TRAFFIC_LIGHT_MODIFY_DENIED)
+    return
+  }
   selectedLight.value = color
+}
+
+const partialResetForm = () => {
+  selectedLight.value = ''
+  duration.value = null
+  durationDisplay.value = ''
+  durationError.value = false
 }
 
 const resetForm = () => {
@@ -195,6 +436,61 @@ const resetForm = () => {
   duration.value = null
   durationDisplay.value = ''
   durationError.value = false
+  isJunctionDropdownOpen.value = false
+  isDirectionDropdownOpen.value = false
+  junctionSearchQuery.value = ''
+  selectedJunctionPermission.value = null
+
+  emit('trafficLightCleared')
+}
+
+const toggleJunctionDropdown = () => {
+  isJunctionDropdownOpen.value = !isJunctionDropdownOpen.value
+  isDirectionDropdownOpen.value = false
+}
+
+const toggleDirectionDropdown = () => {
+  if (!canSelectDirection.value) {
+    return
+  }
+  isDirectionDropdownOpen.value = !isDirectionDropdownOpen.value
+  isJunctionDropdownOpen.value = false
+}
+
+const selectJunction = (index: number) => {
+  const junction = junctionDataList.value[index]
+
+
+  if (selectedJunctionIndex.value !== null && selectedJunctionIndex.value !== index) {
+    console.log('🧹 [Manual] Clearing previous selection before selecting new junction')
+    emit('trafficLightCleared')
+  }
+
+  selectedJunctionIndex.value = index
+  isJunctionDropdownOpen.value = false
+  junctionSearchQuery.value = ''
+  selectedDirectionIndex.value = null
+
+
+  if (junction) {
+    const junctionName = junction.junction_name || junction.junction_id
+    emit('junctionSelected', junctionName, junction.junction_id)
+  }
+}
+
+const selectDirection = (index: number) => {
+
+
+  selectedDirectionIndex.value = index
+  isDirectionDropdownOpen.value = false
+}
+
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.select-wrapper')) {
+    isJunctionDropdownOpen.value = false
+    isDirectionDropdownOpen.value = false
+  }
 }
 
 const onApply = async () => {
@@ -202,22 +498,60 @@ const onApply = async () => {
   const lightIndex = selectedDirectionIndex.value
   if (!junction || lightIndex === null || duration.value === null) return
 
+  isApplying.value = true
   const state = selectedLight.value === 'GREEN' ? 'G' : 'r'
+  // 将用户输入的秒数转换为后端需要的步长：步长 = 秒数 / 9 (取整)
+  const steps = Math.floor(duration.value / 9)
+  console.log('🔄 [Manual] Converting duration to steps:', {
+    userInputSeconds: duration.value,
+    calculatedSteps: steps
+  })
+  
   const requestBody = {
     junctionId: junction.junction_id,
     lightIndex,
-    duration: duration.value,
+    duration: steps, // 发送步长而不是秒数
     state,
     source: 'manual'
   }
 
+  const currentDirection = currentDirections.value[lightIndex]
+  const fromEdge = currentDirection?.fromEdgeName || 'Unknown'
+  const toEdge = currentDirection?.toEdgeName || 'Unknown'
+  const lightColor = selectedLight.value === 'GREEN' ? 'Green' : 'Red'
+  const junctionName = junction.junction_name || junction.junction_id
+
+
+  const recordId = operationStore.addRecord({
+    description: `Set ${junctionName} light from ${fromEdge} to ${toEdge} to ${lightColor} for ${duration.value}s`,
+    source: 'manual',
+    junctionId: junction.junction_id,
+    junctionName,
+    lightIndex,
+    state,
+    duration: duration.value
+  })
+
   try {
-    await axios.post('/api/signalcontrol/manual', requestBody)
+    const response = await apiClient.post('/signalcontrol/manual', requestBody)
+    operationStore.updateRecordStatus(recordId, 'success')
     toast.success('Traffic light settings updated successfully!')
-    resetForm()
+
+    const directionInfo = `${fromEdge} → ${toEdge}`
+    emit('manualControlApplied', {
+      junctionName,
+      directionInfo,
+      lightColor,
+      duration: duration.value
+    })
+
+    partialResetForm()
   } catch (error) {
-    console.error('发送控制请求失败:', error)
+    console.error('Failed to update traffic light:', error)
+    operationStore.updateRecordStatus(recordId, 'failed', 'Failed to send data to backend')
     toast.error('Failed to send data to backend.')
+  } finally {
+    isApplying.value = false
   }
 }
 
@@ -238,31 +572,105 @@ const fetchLaneMappings = async () => {
     laneIdToEdgeName.value = nameMap
     laneIdToShape.value = shapeMap
   } catch (error) {
-    console.error('获取 lane 映射失败:', error)
+    console.error( error)
   }
 }
 
 const fetchJunctions = async () => {
   try {
-    const response = await axios.get('/api-status/junctions')
-    junctionDataList.value = Object.values(response.data)
+    console.log('[Manual] Fetching junctions...')
+
+    const [junctionResponse, tlsJunctionResponse] = await Promise.all([
+      axios.get('/api-status/junctions'),
+      axios.get('/api-status/tls-junctions')
+    ])
+
+    const junctionData = Object.values(junctionResponse.data)
+    const tlsJunctionData = tlsJunctionResponse.data
+
+
+
+    const junctionIdToCoords = new Map()
+    tlsJunctionData.forEach((tls: any) => {
+      if (tls.junctionId && tls.junctionX !== undefined && tls.junctionY !== undefined) {
+        junctionIdToCoords.set(tls.junctionId, {
+          junctionX: tls.junctionX,
+          junctionY: tls.junctionY
+        })
+      }
+    })
+
+    junctionDataList.value = junctionData.map((junction: any) => {
+      const coords = junctionIdToCoords.get(junction.junction_id) || { junctionX: 0, junctionY: 0 }
+      return {
+        tlsID: junction.tlsID || junction.tlsId,
+        junction_id: junction.junction_id,
+        junction_name: junction.junction_name,
+        connection: junction.connection || [],
+        junctionX: coords.junctionX,
+        junctionY: coords.junctionY
+      }
+    })
+
+    console.log('[Manual] Processed junctions:', junctionDataList.value.length)
+    console.log(' [Manual] Sample junction with coords:', junctionDataList.value[0])
+
+    const junctionsWithCoords = junctionDataList.value.filter(j => j.junctionX !== 0 || j.junctionY !== 0)
+    console.log('[Manual] Junctions with coordinates:', junctionsWithCoords.length)
+
   } catch (error) {
-    console.error('获取路口失败:', error)
+    console.error('[Manual] Failed to fetch junctions:', error)
+  }
+}
+
+const initMapCenter = async () => {
+  try {
+    const response = await axios.get('/api-status/lane-mappings')
+    const data = Array.isArray(response.data) ? response.data : Object.values(response.data)
+
+    let minX = Infinity, maxX = -Infinity
+    data.forEach((lane: any) => {
+      if (lane.laneShape) {
+        const coordinates = lane.laneShape.trim().split(' ').map((p: string) => p.split(',').map(Number))
+        coordinates.forEach((coord: number[]) => {
+          if (coord.length >= 2) {
+            minX = Math.min(minX, coord[0])
+            maxX = Math.max(maxX, coord[0])
+          }
+        })
+      }
+    })
+
+    if (minX !== Infinity && maxX !== -Infinity) {
+      mapCenterX.value = (minX + maxX) / 2
+
+    } else {
+      console.warn('⚠️ [Manual] Could not calculate map center, using default value 0')
+      mapCenterX.value = 0
+    }
+  } catch (error) {
+    console.error('[Manual] Failed to fetch map center:', error)
+    mapCenterX.value = 0
   }
 }
 
 onMounted(async () => {
+  await initMapCenter()
+
   await fetchLaneMappings()
   await fetchJunctions()
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 
 watch(selectedJunctionIndex, () => {
   selectedDirectionIndex.value = null
+  emit('trafficLightCleared')
 })
 
-// -------- 输入限制与校验逻辑 --------
-
-// 只允许输入数字字符
 const onlyAllowNumbers = (e: KeyboardEvent) => {
   const key = e.key
   if (!/[\d]/.test(key)) {
@@ -270,12 +678,10 @@ const onlyAllowNumbers = (e: KeyboardEvent) => {
   }
 }
 
-// 输入时去除非数字字符
 const validateDuration = () => {
   durationDisplay.value = durationDisplay.value.replace(/[^\d]/g, '')
 }
 
-// 失去焦点时判断是否在 5~300 范围
 const handleBlur = () => {
   const val = parseInt(durationDisplay.value)
   if (!isNaN(val) && val >= 5 && val <= 300) {
@@ -287,7 +693,6 @@ const handleBlur = () => {
   }
 }
 
-// 可选：上下按钮修改时清除错误提示
 const increaseDuration = () => {
   if (duration.value === null) duration.value = 5
   else if (duration.value < 300) duration.value++
@@ -306,22 +711,62 @@ const decreaseDuration = () => {
 }
 defineExpose({
   setJunctionByName: (name: string) => {
-    const index = junctionDataList.value.findIndex(j => j.junction_name === name)
+
+    const index = junctionDataList.value.findIndex(j =>
+      j.junction_name === name || j.junction_id === name
+    )
     if (index !== -1) {
-      selectedJunctionIndex.value = index
+      console.log('[Manual] Found junction at index:', index, junctionDataList.value[index])
+      selectJunction(index)
+    } else {
+      console.warn(' [Manual] Junction not found by name or ID:', name)
+      console.log(' [Manual] Available junctions:', junctionDataList.value.map(j => ({ name: j.junction_name, id: j.junction_id })))
     }
+  },
+
+  setJunctionById: (id: string) => {
+
+    const index = junctionDataList.value.findIndex(j => j.junction_id === id)
+    if (index !== -1) {
+
+      selectJunction(index)
+    } else {
+      console.warn(' [Manual] Junction with ID not found:', id)
+    }
+  },
+
+  clearSelection: () => {
+
+    resetForm()
+  },
+
+  // 新增：获取路口名称的方法
+  getJunctionNameById: (id: string) => {
+    const junction = junctionDataList.value.find(j => j.junction_id === id)
+    return junction ? (junction.junction_name || junction.junction_id) : null
+  },
+
+  // 新增：选择路口的方法
+  selectJunctionById: (id: string) => {
+    const index = junctionDataList.value.findIndex(j => j.junction_id === id)
+    if (index !== -1) {
+      selectJunction(index)
+      console.log(`🎯 [Manual] Auto-selected junction: ${junctionDataList.value[index].junction_name || id}`)
+    }
+  },
+
+  // 新增：强制刷新权限检查
+  forceRefreshPermissions: () => {
+    // 触发所有计算属性的重新计算
+    console.log('🔄 [Manual] Force refreshing permissions, mapCenterX:', mapCenterX.value)
   }
 })
 </script>
 
-
-
-
-
 <style scoped lang="scss">
 .manual-control {
   width: 100%;
-  height: 4.3rem;
+  height: 4.5rem;
   box-sizing: border-box;
   background-color: #1E1E2F;
   display: flex;
@@ -330,14 +775,45 @@ defineExpose({
   padding-bottom: 0.4rem;
   gap: 0.24rem;
   flex-shrink: 0;
+  position: relative;
+  overflow: visible;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(74, 85, 104, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(113, 128, 150, 0.03) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.02) 49%, rgba(74, 85, 104, 0.02) 51%, transparent 52%);
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+@keyframes borderGlow {
+  0% {
+    opacity: 0.5;
+    filter: blur(1px);
+  }
+  100% {
+    opacity: 0.8;
+    filter: blur(0px);
+  }
 }
 
 .panel-title {
-  font-size: 0.18rem;
-  font-weight: bold;
-  color: #00B4D8;
+  font-size: 0.2rem;
+  font-weight: 700;
+  color: #00E5FF;
   margin-bottom: 0.1rem;
   padding-left: 0.24rem;
+  line-height: 0.2rem;
+
+  position: relative;
 }
 
 .form-row {
@@ -350,9 +826,11 @@ defineExpose({
 .label {
   width: 1.6rem;
   font-size: 0.14rem;
-  color: white;
-  font-weight: bold;
-  padding-left: 0.24rem;
+  color: #FFFFFF;
+  font-weight: 600;
+  padding-left: 0.4rem;
+
+  letter-spacing: 0.02rem;
 }
 
 .light-buttons {
@@ -365,37 +843,73 @@ defineExpose({
   height: 0.4rem;
   border: none;
   border-radius: 0.08rem;
-  font-weight: bold;
+  font-weight: 700;
   font-size: 0.14rem;
   color: #FFFFFF;
   cursor: pointer;
-  background-color: #2B2C3D;
-  transition: background-color 0.2s ease;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.6s;
+  }
+
+  &:hover::before {
+    left: 100%;
+  }
 }
 
 .red {
-  color: #E63946;
+  color: #FF4569;
+  border-color: rgba(255, 69, 105, 0.3);
+
+  &:hover:not(.active-red) {
+    background: linear-gradient(135deg, #FF4569 20%, #2A2D4A 80%);
+    color: #FFFFFF;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 69, 105, 0.6);
+  }
 }
 
 .green {
-  color: #2A9D8F;
+  color: #00E676;
+  border-color: rgba(0, 230, 118, 0.3);
+
+  &:hover:not(.active-green) {
+    background: linear-gradient(135deg, #00E676 20%, #2A2D4A 80%);
+    color: #FFFFFF;
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border-color: rgba(0, 230, 118, 0.6);
+  }
 }
 
 .active-red {
-  background-color: #E63946;
+  background: linear-gradient(135deg, #FF4569 0%, #E91E63 100%);
   color: #FFFFFF;
-  border: none;
+  border-color: rgba(255, 69, 105, 0.8);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
 }
 
 .active-green {
-  background-color: #2A9D8F;
+  background: linear-gradient(135deg, #00E676 0%, #4CAF50 100%);
   color: #FFFFFF;
-  border: none;
-}
-
-// hover
-.light-btn:hover:not(.active-red):not(.active-green){
-  background-color: #41425A;
+  border-color: rgba(0, 230, 118, 0.8);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+  transform: translateY(-1px);
 }
 
 .action-buttons {
@@ -403,6 +917,7 @@ defineExpose({
   justify-content: space-between;
   width: 4.2rem;
   margin: 0 auto;
+  margin-top: -0.2rem;
 }
 
 .apply-btn,
@@ -410,52 +925,353 @@ defineExpose({
   width: 1.4rem;
   height: 0.4rem;
   font-size: 0.14rem;
-  font-weight: bold;
+  font-weight: 700;
   border-radius: 0.2rem;
-  border: none;
+  border: 1px solid;
   cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s ease;
+  }
+
+  &:active::before {
+    width: 300%;
+    height: 300%;
+  }
 }
 
 .apply-btn {
-  background-color: #00B4D8;
+  background: linear-gradient(135deg, #00B4D8 0%, #0090aa 100%);
   color: #FFFFFF;
+  border-color: rgba(0, 180, 216, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.08rem;
+
+  .loading-spinner {
+    width: 0.16rem;
+    height: 0.16rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid #FFFFFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  span {
+    position: relative;
+    z-index: 2;
+    font-weight: 700; // 加粗APPLY文字
+  }
+
+  &:not(:disabled):hover {
+    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
+    border-color: rgba(0, 180, 216, 0.8);
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .apply-btn:disabled {
-  background-color: #00B4D8;
-  color: #FFFFFF;
+  background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+  color: #A0AEC0;
+  border-color: rgba(74, 85, 104, 0.5);
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  text-shadow: none;
 }
 
 .cancel-btn {
-  background-color: #999999;
+  background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
   color: #FFFFFF;
+  border-color: rgba(113, 128, 150, 0.5);
+
+  &:hover {
+    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    border-color: rgba(113, 128, 150, 0.8);
+  }
 }
 
+.select-wrapper {
+  position: relative;
+  flex: 1;
+  max-width: calc(100% - 2rem - 0.3rem - 0.24rem);
+  cursor: pointer;
+  z-index: 100;
 
-select.common-box {
-  width: 3.6rem; // 固定宽度
-  display: block;
+  &.dropdown-open {
+    z-index: 1000;
+  }
+}
+
+.custom-select {
+  width: 100%;
+  height: 0.4rem;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+  border: 1px solid rgba(74, 85, 104, 0.4);
+  border-radius: 0.06rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.1rem;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  &.open,
+  &:hover {
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  &.open {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.select-display {
+  flex: 1;
+  color: #E3F2FD;
+  font-size: 0.14rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 0.1rem;
+  font-weight: 500;
+
+}
+
+.select-arrow {
+  width: 0.15rem;
+  height: 0.15rem;
+  color: #9CA3AF;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  flex-shrink: 0;
+
+  &.rotated {
+    transform: rotate(180deg);
+    color: #D1D5DB;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+  border: 1px solid rgba(74, 85, 104, 0.4);
+  border-top: none;
+  border-radius: 0 0 0.06rem 0.06rem;
+  z-index: 10;
+  max-height: 2rem;
+  overflow: hidden;
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-search {
+  padding: 0.08rem;
+  border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+  background: linear-gradient(135deg, #0F1423 0%, #1A1F35 100%);
+}
+
+.search-input {
+  width: 100%;
+  height: 0.3rem;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+  border: 1px solid rgba(74, 85, 104, 0.3);
+  border-radius: 0.06rem;
+  color: #E3F2FD;
+  font-size: 0.12rem;
+  padding: 0 0.08rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.3s ease;
+  font-weight: 500;
+
+  &:focus {
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
+  }
+
+  &::placeholder {
+    color: rgba(156, 163, 175, 0.6);
+  }
+}
+
+.dropdown-options {
+  max-height: 1.6rem;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(15, 20, 35, 0.5);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #4A5568, #374151);
+    border-radius: 2px;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.dropdown-option {
+  padding: 0.08rem 0.12rem;
+  color: #E3F2FD;
+  font-size: 0.14rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border-left: 2px solid transparent;
+  position: relative;
+  font-weight: 500;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    background: linear-gradient(90deg, rgba(113, 128, 150, 0.1), transparent);
+    transition: width 0.3s ease;
+  }
+
+  &:hover {
+    background: rgba(74, 85, 104, 0.15);
+    border-left-color: #9CA3AF;
+    transform: translateX(4px);
+    color: #FFFFFF;
+
+    &::before {
+      width: 100%;
+    }
+  }
+
+  &.selected {
+    background: rgba(113, 128, 150, 0.2);
+    border-left-color: #D1D5DB;
+    color: #FFFFFF;
+    font-weight: 700;
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
+
+    &::before {
+      width: 100%;
+      background: linear-gradient(90deg, rgba(209, 213, 219, 0.2), transparent);
+    }
+  }
+}
+
+.direction-text {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-select.common-box option {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.no-results {
+  padding: 0.12rem;
+  color: rgba(179, 229, 252, 0.6);
+  font-size: 0.12rem;
+  text-align: center;
+  font-style: italic;
+  font-weight: 500;
 }
-
 
 .duration-custom {
   display: flex;
   align-items: center;
   height: 0.4rem;
-  border: 0.01rem solid #00B4D8;
+  border: 1px solid rgba(74, 85, 104, 0.4);
   border-radius: 0.06rem;
-  background-color: #2B2C3D;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
   overflow: hidden;
+  transition: all 0.4s ease;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  &:focus-within {
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
+
+    &::before {
+      opacity: 1;
+    }
+  }
 }
 
 .custom-input {
@@ -463,11 +1279,21 @@ select.common-box option {
   width: 1.2rem;
   background: transparent;
   border: none;
-  color: #FFFFFF;
+  color: #E3F2FD;
   font-size: 0.14rem;
   padding: 0.1rem 0.2rem;
   text-align: center;
   outline: none;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  text-shadow: 0 0 8px rgba(227, 242, 253, 0.3);
+  position: relative;
+  z-index: 1;
+
+  &::placeholder {
+    color: rgba(156, 163, 175, 0.6);
+    transition: color 0.3s ease;
+  }
 }
 
 .triangle-buttons {
@@ -475,29 +1301,66 @@ select.common-box option {
   flex-direction: column;
   justify-content: center;
   height: 100%;
-  background-color: #2B2C3D;
+  background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+  border-left: 1px solid rgba(74, 85, 104, 0.2);
 }
 
 .triangle-btn {
   flex: 1;
   width: 0.4rem;
   border: none;
-  background: none;
-  color: #FFFFFF;
+  background: transparent;
+  color: #9CA3AF;
   font-size: 0.14rem;
   cursor: pointer;
   line-height: 1;
+  transition: all 0.4s ease;
+  position: relative;
+  font-weight: 700;
+
+  &:hover {
+    background: rgba(113, 128, 150, 0.15);
+    color: #D1D5DB;
+    transform: scale(1.2);
+  }
+
+  &:active {
+    transform: scale(1.05);
+    background: rgba(209, 213, 219, 0.2);
+  }
+
+  &:first-child {
+    border-bottom: 1px solid rgba(74, 85, 104, 0.2);
+  }
 }
 
-.triangle-btn:hover {
-  background-color: #3A3B4C;
+.form-row-duration {
+  display: flex;
+  flex-direction: column;
+  gap: 0.06rem;
 }
+
+.duration-error-container {
+  height: 0.18rem;
+  display: flex;
+  align-items: flex-start;
+}
+
 .duration-error {
-  color: #d9003c;
-  font-size: 0.08rem;
-  margin-left: 0.1rem;
+  color: #EF4444;
+  font-size: 0.1rem;
+  padding: 0.02rem 0.06rem;
+  margin-left: 1.9rem; // 再左移一点
   white-space: nowrap;
+  font-weight: 600;
+  display: inline-block;
+  line-height: 1;
+  height: auto;
+  max-width: 3rem;
+  // 移除所有动画和荧光效果
 }
 
-
+select.common-box {
+  display: none;
+}
 </style>

@@ -5,6 +5,7 @@ import com.ucd.urbanflow.domain.dto.LoginRequest;
 import com.ucd.urbanflow.domain.dto.ResetPwdRequest;
 import com.ucd.urbanflow.domain.vo.*;
 import com.ucd.urbanflow.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,21 +25,27 @@ public class AuthController {
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
-        LoginResponse loginResponse = authService.login(loginRequest);
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest, HttpServletRequest httpRequest) {
+        LoginResponse loginResponse = authService.login(loginRequest, httpRequest);
         return ApiResponse.success(loginResponse);
     }
 
     @PostMapping("/forgot-password")
-    public ApiResponse<String> forgotPassword(@Valid @RequestBody ForgotPwdRequest forgetPwdRequest) {
-        authService.processForgotPassword(forgetPwdRequest.getEmail());
+    public ApiResponse<String> forgotPassword(@Valid @RequestBody ForgotPwdRequest forgetPwdRequest, HttpServletRequest httpRequest) {
+        authService.processForgotPassword(forgetPwdRequest.getEmail(), httpRequest);
         return ApiResponse.success("Reset link sent to your email. Please check your inbox.");
     }
 
     @PostMapping("/reset-password")
-    public ApiResponse<String> resetPassword(@Valid @RequestBody ResetPwdRequest resetPwdRequest) {
-        authService.processResetPassword(resetPwdRequest);
+    public ApiResponse<String> resetPassword(@Valid @RequestBody ResetPwdRequest resetPwdRequest, HttpServletRequest httpRequest) {
+        authService.processResetPassword(resetPwdRequest, httpRequest);
         return ApiResponse.success("Password reset successfully.");
+    }
+
+    // 临时用于调试的端点
+    @GetMapping("/debug/user-areas/{userId}")
+    public ApiResponse<Object> debugUserAreas(@PathVariable Long userId) {
+        return authService.debugUserAreas(userId);
     }
 
     // test data

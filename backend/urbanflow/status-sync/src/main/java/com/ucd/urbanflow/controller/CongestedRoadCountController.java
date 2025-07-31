@@ -12,12 +12,12 @@ import java.util.Date;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/congestioncount")
+@RequestMapping("/api/dashboard")
 public class CongestedRoadCountController {
     @Autowired
     private CongestedRoadCountService congestedRoadCountService;
 
-    @GetMapping("/ranking")
+    @GetMapping("/congestioncount")
     public Map<String, Object> getCongestionRoadCount (
             @RequestParam String timeRange
     ) {

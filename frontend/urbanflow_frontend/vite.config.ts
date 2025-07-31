@@ -5,6 +5,9 @@ import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+const HTTP_LOCALHOST = 'http://localhost'
+const WS_LOCALHOST = 'ws://localhost'
+
 export default defineConfig({
   plugins: [vue(), vueJsx(), vueDevTools()],
   resolve: {
@@ -14,33 +17,85 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      // 本地：8081 用户模块
-      '/api-user': {
-        target: 'http://localhost:8081',
+      '/api/traffic/suggestion': {
+        target: 'http://localhost:8084',
         changeOrigin: true,
-        rewrite: path => path.replace(/^\/api-user/, ''),
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+
+          });
+        }
       },
-      // 本地：8083 交通模块
-      '/api-traffic': {
+      '/api/traffic': {
         target: 'http://localhost:8083',
-        changeOrigin: true,
-        rewrite: path => path.replace(/^\/api-traffic/, ''),
+        changeOrigin: true
       },
-      // ✅ 保留：8087 本地信号灯模块
       '/api-status': {
+        target: `${HTTP_LOCALHOST}:8087`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/dashboard':{
         target: 'http://localhost:8087',
         changeOrigin: true,
-        rewrite: path => path, // 不修改路径，完整转发
       },
-      // ✅ 新增：远程信号灯测试模块（用于 POST 到 10.241.43.177）
+      '/api/events': {
+        target: `${HTTP_LOCALHOST}:8085`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/emergency-vehicles': {
+        target: `${HTTP_LOCALHOST}:8085`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/ws/tracking': {
+        target: `${WS_LOCALHOST}:8085`,
+        ws: true,
+        changeOrigin: true,
+      },
       '/api/signalcontrol': {
-        target: 'http://localhost:8082',
+        target: `${HTTP_LOCALHOST}:8082`,
         changeOrigin: true,
-        rewrite: path => path, // 保留原始路径
+        rewrite: path => path,
       },
-      '/api':{
-        target: 'http://192.168.83.199:8087',
+      '/api/auth': {
+        target: `${HTTP_LOCALHOST}:8081`,
         changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/area-permission': {
+        target: `${HTTP_LOCALHOST}:8081`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/areas': {
+        target: `${HTTP_LOCALHOST}:8081`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/users': {
+        target: `${HTTP_LOCALHOST}:8081`,
+        changeOrigin: true,
+        rewrite: path => path,
+      },
+      '/api/logs': {
+        target: `${HTTP_LOCALHOST}:8086`,
+        changeOrigin: true,
+        rewrite: path => path,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('proxy error', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            console.log('Sending Request to the Target:', req.method, req.url);
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
+          });
+        }
       }
     },
   },

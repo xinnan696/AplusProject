@@ -1,43 +1,79 @@
 <template>
   <div class="dashboard-page">
-    <ControlHeader @toggle-nav="toggleNav" />
+    <ControlHeader 
+      :isRecordPanelVisible="isRecordVisible"
+      @toggle-nav="toggleNav" 
+      @toggle-record="toggleRecord"
+      @sign-out="handleSignOut"
+    />
     <ControlNav :isVisible="isNavVisible" />
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
       <div class="dashboard-container">
-        <DashboardCard title="Traffic Flow" class="card-full-width">
+        <DashboardCard
+          title="Congested Junction Count Trend"
+          titleTooltip="This chart shows the trend in the number of congested junctions over time for the selected time range."
+          class="card-third-height"
+        >
           <template #filters>
             <CustomSelect
-              :options="junctionOptions"
-              v-model="trafficFlowFilters.junctionId"
-              class="filter-select"
-            />
-            <CustomSelect
               :options="timeRangeOptions"
-              v-model="trafficFlowFilters.timeRange"
+              v-model="topSegmentsFilters.timeRange"
               class="filter-select"
             />
           </template>
           <template #default>
-            <TrafficFlowChart :filters="trafficFlowFilters" />
+            <CongestedJunctionCountTrendChart :filters="topSegmentsFilters" />
+          </template>
+        </DashboardCard>
+
+        <DashboardCard
+          title="Junction Congestion Duration Ranking"
+          titleTooltip="This chart ranks junctions by total congestion duration, showing the junctions with the most persistent congestion."
+          class="card-third-height"
+        >
+          <template #filters>
+            <CustomSelect
+              :options="durationRankingTimeRangeOptions"
+              v-model="durationRankingFilters.timeRange"
+              class="filter-select"
+            />
+          </template>
+          <template #default>
+            <CongestionDurationRankingChart :filters="durationRankingFilters" />
           </template>
         </DashboardCard>
 
         <div class="card-row">
-          <DashboardCard title="Congested Junction Count Trend" class="card-half-width">
+          <DashboardCard
+            title="Traffic Flow"
+            titleTooltip="This chart shows traffic flow of selected junctions or this city for the selected time range."
+            class="card-half-width"
+          >
             <template #filters>
               <CustomSelect
+                :options="junctionOptions"
+                v-model="trafficFlowFilters.junctionId"
+                class="filter-select"
+              />
+              <CustomSelect
                 :options="timeRangeOptions"
-                v-model="topSegmentsFilters.timeRange"
+                v-model="trafficFlowFilters.timeRange"
                 class="filter-select"
               />
             </template>
             <template #default>
-              <CongestedJunctionCountTrendChart :filters="topSegmentsFilters" />
+              <TrafficFlowChart
+                v-if="trafficFlowFilters.junctionId"
+                :filters="trafficFlowFilters" />
             </template>
           </DashboardCard>
 
-          <DashboardCard title="Top Congested Times" class="card-half-width">
+          <DashboardCard
+            title="Top Congested Times"
+            titleTooltip="This chart shows the junctions with the top-ranking number of congestion events in the selected time range."
+            class="card-half-width"
+          >
             <template #filters>
               <CustomSelect
                 :options="timeRangeOptions"
@@ -50,28 +86,21 @@
             </template>
           </DashboardCard>
         </div>
-
-        <DashboardCard title="Junction Congestion Duration Ranking" class="card-full-width">
-          <template #filters>
-            <CustomSelect
-              :options="durationRankingTimeRangeOptions"
-              v-model="durationRankingFilters.timeRange"
-              class="filter-select"
-            />
-          </template>
-          <template #default>
-            <CongestionDurationRankingChart :filters="durationRankingFilters" />
-          </template>
-        </DashboardCard>
       </div>
     </div>
+
+    <!-- Record Panel -->
+    <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
+import ControlRecord from '@/views/control/ControlRecord.vue'
 import DashboardCard from '@/views/dashboard/DashboardCard.vue'
 import CustomSelect from '@/views/dashboard/CustomSelect.vue'
 import TrafficFlowChart from '@/views/dashboard/TrafficFlowChart.vue'
@@ -80,12 +109,18 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
-//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-import { getJunctions } from '@/service/dashboard_api'
+import { getJunctions } from '@/services/dashboard_api'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// UI State
+const isRecordVisible = ref(false)
 
 // Filters State
 const trafficFlowFilters = reactive({
-  junctionId: 'total_city',
+  // 1. 将 junctionId 初始值设置为空
+  junctionId: null,
   timeRange: '24hours',
 })
 
@@ -102,14 +137,13 @@ const durationRankingFilters = reactive({
 })
 
 // Filter Options
-const junctionOptions = ref([
-  { value: 'total_city', label: 'Total City' },
-])
+// 2. 将 junctionOptions 初始值设置为空数组
+const junctionOptions = ref([])
 
 const timeRangeOptions = ref([
   { value: '24hours', label: '24 hours' },
   { value: 'oneweek', label: 'One week' },
-  { value: 'onemonth', label: 'One month' },
+  { value: 'onemonth', 'label': 'One month' },
   { value: 'sixmonths', label: 'Six months' },
   { value: 'oneyear', label: 'One year' },
 ])
@@ -125,11 +159,29 @@ const durationRankingTimeRangeOptions = ref([
 // Fetch initial data for filters
 onMounted(async () => {
   const junctions = await getJunctions()
-  junctionOptions.value = [
-    { value: 'total_city', label: 'Total City' },
-    ...junctions.map(j => ({ value: j.junction_id, label: j.junction_name })),
-  ]
+
+  // 3. 核心逻辑：获取数据后，设置默认值并填充选项
+  if (junctions && junctions.length > 0) {
+    // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+    trafficFlowFilters.junctionId = junctions[0].junctionId
+
+    // 使用获取到的路口列表，完整地构建下拉框的选项
+    junctionOptions.value = junctions.map(j => ({
+      value: j.junctionId,
+      label: j.junctionName
+    }))
+  }
 })
+
+// Event Handlers
+const toggleRecord = () => {
+  isRecordVisible.value = !isRecordVisible.value
+}
+
+const handleSignOut = () => {
+  console.log('🚪 [Dashboard] Signing out...')
+  authStore.logout()
+}
 </script>
 
 <style scoped lang="scss">
@@ -162,7 +214,7 @@ onMounted(async () => {
   position: absolute;
   top: 40px; // 假设Header高度为64px
   bottom: 0;
-  overflow-y: auto;
+  overflow: hidden; // 改为hidden，不允许滚动
   display: flex;
   justify-content: center;
 
@@ -184,31 +236,33 @@ onMounted(async () => {
   }
 }
 
-
 .dashboard-container {
   width: 14.80rem; // 对应 1680px
-  min-height: 10.16rem; // 对应 1016px
+  height: 100%; // 占满父容器高度
   display: flex;
   flex-direction: column;
   gap: 0.15rem; // 中间上下间隙 15px
   padding: 0.22rem 0; // 对应上下间隙 22px
+  box-sizing: border-box; // 确保padding不会撑大容器
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
   gap: 0.18rem; // 中间左右间隙 18px
+  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
 }
 
-.card-full-width {
-  height: 3.25rem; // Traffic Flow & Duration Ranking 高度
+// 替换原来的 .card-full-width
+.card-third-height {
+  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
   flex-shrink: 0;
 }
 
 .card-half-width {
   width: 50%; // Will be calculated by flex
   flex-grow: 1;
-  height: 2.92rem; // Top Congested & Count Trend 高度
+  height: 100%; // 占满父容器(.card-row)的高度
 }
 
 .filter-select {

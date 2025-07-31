@@ -1,18 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '@/views//dashboard/Dashboard.vue'
 
-// 路由配置
 const routes = [
-  // 🔸 根路径重定向到登录页
   {
     path: '/',
     redirect: '/login'
-    // path: '/', // 根路径
-    // name: 'dashboard-home', // 可以给个新名字
-    // component: Dashboard
   },
 
-  // 🔸 登录相关页面
+
   {
     path: '/login',
     name: 'Login',
@@ -43,61 +37,95 @@ const routes = [
     }
   },
 
-  // 🔸 控制台主页
   {
     path: '/control',
     name: 'Control',
     component: () => import('@/views/control/ControlHome.vue'),
     meta: {
       requiresAuth: true,
-      title: 'Traffic Control - UrbanFlow'
+      roles: ['ADMIN', 'Traffic Manager'],
+      title: 'Control - UrbanFlow'
     }
   },
 
-  // 🔸 仪表板页面
+
   {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/dashboard/DashBoard.vue'),
     meta: {
       requiresAuth: true,
+      roles: ['ADMIN', 'Traffic Manager', 'Traffic Planner'],
       title: 'Dashboard - UrbanFlow'
     }
   },
 
-  // 🔸 用户管理页面
   {
     path: '/user',
     name: 'UserList',
     component: () => import('@/views/user/UserList.vue'),
     meta: {
       requiresAuth: true,
+      roles: ['ADMIN'],
       title: 'User Management - UrbanFlow'
     }
   },
 
-  // 🔸 用户日志页面
+  {
+    path: '/user/add',
+    name: 'AddUser',
+    component: () => import('@/views/user/AddUser.vue'),
+    meta: {
+      requiresAuth: true,
+      roles: ['ADMIN'],
+      title: 'Add User - UrbanFlow'
+    }
+  },
+
+  {
+    path: '/user/edit/:id',
+    name: 'EditUser',
+    component: () => import('@/views/user/EditUser.vue'),
+    meta: {
+      requiresAuth: true,
+      roles: ['ADMIN'],
+      title: 'Edit User - UrbanFlow'
+    }
+  },
+
+  {
+    path: '/user/details/:id',
+    name: 'UserDetails',
+    component: () => import('@/views/user/UserDetails.vue'),
+    meta: {
+      requiresAuth: true,
+      roles: ['ADMIN'],
+      title: 'User Details - UrbanFlow'
+    }
+  },
+
   {
     path: '/user/log',
     name: 'UserLog',
     component: () => import('@/views/user/UserLog.vue'),
     meta: {
       requiresAuth: true,
+      roles: ['ADMIN'],
       title: 'User Logs - UrbanFlow'
     }
   },
-  // 🔸 帮助页面
+
   {
     path: '/help',
     name: 'Help',
     component: () => import('@/views/help/HelpPage.vue'),
     meta: {
       requiresAuth: true,
+      roles: ['ADMIN', 'Traffic Manager', 'Traffic Planner'],
       title: 'Help - UrbanFlow'
     }
   },
 
-  // 🔸 404错误页面处理
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -108,38 +136,83 @@ const routes = [
   }
 ]
 
-// 创建路由实例
 const router = createRouter({
-  history: createWebHistory(), // 使用History模式
+  history: createWebHistory(),
   routes
 })
 
-// 🔸 全局前置守卫
-router.beforeEach((to) => {
-  // 设置页面标题
+
+function getDefaultPageForRole(role: string): string {
+  const defaultPages = {
+    'ADMIN': 'Control',
+    'Traffic Manager': 'Control',
+    'Traffic Planner': 'Dashboard'
+  }
+
+  return defaultPages[role as keyof typeof defaultPages] || 'Dashboard'
+}
+
+router.beforeEach((to, from) => {
+  console.log('Route guard check:', {
+    to: to.path,
+    requiresAuth: to.meta?.requiresAuth,
+    roles: to.meta?.roles,
+    authStatus: checkAuthStatus()
+  })
+
   if (to.meta?.title) {
     document.title = to.meta.title as string
   }
 
-  // 检查是否需要认证
+  if (isInTransition()) {
+    return false
+  }
+
   if (to.meta?.requiresAuth) {
     const isAuthenticated = checkAuthStatus()
 
     if (!isAuthenticated) {
+      console.log('Redirecting to login: not authenticated')
       return { name: 'Login' }
+    }
+
+    if (to.meta?.roles && Array.isArray(to.meta.roles)) {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+
+      if (!user || !user.role) {
+        console.log('Redirecting to login: no user role found')
+        return { name: 'Login' }
+      }
+
+      const hasPermission = (to.meta.roles as string[]).includes(user.role)
+
+      if (!hasPermission) {
+        console.log(`Access denied: ${user.role} cannot access ${to.name}`)
+
+        const defaultPage = getDefaultPageForRole(user.role)
+        console.log(`Redirecting to default page: ${defaultPage}`)
+
+        return { name: defaultPage }
+      }
     }
   }
 
-  // 如果已登录用户访问登录页，重定向到控制台
   if (to.name === 'Login' && checkAuthStatus()) {
-    return { name: 'Control' }
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    const defaultPage = getDefaultPageForRole(user?.role)
+    console.log(`Redirecting to ${defaultPage}: already authenticated`)
+    return { name: defaultPage }
   }
 })
 
-// 🔸 认证状态检查 - 使用localStorage
 function checkAuthStatus(): boolean {
   const token = localStorage.getItem('authToken')
   return !!token && token !== 'expired'
+}
+
+function isInTransition(): boolean {
+
+  return false
 }
 
 export default router

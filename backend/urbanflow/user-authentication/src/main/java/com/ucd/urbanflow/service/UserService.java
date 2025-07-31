@@ -1,19 +1,26 @@
 package com.ucd.urbanflow.service;
 
+import com.ucd.urbanflow.client.LogServiceClient;
+import com.ucd.urbanflow.config.AuthenticatedUser;
 import com.ucd.urbanflow.domain.dto.CreateUserRequest;
 import com.ucd.urbanflow.domain.dto.UpdateUserRequest;
 import com.ucd.urbanflow.domain.pojo.User;
 import com.ucd.urbanflow.domain.vo.UserVO;
+import com.ucd.urbanflow.dto.UserPermissionLogDTO;
 import com.ucd.urbanflow.exception.DuplicateResourceException;
 import com.ucd.urbanflow.exception.ResourceNotFoundException;
 import com.ucd.urbanflow.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,9 +33,15 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     @Autowired
     private AreaManagementService areaManagementService;
+    @Autowired
+    private LogServiceClient logServiceClient;
+
 
     @Transactional
     public UserVO createUser(CreateUserRequest request) {
+        AuthenticatedUser operator = getAuthenticatedUser();
+        log.info("Operator '{}' is creating user with account number: {}", operator.getAccountNumber(), request.getAccountNumber());
+
         log.info("Creating user with account number: {}", request.getAccountNumber());
 
         if (userMapper.findByAccountNumber(request.getAccountNumber()).isPresent()) {
@@ -51,7 +64,6 @@ public class UserService {
             }
         }
 
-        // 创建用户
         User user = new User();
         user.setAccountNumber(request.getAccountNumber());
         user.setUserName(request.getUserName());
@@ -89,18 +101,27 @@ public class UserService {
                 }
             }
         }
-
+        StringJoiner createdFields = new StringJoiner(", ");
+        createdFields.add("role=" + user.getRole());
+        createdFields.add("enabled=" + user.isEnabled());
+        recordUserPermissionLog(operator, request.getAccountNumber(), "CREATE", createdFields.toString(), "User created successfully.");
         return mapToUserVO(user);
     }
 
     @Transactional
     public UserVO updateUser(Long id, UpdateUserRequest request) {
-        log.info("Updating user with ID: {}", id);
+        AuthenticatedUser operator = getAuthenticatedUser();
+        log.info("Operator '{}' is updating user with account number: {}", operator.getAccountNumber(), id);
 
+        log.info("Updating user with ID: {}", id);
 
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
 
+        String oldUserName = user.getUserName();
+        String oldEmail = user.getEmail();
+        String oldRole = user.getRole();
+        boolean oldEnabled = user.isEnabled();
 
         Optional<User> userWithSameEmail = userMapper.findByEmail(request.getEmail());
         if (userWithSameEmail.isPresent() && !userWithSameEmail.get().getId().equals(id)) {
@@ -123,6 +144,7 @@ public class UserService {
             log.info("Removed all area assignments for user {} (role changed from Traffic Manager)", id);
         }
 
+
         if (isTrafficManager && request.getManagedAreas() != null) {
 
             try {
@@ -138,15 +160,37 @@ public class UserService {
             }
         }
 
+        StringJoiner changes = new StringJoiner("; ");
+        if (!Objects.equals(oldUserName, request.getUserName())) {
+            changes.add(String.format("userName: '%s' -> '%s'", oldUserName, request.getUserName()));
+        }
+        if (!Objects.equals(oldEmail, request.getEmail())) {
+            changes.add(String.format("email: '%s' -> '%s'", oldEmail, request.getEmail()));
+        }
+        if (!Objects.equals(oldRole, request.getRole())) {
+            changes.add(String.format("role: '%s' -> '%s'", oldRole, request.getRole()));
+        }
+        if (oldEnabled != request.isEnabled()) {
+            changes.add(String.format("enabled: '%s' -> '%s'", oldEnabled, request.isEnabled()));
+        }
+        String operatedFields = changes.toString();
+        if (operatedFields.isEmpty()) {
+            operatedFields = "No basic user fields were changed. Area assignments may have been updated.";
+        }
+        recordUserPermissionLog(operator, user.getAccountNumber(), "UPDATE", operatedFields, "User updated successfully.");
         return mapToUserVO(user);
     }
 
     @Transactional
     public void deleteUser(Long id) {
+        AuthenticatedUser operator = getAuthenticatedUser();
+        log.info("Operator '{}' is deleting user with ID: {}", operator.getAccountNumber(), id);
         log.info("Deleting user with ID: {}", id);
 
         User user = userMapper.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
+
+        String targetAccountNumber = user.getAccountNumber();
 
         if ("Traffic Manager".equals(user.getRole())) {
             areaManagementService.removeUserAreaAssignments(id);
@@ -154,6 +198,8 @@ public class UserService {
         }
 
         userMapper.softDeleteById(id);
+        recordUserPermissionLog(operator, targetAccountNumber, "DELETE", "User account marked as deleted.", "User deleted successfully.");
+
     }
 
     public UserVO getUserById(Long id) {
@@ -174,6 +220,8 @@ public class UserService {
                 .accountNumber(user.getAccountNumber())
                 .userName(user.getUserName())
                 .email(user.getEmail())
+                .department(user.getDepartment())
+                .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
                 .enabled(user.isEnabled());
 
@@ -189,4 +237,34 @@ public class UserService {
 
         return builder.build();
     }
+
+    private AuthenticatedUser getAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof AuthenticatedUser) {
+            return (AuthenticatedUser) authentication.getPrincipal();
+        }
+        log.warn("AuthenticatedUser not found in SecurityContext. Using default system user for logging.");
+        AuthenticatedUser systemUser = new AuthenticatedUser();
+        systemUser.setAccountNumber("system");
+        systemUser.setUserName("System");
+        return systemUser;
+    }
+
+    private void recordUserPermissionLog(AuthenticatedUser operator, String targetAccountNumber, String operationType, String operatedFields, String message) {
+        UserPermissionLogDTO logDTO = new UserPermissionLogDTO();
+        logDTO.setAccountNumber(operator.getAccountNumber());
+//        logDTO.setUserName(operator.getUserName());
+        logDTO.setTargetAccount(targetAccountNumber);
+        logDTO.setOperationType(operationType);
+        logDTO.setOperatedFields(operatedFields);
+        logDTO.setOperationResult("SUCCESS");
+        logDTO.setResultMessage(message);
+
+        try {
+            logServiceClient.logUserPermission(logDTO);
+        } catch (Exception e) {
+            log.error("Failed to send user permission log. Log data: {}", logDTO, e);
+        }
+    }
+
 }

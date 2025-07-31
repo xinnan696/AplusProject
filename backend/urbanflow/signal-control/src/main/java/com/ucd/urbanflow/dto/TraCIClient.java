@@ -13,7 +13,7 @@ import java.util.Map;
 @Component
 public class TraCIClient {
     private RestTemplate restTemplate = new RestTemplate();
-    private final String BASE_URL = "http://10.241.114.122:8000";
+    private final String BASE_URL = "http://localhost:8000";
 
     public TraCIClient() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

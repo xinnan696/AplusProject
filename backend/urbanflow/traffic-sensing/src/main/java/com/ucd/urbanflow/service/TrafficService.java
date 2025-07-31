@@ -11,11 +11,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,24 +28,40 @@ public class TrafficService {
     private static final String REDIS_EDGE_KEY_PREFIX = "sumo:edge:";
     private static final int TOP_N_JUNCTIONS = 6;
 
-    // 定义用于缓存计算结果的 Redis Key
     private static final String CACHE_KEY_CONGESTED_JUNCTIONS = "traffic:cache:top6_congested_junctions";
 
-    /**
-     * 【无需修改】此方法为原始的REST API提供服务。
-     * 它现在调用重构后的核心计算方法。
-     */
+    private static final double OCCUPANCY_THRESHOLD = 0.6;
+
+
+    public List<Map<String, String>> getJunctionname() {
+        List<Map<String, String>> junctionList = new ArrayList<>();
+        List<JunctionIncomingEdge> allJunctionEdges = junctionMapper.findAllJunctionEdges();
+        Set<String> seenJunctionIds = new HashSet<>();
+
+        if (!CollectionUtils.isEmpty(allJunctionEdges)){
+            for (JunctionIncomingEdge edge : allJunctionEdges) {
+                String junctionId = edge.getJunctionId();
+                if (!seenJunctionIds.contains(junctionId)) {
+                    Map<String, String> map = new HashMap<>();
+                    map.put("junctionId", junctionId);
+                    map.put("junctionName", edge.getJunctionName());
+                    junctionList.add(map);
+                    seenJunctionIds.add(junctionId);
+                }
+            }
+        }
+        return junctionList;
+    }
+
+
     public List<JunctionCongestionDTO> getCongestedJunctions() {
         return this.calculateTopCongestedJunctions();
     }
 
-    /**
-     * 【新增】计划任务方法。
-     * 此方法会按照 application.properties 中配置的频率自动执行。
-     */
+
     @Scheduled(fixedRateString = "${traffic.cache.update-rate-ms}")
     public void updateCongestionCache() {
-        log.info("Running scheduled task: Calculating and caching congested junctions...");
+//        log.info("Running scheduled task: Calculating and caching congested junctions...");
         try {
             // 1. 执行核心计算
             List<JunctionCongestionDTO> topJunctions = this.calculateTopCongestedJunctions();
@@ -58,7 +72,7 @@ public class TrafficService {
             // 3. 将JSON字符串存入指定的Redis Key中
             redisTemplate.opsForValue().set(CACHE_KEY_CONGESTED_JUNCTIONS, jsonCacheData);
 
-            log.info("Successfully updated congested junctions cache. Found {} junctions.", topJunctions.size());
+//            log.info("Successfully updated congested junctions cache. Found {} junctions.", topJunctions.size());
 
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize congestion data to JSON for caching.", e);
@@ -67,11 +81,7 @@ public class TrafficService {
         }
     }
 
-    /**
-     * 【重构】核心计算逻辑。
-     * 此私有方法被API和计划任务共同调用。
-     * @return A list of the top N congested junctions.
-     */
+
     private List<JunctionCongestionDTO> calculateTopCongestedJunctions() {
         // 从数据库获取所有 "路口-入口" 的关系
         List<JunctionIncomingEdge> allJunctionEdges = junctionMapper.findAllJunctionEdges();
@@ -98,36 +108,125 @@ public class TrafficService {
         // 按拥堵指数降序排序并返回前 N 个
         return junctionCongestions.stream()
                 .sorted(Comparator.comparingInt(JunctionCongestionDTO::getCongestionCount).reversed())
-                .limit(TOP_N_JUNCTIONS)
+//                .limit(TOP_N_JUNCTIONS)
                 .collect(Collectors.toList());
     }
 
-    private int calculateMaxCongestionForJunction(List<JunctionIncomingEdge> incomingEdges) {
+//    private int calculateMaxCongestionForJunction(List<JunctionIncomingEdge> incomingEdges) {
+//
+//        if (incomingEdges == null || incomingEdges.isEmpty()) {
+//            return 0;
+//        }
+//        List<String> redisKeys = incomingEdges.stream()
+//                .map(edge -> REDIS_EDGE_KEY_PREFIX + edge.getIncomingEdgeId())
+//                .collect(Collectors.toList());
+//        List<String> edgeJsonValues = redisTemplate.opsForValue().multiGet(redisKeys);
+//        if (edgeJsonValues == null) {
+//            return 0;
+//        }
+//        return edgeJsonValues.stream()
+//                .mapToInt(jsonString -> {
+//                    if (jsonString == null || jsonString.isEmpty()) {
+//                        return 0;
+//                    }
+//                    try {
+//                        EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
+//                        return edgeData.getVehicleCount();
+//                    } catch (JsonProcessingException e) {
+//                        log.error("Failed to parse edge data JSON: {}", jsonString, e);
+//                        return 0;
+//                    }
+//                })
+//                .max()
+//                .orElse(0);
+//    }
 
+
+//    private int calculateMaxCongestionForJunction(List<JunctionIncomingEdge> incomingEdges) {
+//        if (incomingEdges == null || incomingEdges.isEmpty()) {
+//            return 0;
+//        }
+//
+//        List<String> redisKeys = incomingEdges.stream()
+//                .map(edge -> REDIS_EDGE_KEY_PREFIX + edge.getIncomingEdgeId())
+//                .collect(Collectors.toList());
+//
+//        List<String> edgeJsonValues = redisTemplate.opsForValue().multiGet(redisKeys);
+//        if (edgeJsonValues == null) {
+//            return 0;
+//        }
+//
+//        double maxOccupancy = 0.0;
+//        int vehicleCountAtMaxOccupancy = 0;
+//
+//        for (String jsonString : edgeJsonValues) {
+//            if (jsonString == null || jsonString.isEmpty()) {
+//                continue;
+//            }
+//
+//            try {
+//                EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
+//                float occupancy = edgeData.getOccupancy();
+//
+//                log.info("Evaluating edge for congestion - occupancy: {}, vehicleCount: {}, edgeData: {}",
+//                        occupancy, edgeData.getVehicleCount(), edgeData);
+//
+//                if (occupancy > maxOccupancy) {
+//                    maxOccupancy = occupancy;
+//                    vehicleCountAtMaxOccupancy = edgeData.getVehicleCount();
+//                }
+//
+//            } catch (JsonProcessingException e) {
+//                log.error("Failed to parse edge data JSON: {}", jsonString, e);
+//            }
+//        }
+//
+//        return maxOccupancy > OCCUPANCY_THRESHOLD ? vehicleCountAtMaxOccupancy : 0;
+//    }
+
+    private int calculateMaxCongestionForJunction(List<JunctionIncomingEdge> incomingEdges) {
         if (incomingEdges == null || incomingEdges.isEmpty()) {
             return 0;
         }
-        List<String> redisKeys = incomingEdges.stream()
-                .map(edge -> REDIS_EDGE_KEY_PREFIX + edge.getIncomingEdgeId())
+
+        // 获取所有的 edgeId（hash 的 field）
+        List<String> edgeIds = incomingEdges.stream()
+                .map(JunctionIncomingEdge::getIncomingEdgeId)
                 .collect(Collectors.toList());
-        List<String> edgeJsonValues = redisTemplate.opsForValue().multiGet(redisKeys);
+
+        // 使用 opsForHash().multiGet 从 Redis 的 hash 结构中读取数据
+        List<Object> edgeIdObjects = new ArrayList<>(edgeIds);
+        List<Object> edgeJsonValues = redisTemplate.opsForHash().multiGet("sumo:edge", edgeIdObjects);
+
         if (edgeJsonValues == null) {
             return 0;
         }
-        return edgeJsonValues.stream()
-                .mapToInt(jsonString -> {
-                    if (jsonString == null || jsonString.isEmpty()) {
-                        return 0;
-                    }
-                    try {
-                        EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
-                        return edgeData.getVehicleCount();
-                    } catch (JsonProcessingException e) {
-                        log.error("Failed to parse edge data JSON: {}", jsonString, e);
-                        return 0;
-                    }
-                })
-                .max()
-                .orElse(0);
+
+        double maxOccupancy = 0.0;
+        int vehicleCountAtMaxOccupancy = 0;
+
+        for (Object jsonObject : edgeJsonValues) {
+            if (jsonObject == null) continue;
+
+            String jsonString = jsonObject.toString();
+
+            try {
+                EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
+                float occupancy = edgeData.getOccupancy();
+
+//                log.info("Evaluating edge for congestion - occupancy: {}, vehicleCount: {}, edgeData: {}",
+//                        occupancy, edgeData.getVehicleCount(), edgeData);
+
+                if (occupancy > maxOccupancy) {
+                    maxOccupancy = occupancy;
+                    vehicleCountAtMaxOccupancy = edgeData.getVehicleCount();
+                }
+
+            } catch (JsonProcessingException e) {
+                log.error("Failed to parse edge data JSON: {}", jsonString, e);
+            }
+        }
+
+        return maxOccupancy > OCCUPANCY_THRESHOLD ? vehicleCountAtMaxOccupancy : 0;
     }
 }

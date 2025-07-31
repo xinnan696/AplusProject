@@ -1,5 +1,3 @@
-
-
 <template>
   <v-chart class="chart" :option="chartOption" autoresize />
 </template>
@@ -11,8 +9,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-//import { getTopCongestedSegments } from '@/mocks/mockDashboardData'
-import { getCongestedJunctionCountTrend } from '@/service/dashboard_api'
+import { getCongestedJunctionCountTrend } from '@/services/dashboard_api.ts'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -21,12 +18,25 @@ const props = defineProps<{
 }>()
 
 const chartOption = ref({
-  tooltip: { trigger: 'axis',
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(20, 22, 40, 0.92)',
+    borderColor: '#4a4a70',
+    borderWidth: 1,
+    padding: [8, 12],
+    textStyle: {
+      color: '#ffffff',
+      fontSize: 12,
+      fontWeight: '500',
+      fontFamily: "Inter, 'Segoe UI', Arial, 'Helvetica Neue', Roboto, sans-serif",
+      lineHeight: 16,
+    },
+    extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
     formatter: function (params) {
-      let point = params[0];
+      const point = params[0];
       return `
       ${point.axisValueLabel}<br/>
-      ${point.marker} ${point.seriesName}: <strong>${point.value}</strong> junctions
+      ${point.seriesName}: <strong>${point.value}</strong> junctions
     `;
     }},
   grid: { top: '20px', left: '3%', right: '7%', bottom: '3%', containLabel: true },
