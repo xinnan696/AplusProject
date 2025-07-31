@@ -221,7 +221,7 @@ onMounted(async () => {
   //justify-content: center;
 
   position: absolute;
-  top: 40px; // 假设Header高度为64px
+  top: 40px;
   bottom: 0;
   overflow-y: auto;
   display: flex;
@@ -253,23 +253,28 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.15rem; // 中间上下间隙 15px
   padding: 0.22rem 0; // 对应上下间隙 22px
+  height: 100%;
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
   gap: 0.18rem; // 中间左右间隙 18px
+  flex: 1;
+  min-height: 0;
 }
 
 .card-full-width {
-  height: 3.25rem; // Traffic Flow & Duration Ranking 高度
+  //height: 3.25rem; // Traffic Flow & Duration Ranking 高度
   flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 .card-half-width {
   width: 50%; // Will be calculated by flex
   flex-grow: 1;
-  height: 3.25rem; // Top Congested & Count Trend 高度
+  //height: 3.25rem; // Top Congested & Count Trend 高度
 }
 
 .filter-select {
