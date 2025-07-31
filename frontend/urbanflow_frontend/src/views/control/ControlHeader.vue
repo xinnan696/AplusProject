@@ -217,7 +217,7 @@ onBeforeUnmount(() => {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent 0%, #00B4D8 50%, transparent 100%);
+    background: linear-gradient(90deg, transparent 0%, #3A3A4C 50%, transparent 100%);
     opacity: 0.6;
   }
 
@@ -274,6 +274,9 @@ onBeforeUnmount(() => {
     right: 0;
     bottom: 0;
     border-radius: 0.68rem;
+    background: #2a2a3a;
+    border: 0.02rem solid #444;
+    transition: all 0.3s ease;
   }
 
   .slider::before {
@@ -284,6 +287,17 @@ onBeforeUnmount(() => {
     left: 0.01rem;
     top: 0.01rem;
     border-radius: 50%;
+    background: #ffffff;
+    transition: all 0.3s ease;
+  }
+
+  input:checked + .slider {
+    background: #00b4d8;
+    border-color: #00d4f8;
+  }
+
+  input:checked + .slider::before {
+    transform: translateX(0.23rem);
   }
 
   .switch-wrapper {
@@ -300,6 +314,32 @@ onBeforeUnmount(() => {
 
     .simple-tooltip {
       top: calc(100% + 12px);
+    }
+
+    /* 强制移除所有发光效果 */
+    .slider {
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+    }
+
+    &:hover .slider {
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      transform: none !important;
+    }
+
+    input:checked + .slider {
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+    }
+
+    input:focus + .slider {
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
     }
   }
 
@@ -336,17 +376,13 @@ onBeforeUnmount(() => {
     right: 0.25rem;
     width: 3.2rem;
     min-height: 2.6rem;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-    border: 1px solid rgba(0, 180, 216, 0.2);
+    background: #1a1a2e;
+    border: 1px solid rgba(74, 85, 104, 0.2);
     border-radius: 0.16rem;
-    box-shadow:
-      0 12px 40px rgba(0, 0, 0, 0.6),
-      0 0 0 1px rgba(0, 180, 216, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     z-index: 9999;
     display: flex;
     flex-direction: column;
-    backdrop-filter: blur(20px);
     overflow: hidden;
 
     &::before {
@@ -356,7 +392,7 @@ onBeforeUnmount(() => {
       left: 0;
       right: 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent 0%, #00B4D8 30%, #00D4F8 50%, #00B4D8 70%, transparent 100%);
+      background: linear-gradient(90deg, transparent 0%, #3A3A4C 30%, #4A5568 50%, #3A3A4C 70%, transparent 100%);
       opacity: 0.8;
     }
 
@@ -367,7 +403,7 @@ onBeforeUnmount(() => {
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, rgba(0, 180, 216, 0.03) 0%, transparent 50%, rgba(0, 212, 248, 0.03) 100%);
+      background: linear-gradient(135deg, rgba(74, 85, 104, 0.03) 0%, transparent 50%, rgba(113, 128, 150, 0.03) 100%);
       pointer-events: none;
     }
   }
@@ -384,7 +420,7 @@ onBeforeUnmount(() => {
   .user-avatar {
     width: 0.6rem;
     height: 0.6rem;
-    background: linear-gradient(135deg, #00B4D8 0%, #00D4F8 50%, #0090aa 100%);
+    background: #4A5568;
     border-radius: 50%;
     display: flex;
     justify-content: center;
@@ -393,10 +429,6 @@ onBeforeUnmount(() => {
     font-weight: bold;
     color: #FFFFFF;
     margin-bottom: 0.2rem;
-    box-shadow:
-      0 4px 16px rgba(0, 180, 216, 0.4),
-      0 0 0 3px rgba(0, 180, 216, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
     position: relative;
   }
 
@@ -405,14 +437,14 @@ onBeforeUnmount(() => {
     font-weight: 600;
     color: #FFFFFF;
     margin-bottom: 0.08rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  
     letter-spacing: 0.02em;
   }
 
   .user-title {
     font-size: 0.13rem;
     font-weight: 400;
-    color: rgba(0, 180, 216, 0.8);
+    color: rgba(160, 174, 192, 0.8);
     margin-bottom: 0.08rem;
     text-transform: uppercase;
     letter-spacing: 0.03em;
@@ -437,9 +469,7 @@ onBeforeUnmount(() => {
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(0, 180, 216, 0.05);
-      border-color: rgba(0, 180, 216, 0.2);
-      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.1);
     }
   }
 
@@ -468,19 +498,17 @@ onBeforeUnmount(() => {
     padding: 0.04rem 0.08rem;
     background: linear-gradient(135deg, rgba(0, 180, 216, 0.05) 0%, rgba(0, 212, 248, 0.03) 100%);
     border-radius: 0.08rem;
-    border: 1px solid rgba(0, 180, 216, 0.15);
+    border: 1px solid rgba(74, 85, 104, 0.15);
     transition: all 0.2s ease;
 
     &:hover {
-      background: linear-gradient(135deg, rgba(0, 180, 216, 0.1) 0%, rgba(0, 212, 248, 0.05) 100%);
-      border-color: rgba(0, 180, 216, 0.25);
-      transform: translateY(-1px);
+      border-color: rgba(74, 85, 104, 0.25);
     }
   }
 
   .areas-label {
     font-size: 0.1rem;
-    color: rgba(0, 180, 216, 0.9);
+    color: rgba(160, 174, 192, 0.9);
     font-weight: 500;
     white-space: nowrap;
   }
@@ -511,16 +539,14 @@ onBeforeUnmount(() => {
     transition: all 0.2s ease;
 
     &:hover {
-      background: rgba(245, 154, 35, 0.15);
       border-color: rgba(245, 154, 35, 0.3);
-      transform: translateY(-1px);
     }
   }
 
   .divider {
     width: 85%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0, 180, 216, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(74, 85, 104, 0.3), transparent);
     margin-bottom: 0.2rem;
     position: relative;
 
@@ -565,12 +591,10 @@ onBeforeUnmount(() => {
       width: auto;
       display: block;
       transition: all 0.3s ease;
-      filter: drop-shadow(0 2px 4px rgba(0, 180, 216, 0.3));
     }
 
     &:hover img {
       transform: scale(1.05);
-      filter: drop-shadow(0 4px 8px rgba(0, 180, 216, 0.5));
     }
   }
 
@@ -587,10 +611,8 @@ onBeforeUnmount(() => {
     cursor: pointer;
 
     img {
-      height: 0.42rem; /* 控制图片图标的大小 */
+      height: 0.42rem;
       width: auto;
-      /* 为图片添加红色光晕效果，使其更醒目 */
-      filter: drop-shadow(0 0 5px rgba(255, 77, 79, 0.7));
     }
   }
 
@@ -599,6 +621,74 @@ onBeforeUnmount(() => {
   }
   .blinking-icon {
     animation: blink 1.2s linear infinite;
+  }
+
+  /* 强制移除所有按钮的发光效果和背景色变化 */
+  .btn-hover-icon,
+  .nav,
+  .record,
+  .emergency-alert-wrapper {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+
+    &:hover {
+      background: transparent !important;
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      transform: translateY(-1px) scale(1.02) !important;
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98) !important;
+    }
+  }
+
+  .btn-hover-circle,
+  .personal {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+
+    &:hover {
+      background: #00B4D8 !important;
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      transform: translateY(-1px) scale(1.02) !important;
+    }
+
+    &:active {
+      transform: translateY(0) scale(0.98) !important;
+    }
+  }
+
+  .btn-hover-solid,
+  .sign-out-btn {
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+
+    &:hover {
+      background: #00B4D8 !important;
+      box-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      transform: translateY(-1px) !important;
+    }
+
+    &:active {
+      transform: translateY(0) !important;
+    }
+  }
+
+  .btn-active {
+    background: transparent !important;
+    box-shadow: none !important;
+    filter: none !important;
+    -webkit-filter: none !important;
+    transform: translateY(-1px) scale(1.02) !important;
   }
 }
 </style>

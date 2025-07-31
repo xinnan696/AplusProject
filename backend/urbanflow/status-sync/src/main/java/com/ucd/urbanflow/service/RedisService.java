@@ -30,7 +30,7 @@ public class RedisService {
                 Edge edge = objectMapper.readValue(json, Edge.class);
                 result.put(key, edge);
             } catch (Exception e) {
-                System.err.println("❌ [RedisService] Failed to parse edge JSON for key: " + entry.getKey());
+                System.err.println("[RedisService] Failed to parse edge JSON for key: " + entry.getKey());
                 e.printStackTrace();
             }
         }
@@ -51,7 +51,7 @@ public class RedisService {
                 result.put(key, junction);
             } catch (Exception e) {
                 System.err.println("[RedisService] Failed to parse junction JSON for key: " + entry.getKey());
-                System.err.println(" Value: " + entry.getValue());  // 加上这行打印原始 Redis 字符串
+                System.err.println(" Value: " + entry.getValue());
                 e.printStackTrace();
             }
         }

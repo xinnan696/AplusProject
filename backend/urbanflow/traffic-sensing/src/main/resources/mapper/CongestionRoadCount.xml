@@ -4,7 +4,7 @@
 
     <insert id="insert" parameterType="com.ucd.urbanflow.domain.pojo.CongestedRoadCount">
         INSERT INTO congestion_junction_counts (time_bucket, congested_junction_count)
-        VALUES (#{timeBucket}, #{congested_junction_count})
+        VALUES (#{timeBucket}, #{congestedJunctionCount})
     </insert>
 
 </mapper>

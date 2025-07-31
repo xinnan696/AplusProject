@@ -15,6 +15,7 @@ interface RawVehicleData {
   upcomingTlsID: string | null
   upcomingTlsState: string | null
   upcomingTlsCountdown: number | null
+  signalizedJunctions?: string[] // 预定路线中的交叉口ID列表
   position: {
     x: number
     y: number
@@ -39,6 +40,44 @@ export const useEmergencyStore = defineStore('emergency', () => {
   // 当前用户正在主动追踪的车辆ID
   const activelyTrackedVehicleId = ref<string | null>(null)
 
+  // 存储junction映射数据
+  const junctionIdToNameMap = ref<Record<string, string>>({})
+
+  // 存储紧急车辆路线数据
+  const emergencyRoutesMap = ref<Record<string, any>>({})
+
+  // 初始化junction映射数据
+  const initializeJunctionMappings = async () => {
+    try {
+      const response = await axios.get('/api-status/junctions')
+      const junctionData = Object.values(response.data) as any[]
+      const nameMap: Record<string, string> = {}
+      junctionData.forEach((j: any) => {
+        nameMap[j.junction_id] = j.junction_name || j.junction_id
+      })
+      junctionIdToNameMap.value = nameMap
+      console.log('[Emergency Store] Junction mappings loaded:', nameMap)
+    } catch (error) {
+      console.error('[Emergency Store] Failed to load junction mappings:', error)
+    }
+  }
+
+  // 初始化紧急车辆路线数据
+  const initializeEmergencyRoutes = async () => {
+    try {
+      const response = await axios.get('/api-status/emergency-routes')
+      const routesData = response.data as any[]
+      const routesMap: Record<string, any> = {}
+      routesData.forEach((route: any) => {
+        routesMap[route.vehicle_id] = route
+      })
+      emergencyRoutesMap.value = routesMap
+      console.log('[Emergency Store] Emergency routes loaded:', routesMap)
+    } catch (error) {
+      console.error('[Emergency Store] Failed to load emergency routes:', error)
+    }
+  }
+
   // 计算属性：返回一个待处理的车辆列表（用户还未点击Approve或Reject）
   const pendingVehicles = computed(() => {
     const pending = Object.values(vehicleDataMap.value).filter(v => v.userStatus === 'pending')
@@ -58,6 +97,10 @@ export const useEmergencyStore = defineStore('emergency', () => {
   let ws: WebSocket | null = null
 
   function connectWebSocket() {
+    // 初始化junction映射数据和紧急车辆路线数据
+    initializeJunctionMappings()
+    initializeEmergencyRoutes()
+    
     if (ws && ws.readyState === WebSocket.OPEN) {
       console.log("🔗 [Emergency Store] WebSocket 已连接，无需重复连接。");
       return;
@@ -94,11 +137,25 @@ export const useEmergencyStore = defineStore('emergency', () => {
           if (!vehicleDataMap.value[vehicleId]) {
             // 这是新出现的车辆，设置初始状态
             console.log(`🆕 [Emergency Store] 新车辆 ${vehicleId} 首次出现`);
+            
+            // 从紧急车辆路线数据中获取signalized_junctions
+            const routeData = emergencyRoutesMap.value[vehicleId]
+            let junctionNames: string[] = []
+            
+            if (routeData && routeData.signalized_junctions) {
+              // 将junction ID转换为名称
+              junctionNames = routeData.signalized_junctions.map((jId: string) => 
+                junctionIdToNameMap.value[jId] || jId
+              )
+              console.log(`📍 [Emergency Store] 车辆 ${vehicleId} 路线信号灯路口:`, junctionNames)
+            } else {
+              console.warn(`⚠️ [Emergency Store] 车辆 ${vehicleId} 没有找到路线数据`)
+            }
+            
             vehicleDataMap.value[vehicleId] = {
               ...rawInfo,
               userStatus: 'pending',
-              // 在真实应用中，这个路径列表应该在事件触发时从另一个API获取
-              signalizedJunctions: ['Junction A', 'Junction B', 'Junction C', 'Junction D']
+              signalizedJunctions: junctionNames
             }
           } else {
             // 更新已有车辆数据
@@ -183,9 +240,14 @@ export const useEmergencyStore = defineStore('emergency', () => {
     vehicleDataMap, // 导出原始数据供地图组件使用
     pendingVehicles,
     activelyTrackedVehicle,
+    junctionIdToNameMap, // 导出交叉口映射数据
+    emergencyRoutesMap, // 导出紧急车辆路线数据
+    hasActiveSession: computed(() => activelyTrackedVehicleId.value !== null), // 新增：计算属性来检查是否有活跃会话
     connectWebSocket,
     approveVehicle,
     rejectVehicle,
-    completeTracking
+    completeTracking,
+    initializeJunctionMappings,
+    initializeEmergencyRoutes
   }
 })

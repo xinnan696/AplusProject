@@ -1,20 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-
-  // 紧急车辆追踪页面的路由
-  {
-    path: '/control/tracking',
-    name: 'PriorityVehicleTracking',
-    component: () => import('@/views/control/PriorityVehicleTracking.vue'),
-    meta: {
-      requiresAuth: true,
-      // 权限与主控制页面保持一致
-      roles: ['ADMIN', 'Traffic Manager'],
-      title: 'Vehicle Tracking - UrbanFlow'
-    }
-  },
-
   {
     path: '/',
     redirect: '/login'

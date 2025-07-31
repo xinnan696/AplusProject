@@ -1,3 +1,4 @@
+
 package com.ucd.urbanflow.controller;
 
 
@@ -13,12 +14,12 @@ import java.util.Date;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/congestedtimes")
+@RequestMapping("/api/dashboard")
 public class TopCongestedSegmentsController {
     @Autowired
     private TopCongestedSegmentsService topCongestedSegmentsService;
 
-    @GetMapping("/dashboard")
+    @GetMapping("/congestedtimes")
     public Map<String, Object> getTopCongestedSegments(
             @RequestParam String timeRange
     ) {

@@ -13,12 +13,12 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
-@RequestMapping("/api/trafficflow")
+@RequestMapping("/api/dashboard")
 public class TrafficFlowController {
     @Autowired
     private TrafficFlowService trafficFlowService;
 
-    @GetMapping("/dashboard")
+    @GetMapping("/trafficflow")
     public Map<String, Object> getDashboardData(
             @RequestParam String junctionId,
             @RequestParam String timeRange

@@ -17,10 +17,29 @@ export default defineConfig({
   },
   server: {
     proxy: {
+      '/api/traffic/suggestion': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+          });
+          proxy.on('proxyRes', (proxyRes, req, res) => {
+
+          });
+        }
+      },
+      '/api/traffic': {
+        target: 'http://localhost:8083',
+        changeOrigin: true
+      },
       '/api-status': {
         target: `${HTTP_LOCALHOST}:8087`,
         changeOrigin: true,
         rewrite: path => path,
+      },
+      '/api/dashboard':{
+        target: 'http://localhost:8087',
+        changeOrigin: true,
       },
       '/api/events': {
         target: `${HTTP_LOCALHOST}:8085`,

@@ -16,6 +16,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api-status/**").permitAll()
                 .requestMatchers("/api/status/**").permitAll()  // WebSocket 路径
+                .requestMatchers("/api/dashboard/**").permitAll()  // Dashboard API
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable())

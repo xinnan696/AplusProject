@@ -40,12 +40,10 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
 
     private void broadcastStatus() {
         try {
-            // 检查 redisTemplate 是否为空
             if (redisTemplate == null) {
                 return;
             }
 
-            // === 原始 edge 和 tls 数据 ===
             Map<String, String> edgeData = new HashMap<>();
             Map<String, String> tlsData = new HashMap<>();
 
@@ -70,11 +68,9 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     String junctionName = node.get("junction_name").asText();
                     junctionIdToName.put(junctionId, junctionName);
                 } catch (Exception e) {
-                    // 解析 TLS JSON 出错
                 }
             }
 
-            // === 拥堵数据处理 ===
             List<Map<String, Object>> congestedResults = new ArrayList<>();
             try {
                 String congestedJson = redisTemplate.opsForValue().get("traffic:cache:top6_congested_junctions");
@@ -85,10 +81,10 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     );
 
                     for (Map<String, Object> item : congestedList) {
-                        String junctionId = item.get("junctionId").toString();       // 原样使用
+                        String junctionId = item.get("junctionId").toString();
                         int count = Integer.parseInt(item.get("congestionCount").toString());
 
-                        // name 查不到时 fallback 为 id 自己
+
                         String name = junctionIdToName.getOrDefault(junctionId, junctionId);
 
                         Map<String, Object> resultItem = new HashMap<>();
@@ -98,7 +94,6 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                     }
                 }
             } catch (Exception e) {
-                // 处理 congested 数据出错
             }
 
             Map<String, Object> emergencyVehicles = new HashMap<>();
@@ -135,14 +130,11 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                         emergencyVehicles.put(vehicleId, vehicleInfo);
                         
                     } catch (Exception e) {
-                        // 解析车辆数据出错
                     }
                 }
             } catch (Exception e) {
-                // 紧急车辆数据处理出错
             }
 
-            // === 构造广播内容 ===
             Map<String, Object> message = new HashMap<>();
             message.put("edges", edgeData);
             message.put("trafficLights", tlsData);
@@ -158,7 +150,6 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
             }
 
         } catch (Exception e) {
-            // WebSocket 广播出错
         }
     }
 }

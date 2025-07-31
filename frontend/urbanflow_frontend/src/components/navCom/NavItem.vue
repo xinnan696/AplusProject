@@ -61,31 +61,6 @@ defineEmits<{
     background: linear-gradient(135deg, #00B4D8, #0096C7);
     color: white;
     box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
-    border-left: 3px solid #00E3FF;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      right: 8px;
-      width: 4px;
-      height: 4px;
-      background-color: #00E3FF;
-      border-radius: 50%;
-      transform: translateY(-50%);
-      animation: pulse 2s infinite;
-    }
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-    transform: translateY(-50%) scale(1);
-  }
-  50% {
-    opacity: 0.6;
-    transform: translateY(-50%) scale(1.2);
   }
 }
 </style>
