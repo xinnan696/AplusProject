@@ -2,7 +2,7 @@ package com.ucd.urbanflow.service.dataprocessing;
 
 import com.ucd.urbanflow.domain.dto.EnrichedTrafficEvent;
 import com.ucd.urbanflow.domain.tsdb.TrafficDataPoint;
-import com.ucd.urbanflow.repository.TrafficDataPointRepository; // Please verify this import path
+import com.ucd.urbanflow.repository.TrafficDataPointRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
@@ -27,19 +27,18 @@ public class DataForwardingService {
     }
 
     /**
-     * [MODIFIED FOR DEBUGGING] The pipeline is now simplified to a direct, synchronous call
+     * The pipeline is now simplified to a direct, synchronous call
      * for each event to ensure any exception is immediately caught and logged.
      */
     @EventListener(ApplicationReadyEvent.class)
     public void startPipelineAfterStartup() {
         log.info("Application is ready. Starting data forwarding pipeline in DEBUG mode.");
         pollingService.getEventStream()
-                // We subscribe directly and handle each event one by one.
                 .subscribe(this::processAndSaveEventSynchronously);
     }
 
     /**
-     * [NEW DEBUG METHOD] This method processes and saves a single event within a try-catch block.
+     * This method processes and saves a single event within a try-catch block.
      * @param event The event to process.
      */
     private void processAndSaveEventSynchronously(EnrichedTrafficEvent event) {
@@ -50,7 +49,8 @@ public class DataForwardingService {
 
             // This is now a blocking call. If it fails, the exception will be caught below.
             tsdbRepository.saveAll(Collections.singletonList(dataPoint)).block();
-            log.info("✅ Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
+
+            log.info(" Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
         } catch (Exception e) {
             // If the write fails, this log is guaranteed to be printed.
             log.error("!!! [LAYER 2 FAILED] CRITICAL ERROR during synchronous InfluxDB write.", e);
@@ -63,7 +63,7 @@ public class DataForwardingService {
                 .junctionName(event.getJunctionName())
                 .edgeId(event.getEdgeId())
                 .vehicleCount(event.getVehicleCount())
-                .waitTime(event.getWaitTime())
+                .waitingTime(event.getWaitingTime())
                 .waitingVehicleCount(event.getWaitingVehicleCount())
                 .congested(event.isCongested())
                 .occupancy(event.getOccupancy())

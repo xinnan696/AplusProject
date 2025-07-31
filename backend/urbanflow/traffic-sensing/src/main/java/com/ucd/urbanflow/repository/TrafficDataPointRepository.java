@@ -108,7 +108,7 @@ public class TrafficDataPointRepository {
                             .edgeId((String) record.getValueByKey("edgeId"))
                             .simulationStep((Long) record.getValueByKey("simulationStep"))
                             .vehicleCount(record.getValueByKey("vehicleCount") != null ? ((Number) record.getValueByKey("vehicleCount")).intValue() : 0)
-                            .waitTime(record.getValueByKey("waitTime") != null ? ((Number) record.getValueByKey("waitTime")).doubleValue() : 0.0)
+                            .waitingTime(record.getValueByKey("waitingTime") != null ? ((Number) record.getValueByKey("waitingTime")).doubleValue() : 0.0)
                             .waitingVehicleCount(record.getValueByKey("waitingVehicleCount") != null ? ((Number) record.getValueByKey("waitingVehicleCount")).intValue() : 0)
                             .occupancy(record.getValueByKey("occupancy") != null ? ((Number) record.getValueByKey("occupancy")).floatValue() : 0.0f)
                             .congested((Boolean) record.getValueByKey("congested"))

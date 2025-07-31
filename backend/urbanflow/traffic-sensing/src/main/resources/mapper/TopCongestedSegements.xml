@@ -3,8 +3,8 @@
 <mapper namespace="com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper">
 
     <insert id="insert" parameterType="com.ucd.urbanflow.domain.pojo.TopCongestedSegments">
-        INSERT INTO congested_times_ranking (time_bucket, junction_name, congestion_times)
-        VALUES (#{timeBucket}, #{junctionName}, #{congestionTimes})
+        INSERT INTO congested_times_ranking (time_bucket, junction_id, junction_name, congestion_times)
+        VALUES (#{timeBucket}, #{junctionId}, #{junctionName}, #{congestionTimes})
     </insert>
 
 </mapper>

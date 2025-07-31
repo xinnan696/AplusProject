@@ -32,7 +32,7 @@ public class TrafficDataPoint {
     private Integer vehicleCount;
 
     @Column
-    private Double waitTime;
+    private Double waitingTime;
 
     @Column
     private Boolean congested;

@@ -15,7 +15,7 @@ public class EnrichedTrafficEvent {
     private String junctionName;
     private long simulationStep;
     private int vehicleCount;
-    private double waitTime;
+    private double waitingTime;
     private boolean congested;
     private int waitingVehicleCount;
     private float occupancy;

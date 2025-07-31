@@ -33,7 +33,6 @@ public class SecurityConfig {
                         .requestMatchers("/api/areas/**").permitAll()
                         .requestMatchers("/api/area-permission/**").permitAll()
                         .requestMatchers("/api/users/**").permitAll()
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

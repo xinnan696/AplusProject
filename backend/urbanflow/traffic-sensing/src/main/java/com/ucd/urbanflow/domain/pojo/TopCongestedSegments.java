@@ -9,5 +9,6 @@ public class TopCongestedSegments {
     private Integer id;
     private Date timeBucket;
     private String junctionName;
+    private String junctionId;
     private Integer congestionTimes;
 }

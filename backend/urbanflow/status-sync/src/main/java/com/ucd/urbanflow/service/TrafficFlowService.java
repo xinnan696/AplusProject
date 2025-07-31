@@ -1,5 +1,6 @@
 package com.ucd.urbanflow.service;
 
+import com.ucd.urbanflow.mapper.JunctionRegionsMapper;
 import com.ucd.urbanflow.mapper.TrafficFlowMapper;
 import com.ucd.urbanflow.model.TrafficFlow;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,15 +8,16 @@ import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TrafficFlowService {
     @Autowired
     private TrafficFlowMapper mapper;
 
-    public Map<String, Object> buildDashboardData(String junctionId, String timeRange) {
-//        Date end = new Date();
+    @Autowired
+    private JunctionRegionsMapper junctionRegionsMapper;
+
+    public Map<String, Object> buildDashboardData(String junctionId, String timeRange, String managedAreas) {
         Date end = new Date();
 
         Calendar cal = Calendar.getInstance();
@@ -45,8 +47,21 @@ public class TrafficFlowService {
         }
         start = cal.getTime();
 
+        List<String> junctionIdFilter = null;
 
-        List<TrafficFlow> stats = mapper.selectByJunctionAndTimeRange(junctionId, start, end);
+        // Priority 1: If a specific junctionId is requested, ALWAYS use it.
+        if (junctionId != null && !junctionId.isEmpty()) {
+            junctionIdFilter = Collections.singletonList(junctionId);
+        }
+        // Priority 2: If no specific junction is requested, but an area is, use the area.
+        else if (managedAreas != null && !managedAreas.isEmpty()) {
+            junctionIdFilter = junctionRegionsMapper.findJunctionIdsByArea(managedAreas);
+            if (junctionIdFilter.isEmpty()) {
+                return createEmptyDashboardResponse();
+            }
+        }
+
+        List<TrafficFlow> stats = mapper.selectByJunctionAndTimeRange(start, end, junctionIdFilter);
 
 
         List<String> xAxisLabels = new ArrayList<>();
@@ -196,6 +211,18 @@ public class TrafficFlowService {
         resp.put("xAxisLabels", xAxisLabels);
         resp.put("yAxisConfig", yAxisConfig);
         resp.put("data", data);
+        return resp;
+    }
+
+    private Map<String, Object> createEmptyDashboardResponse() {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("xAxisLabels", Collections.emptyList());
+        Map<String, Object> yAxisConfig = new HashMap<>();
+        yAxisConfig.put("min", 0);
+        yAxisConfig.put("max", 0);
+        yAxisConfig.put("interval", 500);
+        resp.put("yAxisConfig", yAxisConfig);
+        resp.put("data", Collections.emptyList());
         return resp;
     }
 }

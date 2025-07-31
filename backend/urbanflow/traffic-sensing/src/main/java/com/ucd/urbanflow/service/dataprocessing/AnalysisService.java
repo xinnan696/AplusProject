@@ -11,7 +11,6 @@ import com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper;
 import com.ucd.urbanflow.mapper.TrafficFlowMapper;
 import com.ucd.urbanflow.repository.TrafficDataPointRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -70,6 +69,7 @@ public class AnalysisService {
         // Initialize baseTime from properties
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+//            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             this.baseTime = sdf.parse(initialBaseTimeStr);
             log.info("Analysis baseTime initialized to: {}", this.baseTime);
         } catch (ParseException e) {
@@ -94,18 +94,6 @@ public class AnalysisService {
             this.lastProcessedStep.set(0);
         }
     }
-//    @PostConstruct
-//    public void initializeBaseTime() throws ParseException {
-//        try {
-//            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-//            this.baseTime = sdf.parse(initialBaseTimeStr);
-//            log.info("Analysis baseTime initialized to: {}", this.baseTime);
-//            log.info(">>>> [ANALYSIS SERVICE INITIALIZED] The initial value of lastProcessedStep is: {}", this.lastProcessedStep.get());
-//        } catch (ParseException e) {
-//            log.error("Failed to parse initial base-time property. Using current time as fallback.", e);
-//            this.baseTime = new Date();
-//        }
-//    }
 
     @Scheduled(fixedRate = 15000)
     public void analysisTrigger() {
@@ -162,7 +150,7 @@ public class AnalysisService {
             tf.setTimeBucket(timeBucket);
             tf.setJunctionId(junctionId);
             tf.setFlowRateHourly(totalFlow);
-            // log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
+            log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
             try {
                 trafficFlowMapper.insert(tf);
             } catch (Exception e) {
@@ -190,6 +178,7 @@ public class AnalysisService {
             if (congestionTimes > 0) {
                 TopCongestedSegments ctr = new TopCongestedSegments();
                 ctr.setTimeBucket(timeBucket);
+                ctr.setJunctionId(junctionId);
                 ctr.setJunctionName(points.get(0).getJunctionName());
                 ctr.setCongestionTimes((int) congestionTimes);
                 topCongestedSegmentsMapper.insert(ctr);
@@ -225,8 +214,8 @@ public class AnalysisService {
                     TrafficDataPoint prevPoint = prevStepData.get(currentPoint.getEdgeId());
 
                     // The cumulative waitTime from Redis.
-                    double prevWaitTime = (prevPoint != null && prevPoint.getWaitTime() != null) ? prevPoint.getWaitTime() : 0.0;
-                    double currentWaitTime = currentPoint.getWaitTime() != null ? currentPoint.getWaitTime() : 0.0;
+                    double prevWaitTime = (prevPoint != null && prevPoint.getWaitingTime() != null) ? prevPoint.getWaitingTime() : 0.0;
+                    double currentWaitTime = currentPoint.getWaitingTime() != null ? currentPoint.getWaitingTime() : 0.0;
 
                     // Calculate the wait time for this single step.
                     double deltaWaitTime = currentWaitTime - prevWaitTime;
@@ -244,66 +233,14 @@ public class AnalysisService {
 
             CongestedDurationRanking cdr = new CongestedDurationRanking();
             cdr.setTimeBucket(timeBucket);
+            cdr.setJunctionId(junctionId);
             cdr.setJunctionName(points.get(0).getJunctionName());
 
             // Set the final value, casting to Integer as required by your POJO.
-            cdr.setTotalCongestionDurationSeconds((int)finalValueInSeconds);
+            cdr.setTotalCongestionDurationSeconds((float)finalValueInSeconds);
 
             congestedDurationRankingMapper.insert(cdr);
         });
     }
-
-//    private void processCongestionDurationRanking(Map<String, List<TrafficDataPoint>> data, Date timeBucket) {
-//
-//        data.forEach((junctionId, points) -> {
-//
-//            Map<Long, Map<String, TrafficDataPoint>> stepToEdgeDataMap = points.stream()
-//                    .collect(Collectors.groupingBy(
-//                            TrafficDataPoint::getSimulationStep,
-//                            Collectors.toMap(TrafficDataPoint::getEdgeId, p -> p, (p1, p2) -> p1)
-//                    ));
-//
-//            long minStep = points.stream().mapToLong(TrafficDataPoint::getSimulationStep).min().orElse(0);
-//            long maxStep = points.stream().mapToLong(TrafficDataPoint::getSimulationStep).max().orElse(0);
-//
-//            double totalAggregatedDurationInSeconds = 0.0;
-//
-//            for (long step = minStep; step <= maxStep; step++) {
-//                Map<String, TrafficDataPoint> currentStepData = stepToEdgeDataMap.getOrDefault(step, Collections.emptyMap());
-//                Map<String, TrafficDataPoint> prevStepData = stepToEdgeDataMap.getOrDefault(step - 1, Collections.emptyMap());
-//
-//                double maxAvgWaitTimeForStep = 0.0;
-//
-//                for (TrafficDataPoint currentPoint : currentStepData.values()) {
-//                    TrafficDataPoint prevPoint = prevStepData.get(currentPoint.getEdgeId());
-//
-//                    double prevWaitTime = (prevPoint != null && prevPoint.getWaitTime() != null) ? prevPoint.getWaitTime() : 0.0;
-//                    double currentWaitTime = currentPoint.getWaitTime() != null ? currentPoint.getWaitTime() : 0.0;
-//                    double deltaWaitTime = currentWaitTime - prevWaitTime;
-//
-//                    int waitingVehicleCount = currentPoint.getWaitingVehicleCount() != null ? currentPoint.getWaitingVehicleCount() : 0;
-//
-//                    if (waitingVehicleCount > 0 && deltaWaitTime > 0) {
-//                        double avgWaitTime = deltaWaitTime / waitingVehicleCount;
-//                        if (avgWaitTime > maxAvgWaitTimeForStep) {
-//                            maxAvgWaitTimeForStep = avgWaitTime;
-//                        }
-//                    }
-//                }
-//                totalAggregatedDurationInSeconds += maxAvgWaitTimeForStep;
-//            }
-//
-//            double totalDurationInMinutes = totalAggregatedDurationInSeconds / 60.0;
-//            double finalValue = Math.min(totalDurationInMinutes, 120.0);
-//
-//            CongestedDurationRanking cdr = new CongestedDurationRanking();
-//            cdr.setTimeBucket(timeBucket);
-//            cdr.setJunctionName(points.get(0).getJunctionName());
-//
-//            cdr.setTotalCongestionDurationSeconds((int)finalValue);
-//
-//            congestedDurationRankingMapper.insert(cdr);
-//        });
-//    }
 
 }
