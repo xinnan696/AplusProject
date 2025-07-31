@@ -79,11 +79,11 @@ export default defineConfig({
         }
       },
       '/api/traffic':{
-        target: 'http://192.168.83.41:8083',
+        target: `${HTTP_LOCALHOST}:8083`,
         changeOrigin: true,
       },
       '/api/dashboard':{
-        target: 'http://192.168.83.41:8087',
+        target: `${HTTP_LOCALHOST}:8087`,
         changeOrigin: true,
       },
     },

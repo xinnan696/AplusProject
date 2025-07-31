@@ -106,6 +106,7 @@ import { getJunctions } from '@/services/dashboard_api'
 const authStore = useAuthStore()
 // 使用 computed 确保当 store 中的状态变化时，这里的值也能响应式更新
 const managedAreas = computed(() => authStore.getManagedAreas())
+console.log('managedAreas:', managedAreas.value);
 //模拟测试
 //const managedAreas = ['Left']
 

@@ -12,6 +12,13 @@ import '@/style/button-hover.scss'
 // import CommonInput from './components/common/CommonInput.vue'
 // import CommonSelect from './components/common/CommonSelect.vue'
 
+// dashboard页面分区模拟测试
+// if (process.env.NODE_ENV === 'development') {
+//   import('@/mocks/mockDashboardUserAreaApi');
+//   console.log('API mocks have been activated for development.');
+// }
+
+
 const app = createApp(App)
 
 // app.component('CommonSelect', CommonSelect)
