@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ucd.urbanflow.domain.dto.JunctionCongestionDTO;
 import com.ucd.urbanflow.domain.pojo.JunctionIncomingEdge;
+import com.ucd.urbanflow.domain.pojo.JunctionInfo;
 import com.ucd.urbanflow.domain.vo.EdgeData;
 import com.ucd.urbanflow.mapper.JunctionMapper;
+import com.ucd.urbanflow.mapper.JunctionRegionsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
 public class TrafficService {
 
     private final JunctionMapper junctionMapper;
+    private final JunctionRegionsMapper junctionRegionsMapper;
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -33,23 +36,37 @@ public class TrafficService {
     private static final double OCCUPANCY_THRESHOLD = 0.6;
 
 
-    public List<Map<String, String>> getJunctionname() {
+    public List<Map<String, String>> getJunctionname(String managedAreas) {
         List<Map<String, String>> junctionList = new ArrayList<>();
-        List<JunctionIncomingEdge> allJunctionEdges = junctionMapper.findAllJunctionEdges();
-        Set<String> seenJunctionIds = new HashSet<>();
 
-        if (!CollectionUtils.isEmpty(allJunctionEdges)){
-            for (JunctionIncomingEdge edge : allJunctionEdges) {
-                String junctionId = edge.getJunctionId();
-                if (!seenJunctionIds.contains(junctionId)) {
-                    Map<String, String> map = new HashMap<>();
-                    map.put("junctionId", junctionId);
-                    map.put("junctionName", edge.getJunctionName());
-                    junctionList.add(map);
-                    seenJunctionIds.add(junctionId);
+        if (managedAreas == null || managedAreas.isEmpty()) {
+            List<JunctionIncomingEdge> allJunctionEdges = junctionMapper.findAllJunctionEdges();
+            Set<String> seenJunctionIds = new HashSet<>();
+            if (!CollectionUtils.isEmpty(allJunctionEdges)){
+                for (JunctionIncomingEdge edge : allJunctionEdges) {
+                    if (seenJunctionIds.add(edge.getJunctionId())) {
+                        Map<String, String> map = new HashMap<>();
+                        map.put("junctionId", edge.getJunctionId());
+                        map.put("junctionName", edge.getJunctionName());
+                        junctionList.add(map);
+                    }
                 }
             }
+        } else {
+            List<JunctionInfo> filteredJunctions = junctionRegionsMapper.findJunctionsByArea(managedAreas);
+            if (!CollectionUtils.isEmpty(filteredJunctions)) {
+                // Convert the list of POJOs to the required List<Map<String, String>> format
+                junctionList = filteredJunctions.stream()
+                        .map(info -> {
+                            Map<String, String> map = new HashMap<>();
+                            map.put("junctionId", info.getJunctionId());
+                            map.put("junctionName", info.getJunctionName());
+                            return map;
+                        })
+                        .collect(Collectors.toList());
+            }
         }
+
         return junctionList;
     }
 
@@ -196,7 +213,7 @@ public class TrafficService {
 
         // 使用 opsForHash().multiGet 从 Redis 的 hash 结构中读取数据
         List<Object> edgeIdObjects = new ArrayList<>(edgeIds);
-        List<Object> edgeJsonValues = redisTemplate.opsForHash().multiGet("sumo:edge", edgeIdObjects);
+        List<Object> edgeJsonValues = redisTemplate.opsForHash().multiGet(REDIS_EDGE_KEY_PREFIX, edgeIdObjects);
 
         if (edgeJsonValues == null) {
             return 0;

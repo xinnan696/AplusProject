@@ -21,8 +21,7 @@ public class RedisEdgeData {
     private Float speed;
     private Integer vehicleCount;
     private List<String> vehicleIDs;
-    private Double waitTime;
-    private List<String> waitingVehicleIDs;
+    private Double waitingTime;
     private Integer waitingVehicleCount;
     private Float occupancy;
 }

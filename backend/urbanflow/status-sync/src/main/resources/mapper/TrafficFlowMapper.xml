@@ -7,8 +7,13 @@
 
     <select id="selectByJunctionAndTimeRange" resultType="com.ucd.urbanflow.model.TrafficFlow">
         SELECT * FROM traffic_flow
-        WHERE junction_id = #{junctionId}
-            AND time_bucket BETWEEN #{start} AND #{end}
+        WHERE time_bucket BETWEEN #{start} AND #{end}
+        <if test="junctionIds != null and !junctionIds.isEmpty()">
+            AND junction_id IN
+            <foreach item="id" collection="junctionIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
     </select>
 
 </mapper>

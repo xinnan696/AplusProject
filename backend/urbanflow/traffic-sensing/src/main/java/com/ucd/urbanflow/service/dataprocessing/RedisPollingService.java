@@ -108,7 +108,7 @@ public class RedisPollingService {
                             .junctionName(junctionIdToNameMap.getOrDefault(junctionId, junctionId))
                             .simulationStep(edgeData.getTimestamp().longValue())
                             .vehicleCount(Optional.ofNullable(edgeData.getVehicleCount()).orElse(0))
-                            .waitTime(Optional.ofNullable(edgeData.getWaitTime()).orElse(0.0))
+                            .waitingTime(Optional.ofNullable(edgeData.getWaitingTime()).orElse(0.0))
                             .waitingVehicleCount(Optional.ofNullable(edgeData.getWaitingVehicleCount()).orElse(0))
                             .congested(congestedJunctions.contains(junctionId))
                             .build();

@@ -9,5 +9,6 @@ public class CongestedDurationRanking {
     private Integer id;
     private Date timeBucket;
     private String junctionName;
-    private Integer totalCongestionDurationSeconds;
+    private String junctionId;
+    private Float totalCongestionDurationSeconds;
 }

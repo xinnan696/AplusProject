@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,8 +27,10 @@ public class TrafficController {
     }
 
     @GetMapping("/junctions")
-    public ResponseEntity<List<Map<String, String>>> getJunctionnameList() {
-        List<Map<String, String>> junctionnameList = trafficService.getJunctionname();
+    public ResponseEntity<List<Map<String, String>>> getJunctionnameList(
+            @RequestParam(required = false) String managedAreas
+    ) {
+        List<Map<String, String>> junctionnameList = trafficService.getJunctionname(managedAreas);
         return ResponseEntity.ok(junctionnameList);
     }
 }
