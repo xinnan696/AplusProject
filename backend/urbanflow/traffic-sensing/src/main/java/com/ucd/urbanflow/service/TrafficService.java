@@ -80,13 +80,13 @@ public class TrafficService {
     public void updateCongestionCache() {
 //        log.info("Running scheduled task: Calculating and caching congested junctions...");
         try {
-            // 1. 执行核心计算
+            // 1.Execute core computation
             List<JunctionCongestionDTO> topJunctions = this.calculateTopCongestedJunctions();
 
-            // 2. 将结果列表序列化为JSON字符串
+            // 2.Serialize the result list into a JSON string
             String jsonCacheData = objectMapper.writeValueAsString(topJunctions);
 
-            // 3. 将JSON字符串存入指定的Redis Key中
+            // 3.Save the JSON string to the specified Redis key
             redisTemplate.opsForValue().set(CACHE_KEY_CONGESTED_JUNCTIONS, jsonCacheData);
 
 //            log.info("Successfully updated congested junctions cache. Found {} junctions.", topJunctions.size());
