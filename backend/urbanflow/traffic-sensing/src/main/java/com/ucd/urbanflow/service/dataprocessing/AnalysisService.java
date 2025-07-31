@@ -162,7 +162,7 @@ public class AnalysisService {
             tf.setTimeBucket(timeBucket);
             tf.setJunctionId(junctionId);
             tf.setFlowRateHourly(totalFlow);
-            log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
+            // log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
             try {
                 trafficFlowMapper.insert(tf);
             } catch (Exception e) {

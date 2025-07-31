@@ -97,7 +97,7 @@ defineExpose({
     left: 0;
     width: 2px;
     height: 100%;
-    background: linear-gradient(180deg, #00B4D8 0%, transparent 50%, #00B4D8 100%);
+    background: linear-gradient(180deg, #4A5568 0%, transparent 50%, #4A5568 100%);
     opacity: 0.6;
     z-index: 1;
   }

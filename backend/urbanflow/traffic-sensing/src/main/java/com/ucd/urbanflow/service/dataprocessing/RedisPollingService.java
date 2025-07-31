@@ -89,6 +89,7 @@ public class RedisPollingService {
         log.info("Successfully fetched {} records from Redis hash '{}'.", allCurrentEdgeData.size(), REDIS_EDGE_HASH_KEY);
 
 
+
         // Step 2: Calculate the set of congested junctions using the in-memory data.
         Set<String> congestedJunctions = getCongestedJunctions(allCurrentEdgeData);
 
@@ -99,6 +100,7 @@ public class RedisPollingService {
                         edgeData.getEdgeId(),
                         edgeData.getTimestamp(),
                         lastSeenTimestamps.getOrDefault(edgeData.getEdgeId(), -1.0));
+
                 lastSeenTimestamps.put(edgeData.getEdgeId(), edgeData.getTimestamp());
 
                 findJunctionIdForEdge(edgeData.getEdgeId()).ifPresent(junctionId -> {

@@ -1,56 +1,31 @@
 import axios from 'axios';
 
+// 后端API基础地址 同时要配置在vite.config.ts
+// const API_BASE_URL = '/api';
+
+// 定义一个通用的错误返回值，防止图表因数据null而崩溃
 const errorResponse = { data: [], xAxisLabels: [], yAxisLabels: [], xAxisConfig: {}, yAxisConfig: {} };
 
-const convertTimeRangeForBackend = (frontendTimeRange: string): string => {
-  switch (frontendTimeRange.toLowerCase()) {
-    case '24hours':
-      return '24 hours';
-    case 'oneweek':
-      return 'one week';
-    case 'onemonth':
-      return 'one month';
-    case 'sixmonths':
-      return 'six months';
-    case 'oneyear':
-      return 'one year';
-    default:
-      return '24 hours'; 
-  }
-};
-
+//获取路口列表
 export const getJunctions = async () => {
   try {
-    const response = await axios.get('/api/junctions');
+    const response = await axios.get('/api/traffic/junctions');
     return response.data;
   } catch (error) {
     console.error("Error fetching junctions:", error);
-    return [
-      { junction_id: 'A1', junction_name: 'Central Plaza' },
-      { junction_id: 'B2', junction_name: 'Train Station' },
-      { junction_id: 'C3', junction_name: 'Shopping Mall' },
-      { junction_id: 'D4', junction_name: 'University Gate' },
-      { junction_id: 'E5', junction_name: 'City Hospital' },
-      { junction_id: 'F6', junction_name: 'Industrial Park' },
-      { junction_id: 'G7', junction_name: 'Residential District' },
-      { junction_id: 'H8', junction_name: 'Sports Complex' },
-      { junction_id: 'I9', junction_name: 'Business Center' },
-      { junction_id: 'J10', junction_name: 'Airport Road' },
-      { junction_id: 'K11', junction_name: 'Highway Entrance' },
-      { junction_id: 'L12', junction_name: 'Entertainment District' },
-    ];
+    return [];
   }
 };
 
 
+// 图表一 API
 export const getTrafficFlow = async (params: { junction_id?: string, time_range: string }) => {
   try {
     const apiParams = {
-      timeRange: convertTimeRangeForBackend(params.time_range),
-      junctionId: params.junction_id === 'total_city' ? undefined : params.junction_id,
+      timeRange: params.time_range,
+      junctionId: params.junction_id,
     };
-
-    const response = await axios.get(`/api/trafficflow/dashboard`, { params: apiParams });
+    const response = await axios.get(`/api/dashboard/trafficflow`, { params: apiParams });
     return response.data;
   } catch (error) {
     console.error(`Error fetching traffic flow for [${params.time_range}]:`, error);
@@ -58,13 +33,13 @@ export const getTrafficFlow = async (params: { junction_id?: string, time_range:
   }
 };
 
-
+// 图表二 API
 export const getCongestedJunctionCountTrend = async (params: { time_range: string }) => {
   try {
     const apiParams = {
-      timeRange: convertTimeRangeForBackend(params.time_range),
+      timeRange: params.time_range,
     };
-    const response = await axios.get(`/api/congestioncount/ranking`, { params: apiParams });
+    const response = await axios.get(`/api/dashboard/congestioncount`, { params: apiParams });
     return response.data;
   } catch (error) {
     console.error(`Error fetching congested junction count trend for [${params.time_range}]:`, error);
@@ -72,13 +47,13 @@ export const getCongestedJunctionCountTrend = async (params: { time_range: strin
   }
 };
 
-
+// 图表三 API
 export const getTopCongestedTimes = async (params: { time_range: string }) => {
   try {
     const apiParams = {
-      timeRange: convertTimeRangeForBackend(params.time_range),
+      timeRange: params.time_range,
     };
-    const response = await axios.get(`/api/congestedtimes/dashboard`, { params: apiParams });
+    const response = await axios.get(`/api/dashboard/congestedtimes`, { params: apiParams });
     return response.data;
   } catch (error) {
     console.error(`Error fetching top congested times for [${params.time_range}]:`, error);
@@ -86,13 +61,13 @@ export const getTopCongestedTimes = async (params: { time_range: string }) => {
   }
 };
 
-
+// 图表四 API
 export const getCongestionDurationRanking = async (params: { time_range: string }) => {
   try {
     const apiParams = {
-      timeRange: convertTimeRangeForBackend(params.time_range),
+      timeRange: params.time_range,
     };
-    const response = await axios.get(`/api/durationranking/dashboard`, { params: apiParams });
+    const response = await axios.get(`/api/dashboard/durationranking`, { params: apiParams });
     return response.data;
   } catch (error) {
     console.error(`Error fetching congestion duration ranking for [${params.time_range}]:`, error);

@@ -50,7 +50,6 @@ public class DataForwardingService {
 
             // This is now a blocking call. If it fails, the exception will be caught below.
             tsdbRepository.saveAll(Collections.singletonList(dataPoint)).block();
-
             log.info("✅ Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
         } catch (Exception e) {
             // If the write fails, this log is guaranteed to be printed.

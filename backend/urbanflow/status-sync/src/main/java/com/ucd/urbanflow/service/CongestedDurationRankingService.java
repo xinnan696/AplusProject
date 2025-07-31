@@ -56,13 +56,6 @@ public class CongestedDurationRankingService {
 
         List<CongestedDurationRanking> stats = congestedDurationRankingMapper.selectByTimeRange(start, end);
 
-//        System.out.println("start = " + start + ", end = " + end);
-//        System.out.println("stats.size() = " + stats.size());
-//        if (!stats.isEmpty()) {
-//            for (CongestedDurationRanking s : stats) {
-//                System.out.println(s.getTimeBucket() + " " + s.getJunctionName() + " " + s.getTotalCongestionDurationSeconds());
-//            }
-//        }
 
         Map<String, Double> durationByJunction = new HashMap<>();
         if(!stats.isEmpty()){

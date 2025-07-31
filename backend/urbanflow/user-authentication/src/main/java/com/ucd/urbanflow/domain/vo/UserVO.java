@@ -16,6 +16,8 @@ public class UserVO {
     private String accountNumber; // The UserID
     private String userName;
     private String email;
+    private String department;
+    private String phoneNumber;
     private String role;
     private boolean enabled;      // The user's status
     private List<String> managedAreas;

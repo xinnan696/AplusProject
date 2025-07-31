@@ -220,6 +220,8 @@ public class UserService {
                 .accountNumber(user.getAccountNumber())
                 .userName(user.getUserName())
                 .email(user.getEmail())
+                .department(user.getDepartment())
+                .phoneNumber(user.getPhoneNumber())
                 .role(user.getRole())
                 .enabled(user.isEnabled());
 
