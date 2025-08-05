@@ -69,7 +69,7 @@
         l.account_number,
         COALESCE(u.user_name, 'Unknown User') AS user_name,
         l.operation_type AS action,
-        CONCAT(l.operation_type, ' ', l.operation_result, '. ', l.result_message) AS detail,
+        l.result_message AS detail,
         'AUTH' AS module,
         l.created_at AS timestamp
         FROM

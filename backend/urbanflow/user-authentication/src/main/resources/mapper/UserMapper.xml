@@ -35,7 +35,9 @@
 
     <select id="findAllActive" resultMap="UserResultMap">
         SELECT * FROM users
-        WHERE is_deleted = FALSE
+        WHERE
+            is_deleted = FALSE
+            AND account_number != 'admin01'
         ORDER BY id ASC
     </select>
 
