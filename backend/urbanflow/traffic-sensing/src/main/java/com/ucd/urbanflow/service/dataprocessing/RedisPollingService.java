@@ -86,8 +86,7 @@ public class RedisPollingService {
         if (allCurrentEdgeData.isEmpty()) {
             return;
         }
-        log.info("Successfully fetched {} records from Redis hash '{}'.", allCurrentEdgeData.size(), REDIS_EDGE_HASH_KEY);
-
+//        log.info("Successfully fetched {} records from Redis hash '{}'.", allCurrentEdgeData.size(), REDIS_EDGE_HASH_KEY);
 
         // Step 2: Calculate the set of congested junctions using the in-memory data.
         Set<String> congestedJunctions = getCongestedJunctions(allCurrentEdgeData);
@@ -95,10 +94,10 @@ public class RedisPollingService {
         // Step 3: Process each data point from the fetched in-memory map.
         for (RedisEdgeData edgeData : allCurrentEdgeData.values()) {
             if (isNewData(edgeData)) {
-                log.info(">>>> [NEW DATA DETECTED] Edge: {}, Timestamp: {}, LastSeen: {}",
-                        edgeData.getEdgeId(),
-                        edgeData.getTimestamp(),
-                        lastSeenTimestamps.getOrDefault(edgeData.getEdgeId(), -1.0));
+//                log.info(">>>> [NEW DATA DETECTED] Edge: {}, Timestamp: {}, LastSeen: {}",
+//                        edgeData.getEdgeId(),
+//                        edgeData.getTimestamp(),
+//                        lastSeenTimestamps.getOrDefault(edgeData.getEdgeId(), -1.0));
                 lastSeenTimestamps.put(edgeData.getEdgeId(), edgeData.getTimestamp());
 
                 findJunctionIdForEdge(edgeData.getEdgeId()).ifPresent(junctionId -> {
@@ -165,11 +164,9 @@ public class RedisPollingService {
     private boolean isJunctionCongested(List<String> incomingEdgeIds, Map<String, RedisEdgeData> allEdgeData) {
         double maxOccupancy = 0.0;
         for (String edgeId : incomingEdgeIds) {
-            // No Redis call here. We use the map that was already fetched.
             RedisEdgeData edgeData = allEdgeData.get(edgeId);
             if (edgeData == null) continue;
 
-            // --- Simulation Block ---
             if (edgeData.getOccupancy() == null) {
                 if (edgeData.getLaneNumber() != null && edgeData.getLaneNumber() > 0 && edgeData.getWaitingVehicleCount() != null) {
                     float simulatedOccupancy = (float) (((double) edgeData.getWaitingVehicleCount() / edgeData.getLaneNumber()) * 15.0);
@@ -178,7 +175,6 @@ public class RedisPollingService {
                     edgeData.setOccupancy(0.0f);
                 }
             }
-            // --- End Simulation Block ---
 
             float currentOccupancy = Optional.ofNullable(edgeData.getOccupancy()).orElse(0.0f);
             if (currentOccupancy > maxOccupancy) {
@@ -200,8 +196,8 @@ public class RedisPollingService {
         double previous = lastSeenTimestamps.getOrDefault(data.getEdgeId(), -1.0);
         boolean isNew = data.getTimestamp() > previous;
 
-        log.info(">>>> isNewData Check for edge '{}': incoming_ts={}, last_seen_ts={}, is_new={}",
-                data.getEdgeId(), data.getTimestamp(), previous, isNew);
+//        log.info(">>>> isNewData Check for edge '{}': incoming_ts={}, last_seen_ts={}, is_new={}",
+//                data.getEdgeId(), data.getTimestamp(), previous, isNew);
 
         return isNew;
     }

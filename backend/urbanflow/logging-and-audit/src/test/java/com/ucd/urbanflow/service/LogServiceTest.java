@@ -90,7 +90,6 @@ class LogServiceTest {
         logService.recordSpecialEventLog(testDto);
 
         // Assert
-        // Verify that the insertSpecialEventLog method was called with the correct DTO and the JSON string
         verify(logMapper).insertSpecialEventLog(testDto, expectedJson);
     }
 
@@ -105,7 +104,6 @@ class LogServiceTest {
         logService.recordSpecialEventLog(testDto);
 
         // Assert
-        // Verify that the insert method is still called, but with a null for the JSON string
         verify(logMapper).insertSpecialEventLog(testDto, null);
         // Also verify that the objectMapper was never used
         verify(objectMapper, never()).writeValueAsString(any());
@@ -125,7 +123,6 @@ class LogServiceTest {
         logService.recordSpecialEventLog(testDto);
 
         // Assert
-        // Verify that the mapper's insert method was NEVER called, because the process failed before that.
         verify(logMapper, never()).insertSpecialEventLog(any(), anyString());
     }
 

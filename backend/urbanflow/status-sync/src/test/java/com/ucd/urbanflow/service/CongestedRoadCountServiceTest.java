@@ -52,7 +52,7 @@ class CongestedRoadCountServiceTest {
         record1_day2.setTimeBucket(day2);
         record1_day2.setCongestedJunctionCount(8);
 
-        // [FIXED] The mock setup now correctly matches the mapper's method signature,
+
         // which only has two parameters: start and end dates.
         when(congestedRoadCountMapper.selectByTimeRange(any(Date.class), any(Date.class)))
                 .thenReturn(Arrays.asList(record1_day1, record2_day1, record1_day2));
@@ -74,7 +74,7 @@ class CongestedRoadCountServiceTest {
         int day1Index = xAxisLabels.indexOf("2025-07-20");
         assertTrue(day1Index != -1, "Label for 2025-07-20 should exist");
 
-        // [FIXED] Correctly get the map at the found index, then get the value from the map.
+
         assertEquals(15, dataList.get(day1Index).get("congested_junction_count")); // 5 + 10 = 15
 
         // Find the index for day2 and assert its value

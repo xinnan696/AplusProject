@@ -158,8 +158,8 @@ public class TrafficService {
                 EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
                 float occupancy = edgeData.getOccupancy();
 
-//                log.info("Evaluating edge for congestion - occupancy: {}, vehicleCount: {}, edgeData: {}",
-//                        occupancy, edgeData.getVehicleCount(), edgeData);
+                log.info("Evaluating edge for congestion - occupancy: {}, vehicleCount: {}, edgeData: {}",
+                        occupancy, edgeData.getVehicleCount(), edgeData);
 
                 if (occupancy > maxOccupancy) {
                     maxOccupancy = occupancy;
