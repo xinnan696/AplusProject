@@ -1,7 +1,7 @@
 <template>
   <div class="custom-select" ref="selectRef">
     <div class="select-selected" @click="toggleDropdown">
-      {{ selectedLabel }}
+      <span class="select-label">{{ selectedLabel }}</span>
       <span class="arrow" :class="{ 'open': isOpen }"></span>
     </div>
     <div v-if="isOpen" class="select-items">
@@ -18,16 +18,26 @@
           :key="option.value"
           @click="selectOption(option)"
           class="option-item"
+          @mouseenter="showTooltip"
+          @mouseleave="hideTooltip"
         >
           {{ option.label }}
         </li>
       </ul>
     </div>
+
+    <div
+      v-if="tooltip.visible"
+      class="custom-tooltip"
+      :style="tooltip.style"
+    >
+      {{ tooltip.text }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
 const props = defineProps<{
   options: { value: any; label: string }[]
@@ -40,6 +50,13 @@ const isOpen = ref(false)
 const searchTerm = ref('')
 const searchAppliedTerm = ref('')
 const selectRef = ref<HTMLElement | null>(null)
+
+// ★★★ 新增修改 2：为自定义悬浮框创建响应式状态 ★★★
+const tooltip = reactive({
+  visible: false,
+  text: '',
+  style: {}
+})
 
 const selectedLabel = computed(() => {
   const selected = props.options.find(opt => opt.value === props.modelValue)
@@ -54,6 +71,37 @@ const filteredOptions = computed(() => {
     option.label.toLowerCase().includes(searchAppliedTerm.value.toLowerCase())
   );
 });
+
+// ★★★ 新增修改 3：创建显示和隐藏悬浮框的函数 ★★★
+
+/**
+ * 当鼠标悬停在选项上时触发
+ * @param event 鼠标事件对象
+ */
+const showTooltip = (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+  // 检查文本是否真的被截断了 (滚动宽度 > 可见宽度)
+  if (target.scrollWidth > target.clientWidth) {
+    const rect = target.getBoundingClientRect();
+    tooltip.text = target.innerText;
+    tooltip.style = {
+      // 使用 fixed 定位，使其能溢出滚动容器
+      position: 'fixed',
+      // 定位在元素的右侧，并垂直居中
+      top: `${rect.top + rect.height / 2}px`,
+      left: `${rect.right + 8}px`, // 在元素右边 8px 处
+      transform: 'translateY(-50%)', // 垂直居中
+    };
+    tooltip.visible = true;
+  }
+};
+
+/**
+ * 当鼠标离开时触发
+ */
+const hideTooltip = () => {
+  tooltip.visible = false;
+};
 
 
 function toggleDropdown() {
@@ -71,7 +119,6 @@ function handleSearch() {
   searchAppliedTerm.value = searchTerm.value;
 }
 
-
 function closeDropdown(event: MouseEvent) {
   if (selectRef.value && !selectRef.value.contains(event.target as Node)) {
     isOpen.value = false
@@ -87,7 +134,6 @@ onBeforeUnmount(() => {
 })
 
 watch(() => props.modelValue, () => {
-  // Reset search when model value changes from outside
   searchTerm.value = '';
   searchAppliedTerm.value = '';
 });
@@ -112,9 +158,14 @@ watch(() => props.modelValue, () => {
   cursor: pointer;
   user-select: none;
   position: relative;
+}
+
+.select-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex-grow: 1;
+  width: 0;
 }
 
 .arrow {
@@ -160,7 +211,7 @@ watch(() => props.modelValue, () => {
   list-style: none;
   padding: 0;
   margin: 0;
-  max-height: 150px; // 约等于 5 * (行高 + padding)
+  max-height: 100px;
   overflow-y: auto;
 
   &::-webkit-scrollbar {
@@ -179,9 +230,33 @@ watch(() => props.modelValue, () => {
   padding: 0.08rem 0.1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &:hover {
-    background-color: #007BFF; // 高亮蓝色
+    background-color: #007BFF;
   }
+}
+
+/* ★★★ 新增修改 4：添加自定义悬浮框的样式 ★★★ */
+.custom-tooltip {
+  /* 定位与行为 */
+  z-index: 1000; /* 确保在最顶层 */
+  pointer-events: none; /* 确保鼠标可以穿透它，不会影响下方的悬停事件 */
+  white-space: nowrap; /* 确保悬浮框本身内容不换行 */
+
+  /* 样式 (部分样式与DashboardCard的悬浮框保持一致) */
+  font-size: 0.14rem;
+  font-weight: 500;
+  padding: 0.08rem 0.12rem;
+  border-radius: 4px;
+  border: 1px solid #4a4a70;
+  font-family: 'Inter', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Roboto', sans-serif !important;
+  line-height: 1.3 !important;
+
+  /* ★★★ 应用您要求的颜色 ★★★ */
+  color: white;
+  background-color: #2A2A45;
 }
 </style>
