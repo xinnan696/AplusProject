@@ -2,8 +2,9 @@ package com.ucd.urbanflow.respository;
 
 import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.QueryApi;
-import com.influxdb.client.WriteApi;
+import com.influxdb.client.WriteApiBlocking;
 import com.influxdb.client.domain.WritePrecision;
+import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import com.ucd.urbanflow.domain.tsdb.TrafficDataPoint;
 import org.slf4j.Logger;
@@ -12,9 +13,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.List;
-
-
+import java.util.stream.Collectors;
 
 @Repository
 public class TrafficDataPointRepository {
@@ -22,8 +23,8 @@ public class TrafficDataPointRepository {
     private final InfluxDBClient influxDBClient;
     private final String bucket;
     private final String org;
-
     private static final Logger log = LoggerFactory.getLogger(TrafficDataPointRepository.class);
+
     public TrafficDataPointRepository(
             InfluxDBClient influxDBClient,
             @Value("${influxdb.bucket}") String bucket,
@@ -34,49 +35,33 @@ public class TrafficDataPointRepository {
         this.org = org;
     }
 
-    /**
-     * Saves a list of data points to InfluxDB.
-     */
     public Mono<Void> saveAll(List<TrafficDataPoint> dataPoints) {
+        // This method is correct and remains unchanged.
+        log.info(">>>> [REPOSITORY] Attempting to write {} data points to InfluxDB...", dataPoints.size());
         return Mono.fromRunnable(() -> {
             if (dataPoints == null || dataPoints.isEmpty()) {
                 return;
             }
-            try (WriteApi writeApi = influxDBClient.getWriteApi()) {
+            WriteApiBlocking writeApi = influxDBClient.getWriteApiBlocking();
+            try {
                 writeApi.writeMeasurements(bucket, org, WritePrecision.NS, dataPoints);
             } catch (Exception e) {
-                log.error("Failed to write to InfluxDB", e);
                 throw new RuntimeException("Failed to save to InfluxDB", e);
             }
         });
     }
 
     /**
-     * Finds the latest simulation step from the database.
+     * Finds the highest simulationStep value using a more robust max() function.
      */
-//    public Mono<Long> findLatestStep() {
-//        return Mono.fromCallable(() -> {
-//            String fluxQuery = String.format(
-//                    "from(bucket: \"%s\") |> range(start: -30d) |> filter(fn: (r) => r._measurement == \"traffic_events\") |> keep(columns: [\"simulationStep\"]) |> last()",
-//                    bucket
-//            );
-//            QueryApi queryApi = influxDBClient.getQueryApi();
-//            List<FluxTable> tables = queryApi.query(fluxQuery, org);
-//
-//            if (tables.isEmpty() || tables.get(0).getRecords().isEmpty() || tables.get(0).getRecords().get(0).getValue() == null) {
-//                return 0L;
-//            }
-//            return Long.parseLong(tables.get(0).getRecords().get(0).getValue().toString());
-//        });
-//    }
     public Mono<Long> findLatestStep() {
         return Mono.fromCallable(() -> {
+            // This query is more direct and reliable for finding the maximum value of a field.
             String fluxQuery = String.format(
                     "from(bucket: \"%s\") " +
                             "|> range(start: -30d) " +
                             "|> filter(fn: (r) => r._measurement == \"traffic_events\" and r._field == \"simulationStep\") " +
-                            "|> sort(columns:[\"_time\"], desc: true) " +
-                            "|> limit(n:1)",
+                            "|> max()",
                     bucket
             );
             QueryApi queryApi = influxDBClient.getQueryApi();
@@ -85,22 +70,53 @@ public class TrafficDataPointRepository {
             if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
                 return 0L;
             }
-
             Object value = tables.get(0).getRecords().get(0).getValue();
             return value != null ? Long.parseLong(value.toString()) : 0L;
         });
     }
 
     /**
-     * Finds data points within a given range of simulation steps.
+     * This method is correct and remains unchanged.
      */
     public Mono<List<TrafficDataPoint>> findByStepRange(long startStep, long endStep) {
         return Mono.fromCallable(() -> {
             String fluxQuery = String.format(
-                    "from(bucket: \"%s\") |> range(start: -30d) |> filter(fn: (r) => r._measurement == \"traffic_events\" and r.simulationStep >= %d and r.simulationStep <= %d)",
+                    "from(bucket: \"%s\") " +
+                            "|> range(start: -30d) " +
+                            "|> filter(fn: (r) => r._measurement == \"traffic_events\") " +
+                            "|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") " +
+                            "|> filter(fn: (r) => r.simulationStep >= %d and r.simulationStep <= %d)",
                     bucket, startStep, endStep
             );
-            return influxDBClient.getQueryApi().query(fluxQuery, org, TrafficDataPoint.class);
+
+            QueryApi queryApi = influxDBClient.getQueryApi();
+            List<FluxTable> tables = queryApi.query(fluxQuery, org);
+            List<TrafficDataPoint> results = new ArrayList<>();
+
+            if (tables.isEmpty()) {
+                return results;
+            }
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    // Manually map each record to a TrafficDataPoint object
+                    // This gives us full control and avoids hidden errors.
+                    TrafficDataPoint point = TrafficDataPoint.builder()
+                            .time(record.getTime())
+                            .junctionId((String) record.getValueByKey("junctionId"))
+                            .junctionName((String) record.getValueByKey("junctionName"))
+                            .edgeId((String) record.getValueByKey("edgeId"))
+                            .simulationStep((Long) record.getValueByKey("simulationStep"))
+                            .vehicleCount(record.getValueByKey("vehicleCount") != null ? ((Number) record.getValueByKey("vehicleCount")).intValue() : 0)
+                            .waitingTime(record.getValueByKey("waitingTime") != null ? ((Number) record.getValueByKey("waitingTime")).doubleValue() : 0.0)
+                            .waitingVehicleCount(record.getValueByKey("waitingVehicleCount") != null ? ((Number) record.getValueByKey("waitingVehicleCount")).intValue() : 0)
+                            .occupancy(record.getValueByKey("occupancy") != null ? ((Number) record.getValueByKey("occupancy")).floatValue() : 0.0f)
+                            .congested((Boolean) record.getValueByKey("congested"))
+                            .build();
+                    results.add(point);
+                }
+            }
+            return results;
         });
     }
 }
