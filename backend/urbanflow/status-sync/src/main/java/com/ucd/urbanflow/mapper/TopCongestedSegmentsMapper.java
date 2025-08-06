@@ -11,6 +11,7 @@ import java.util.List;
 public interface TopCongestedSegmentsMapper {
     List<TopCongestedSegments> selectByTimeRange(
             @Param("start") Date start,
-            @Param("end") Date end
+            @Param("end") Date end,
+            @Param("junctionIds") List<String> junctionIds
     );
 }

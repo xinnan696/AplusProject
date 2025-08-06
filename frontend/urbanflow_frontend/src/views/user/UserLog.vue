@@ -10,7 +10,7 @@
     />
     <ControlNav :isVisible="isNavVisible" />
 
-    <div class="main-area">
+    <div class="main-area" :class="{ 'nav-collapsed': !isNavVisible }">
       <div class="logs-container">
         <!-- Page title -->
         <h1 class="page-title">User Logs</h1>
@@ -19,17 +19,46 @@
         <div class="controls-bar">
           <div class="date-filter-group">
             <label class="date-label">From:</label>
-            <input type="date" v-model="startDate" class="date-input" @change="handleDateChange" />
+            <div class="date-input-wrapper">
+              <input 
+                type="date" 
+                v-model="startDate" 
+                class="date-input" 
+                @change="handleDateChange"
+                :class="{ 'has-value': startDate }"
+                ref="startDateInput"
+                @click="handleDateInputClick($event)"
+              />
+              <span v-if="!startDate" class="date-placeholder">dd/mm/yyyy</span>
+            </div>
             <label class="date-label">To:</label>
-            <input type="date" v-model="endDate" class="date-input" @change="handleDateChange" />
-            <button @click="clearDateFilter" class="clear-btn">Clear</button>
+            <div class="date-input-wrapper">
+              <input 
+                type="date" 
+                v-model="endDate" 
+                class="date-input" 
+                @change="handleDateChange"
+                :class="{ 'has-value': endDate }"
+                ref="endDateInput"
+                @click="handleDateInputClick($event)"
+              />
+              <span v-if="!endDate" class="date-placeholder">dd/mm/yyyy</span>
+            </div>
+            <button 
+              @click="clearDateFilter" 
+              class="clear-btn"
+              :class="{ 'active': hasDateFilter, 'disabled': !hasDateFilter }"
+              :disabled="!hasDateFilter"
+            >
+              Clear
+            </button>
           </div>
 
           <div class="search-group">
             <input
               type="text"
               class="search-input"
-              placeholder="Search logs..."
+              placeholder="Search by Account Number..."
               v-model="searchTerm"
               @input="handleSearchInput"
             >
@@ -66,29 +95,34 @@
               <!-- Date header -->
               <div class="date-header">{{ formatDisplayDate(dateGroup.date) }}</div>
 
-              <!-- Table header -->
-              <div class="table-header">
-              <div class="header-time" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Time</div>
-              <div class="header-account" style="position: absolute; left: 2.0rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Account</div>
-              <div class="header-name" style="position: absolute; left: 4.5rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Name</div>
-              <div class="header-action" style="position: absolute; left: 7.0rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Action</div>
-              <div class="header-module" style="position: absolute; left: 9.8rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Module</div>
-              <div class="header-details" style="position: absolute; left: 12.8rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Details</div>
+              <!-- Table header for this date group -->
+              <div class="table-header" :class="{ 'nav-collapsed': !isNavVisible }">
+                <div class="header-time">Time</div>
+                <div class="header-account">Account</div>
+                <div class="header-name">Name</div>
+                <div class="header-action">Action</div>
+                <div class="header-module">Module</div>
+                <div class="header-details">Details</div>
               </div>
 
               <!-- Table body -->
               <div class="table-body">
-                <div v-for="(log, index) in dateGroup.logs" :key="index" class="log-row">
-                  <div class="cell-time" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 40px;">{{ formatTime(log.timestamp) }}</div>
-                  <div class="cell-account" style="position: absolute; left: 2.0rem; display: flex; align-items: center; height: 40px;">{{ log.accountNumber }}</div>
-                  <div class="cell-name" style="position: absolute; left: 4.5rem; display: flex; align-items: center; height: 40px;">{{ log.userName }}</div>
-                  <div class="cell-action" style="position: absolute; left: 7.0rem; display: flex; align-items: center; height: 40px;">
+                <div v-for="(log, index) in dateGroup.logs" :key="index" class="log-row" :class="{ 'nav-collapsed': !isNavVisible }">
+                  <div class="cell-time">{{ formatTime(log.timestamp) }}</div>
+                  <div class="cell-account">{{ log.accountNumber }}</div>
+                  <div class="cell-name">{{ log.userName }}</div>
+                  <div class="cell-action">
                     <span :class="getActionClass(log.action)">{{ formatAction(log.action) }}</span>
                   </div>
-                  <div class="cell-module" style="position: absolute; left: 9.8rem; display: flex; align-items: center; height: 40px;">
+                  <div class="cell-module">
                     <span :class="getModuleClass(log.module)">{{ formatModule(log.module) }}</span>
                   </div>
-                  <div class="cell-details" style="position: absolute; left: 12.8rem; display: flex; align-items: center; height: 40px; width: calc(100% - 13.2rem); overflow: hidden; text-overflow: ellipsis;">{{ log.detail }}</div>
+                  <div class="cell-details" 
+                    @mouseenter="showTooltip($event, log.detail)"
+                    @mouseleave="hideTooltip"
+                  >
+                    <span class="detail-text">{{ log.detail }}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -96,9 +130,9 @@
         </div>
 
         <!-- Pagination -->
-        <div class="pagination" v-if="!loading && totalItems > logsPerPage">
+        <div class="pagination" v-if="!loading && totalItems > dynamicLogsPerPage">
           <span class="page-info">
-            Showing {{ (currentPage - 1) * logsPerPage + 1 }}-{{ Math.min(currentPage * logsPerPage, totalItems) }}
+            Showing {{ (currentPage - 1) * dynamicLogsPerPage + 1 }}-{{ Math.min(currentPage * dynamicLogsPerPage, totalItems) }}
             of {{ totalItems }} logs
           </span>
           <div class="page-controls">
@@ -122,11 +156,18 @@
 
     <!-- Record Panel -->
     <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
+    
+    <!-- Global Tooltip -->
+    <div v-if="tooltipVisible" 
+         class="simple-tooltip"
+         :style="tooltipStyle">
+      {{ tooltipText }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
@@ -145,16 +186,25 @@ const searchTerm = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const currentPage = ref(1)
-const logsPerPage = 10 // 每页显示10条日志记录
+const dynamicLogsPerPage = ref(10) // 初始值，会动态调整
 const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 const loading = ref(false)
 const error = ref('')
+const containerHeight = ref(0) // 容器高度
+
+// Tooltip state
+const tooltipVisible = ref(false)
+const tooltipText = ref('')
+const tooltipStyle = ref({})
 
 const originalLogs = ref<DateGroupedLogs[]>([])
 
 // Computed properties
+const hasDateFilter = computed(() => {
+  return !!(startDate.value || endDate.value)
+})
 const filteredGroupedLogs = computed(() => {
   let filtered = [...originalLogs.value]
 
@@ -163,11 +213,7 @@ const filteredGroupedLogs = computed(() => {
     filtered = filtered.map(dateGroup => ({
       ...dateGroup,
       logs: dateGroup.logs.filter(log =>
-        log.accountNumber.toLowerCase().includes(searchLower) ||
-        log.userName.toLowerCase().includes(searchLower) ||
-        log.action.toLowerCase().includes(searchLower) ||
-        log.detail.toLowerCase().includes(searchLower) ||
-        log.module.toLowerCase().includes(searchLower)
+        log.accountNumber.toLowerCase().includes(searchLower)
       )
     })).filter(dateGroup => dateGroup.logs.length > 0)
   }
@@ -203,17 +249,17 @@ const filteredGroupedLogs = computed(() => {
 // 将所有日志展开为一个平面数组，按时间排序
 const allFilteredLogs = computed(() => {
   const logs: Array<{ log: UserLog; date: string; timestamp: string }> = []
-  
+
   filteredGroupedLogs.value.forEach(dateGroup => {
     dateGroup.logs.forEach(log => {
-      logs.push({ 
-        log, 
+      logs.push({
+        log,
         date: dateGroup.date,
         timestamp: log.timestamp
       })
     })
   })
-  
+
   // 按时间戳排序，最新的在前
   return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 })
@@ -222,27 +268,27 @@ const totalItems = computed(() => {
   return allFilteredLogs.value.length
 })
 
-// 按日志条数分页，每页显示10条
+// 按日志条数分页，动态计算每页显示条数
 const totalPages = computed(() => {
-  return Math.ceil(totalItems.value / logsPerPage)
+  return Math.ceil(totalItems.value / dynamicLogsPerPage.value)
 })
 
 // 分页后重新按日期分组显示
 const paginatedLogs = computed(() => {
-  const start = (currentPage.value - 1) * logsPerPage
-  const end = start + logsPerPage
+  const start = (currentPage.value - 1) * dynamicLogsPerPage.value
+  const end = start + dynamicLogsPerPage.value
   const currentPageLogs = allFilteredLogs.value.slice(start, end)
-  
+
   // 按日期重新分组
   const groupedByDate = new Map<string, UserLog[]>()
-  
+
   currentPageLogs.forEach(({ log, date }) => {
     if (!groupedByDate.has(date)) {
       groupedByDate.set(date, [])
     }
     groupedByDate.get(date)!.push(log)
   })
-  
+
   // 转换为数组格式并排序
   const result: DateGroupedLogs[] = []
   groupedByDate.forEach((logs, date) => {
@@ -250,7 +296,7 @@ const paginatedLogs = computed(() => {
     const sortedLogs = logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     result.push({ date, logs: sortedLogs })
   })
-  
+
   // 按日期排序（最新的在前）
   return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
@@ -292,34 +338,87 @@ const showEndEllipsis = computed(() => {
   return totalPages.value > 7 && currentPage.value < totalPages.value - 3
 })
 
-// Methods
+// 监听导航栏状态变化
+watch(() => isNavVisible.value, () => {
+  // 导航栏状态改变时重新计算
+  setTimeout(calculateDynamicLogsPerPage, 500)
+})
+
+// 监听数据变化
+watch(filteredGroupedLogs, () => {
+  // 数据过滤后重置到第一页
+  currentPage.value = 1
+})
+
+// 保存上次的视口高度
+let lastViewportHeight = window.innerHeight
+
+// 动态计算每页应该显示的日志条数 - 简化版本
+const calculateDynamicLogsPerPage = () => {
+  try {
+    const viewportHeight = window.innerHeight
+    
+    // 只有在视口高度变化较大时才重新计算
+    if (Math.abs(viewportHeight - lastViewportHeight) < 50) {
+      return
+    }
+    
+    lastViewportHeight = viewportHeight
+    
+    // 基于视口高度的简单计算
+    // 假设页面上下占用3分之1的空间
+    const availableHeight = viewportHeight * 0.65
+    
+    // 每条日志预估高度（包括分组标题平均开销）
+    const estimatedHeightPerLog = 55
+    
+    // 计算可显示的日志数
+    const calculatedLogs = Math.floor(availableHeight / estimatedHeightPerLog)
+    
+    // 限制在合理范围内
+    const targetLogsPerPage = Math.max(5, Math.min(20, calculatedLogs))
+    
+    // 只有当值真正改变时才更新
+    if (dynamicLogsPerPage.value !== targetLogsPerPage) {
+      console.log('📊 Adjusting logs per page based on viewport:', {
+        viewportHeight,
+        availableHeight,
+        oldValue: dynamicLogsPerPage.value,
+        newValue: targetLogsPerPage
+      })
+      dynamicLogsPerPage.value = targetLogsPerPage
+    }
+    
+  } catch (error) {
+    console.warn('Failed to calculate logs per page:', error)
+  }
+}
+
+
 
 const fetchUserLogs = async () => {
   try {
     loading.value = true
     error.value = ''
 
-    console.log('🚀 开始获取用户日志数据...');
 
     const params: UserLogQueryParams = {}
 
 
     const response = await UserLogApiService.getUserLogs(params)
 
-    console.log('📊 API响应:', response);
-    console.log('📊 响应代码:', response.code);
-    console.log('📊 数据长度:', response.data?.length);
+
 
     if (response.code === 200) {
       originalLogs.value = response.data
       currentPage.value = 1
-      
+
       console.log('📊 Loaded logs:', {
         totalDateGroups: response.data.length,
         totalLogs: response.data.reduce((total, group) => total + group.logs.length, 0),
         firstFewDates: response.data.slice(0, 3).map(g => g.date)
       })
-      
+
       console.log('First few logs from each date:')
       response.data.slice(0, 3).forEach(dateGroup => {
         console.log(`${dateGroup.date}: ${dateGroup.logs.length} logs`)
@@ -329,14 +428,14 @@ const fetchUserLogs = async () => {
       })
     } else {
       error.value = 'Failed to fetch user logs'
-      console.error('❌ API Error:', response.code)
+      console.error('API Error:', response.code)
     }
   } catch (err: any) {
     error.value = err.message || 'Failed to fetch user logs'
     console.error( err)
   } finally {
     loading.value = false
-    console.log('🏁 获取用户日志完成，loading:', loading.value, 'error:', error.value);
+    console.log(loading.value, 'error:', error.value);
   }
 }
 
@@ -344,21 +443,48 @@ const exportLogs = async () => {
   try {
     loading.value = true
 
-    const params: UserLogQueryParams = {}
+    // Get the filtered logs data that's currently displayed
+    const logsToExport: UserLog[] = []
 
+    filteredGroupedLogs.value.forEach(dateGroup => {
+      dateGroup.logs.forEach(log => {
+        logsToExport.push(log)
+      })
+    })
 
-    if (searchTerm.value.trim()) {
-      params.searchTerm = searchTerm.value.trim()
+    if (logsToExport.length === 0) {
+      error.value = 'No logs to export'
+      return
     }
 
-    if (startDate.value) {
-      params.startDate = startDate.value
-    }
-    if (endDate.value) {
-      params.endDate = endDate.value
-    }
+    // Create CSV content
+    const headers = ['Date', 'Time', 'Account Number', 'User Name', 'Action', 'Module', 'Details']
+    const csvContent = []
 
-    const blob = await UserLogApiService.exportUserLogs(params)
+    // Add headers
+    csvContent.push(headers.join(','))
+
+    // Add data rows
+    logsToExport.forEach(log => {
+      const date = new Date(log.timestamp)
+      const dateStr = date.toISOString().split('T')[0]
+      const timeStr = date.toLocaleTimeString('en-US', { hour12: false })
+
+      const row = [
+        dateStr,
+        timeStr,
+        `"${log.accountNumber || ''}"`,
+        `"${log.userName || ''}"`,
+        `"${formatAction(log.action)}"`,
+        `"${formatModule(log.module)}"`,
+        `"${log.detail || ''}"`
+      ]
+      csvContent.push(row.join(','))
+    })
+
+    // Create and download CSV file
+    const csvString = csvContent.join('\n')
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' })
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -367,6 +493,9 @@ const exportLogs = async () => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
+
+    console.log(`Exported ${logsToExport.length} logs to CSV`)
+
   } catch (err: any) {
     error.value = err.message || 'Failed to export user logs'
     console.error('Error exporting user logs:', err)
@@ -377,21 +506,12 @@ const exportLogs = async () => {
 
 const formatDisplayDate = (dateStr: string) => {
   const date = new Date(dateStr)
-  const today = new Date()
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
-
-  if (dateStr === today.toISOString().split('T')[0]) {
-    return `Today (${date.toLocaleDateString()})`
-  } else if (dateStr === yesterday.toISOString().split('T')[0]) {
-    return `Yesterday (${date.toLocaleDateString()})`
-  } else {
-    return date.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
-  }
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 }
 const formatTime = (timestamp: string) => {
   const date = new Date(timestamp)
@@ -401,6 +521,7 @@ const formatTime = (timestamp: string) => {
 const formatAction = (action: string) => {
   const actionMap: { [key: string]: string } = {
     'MANUAL_CONTROL': 'Manual Control',
+    'MANUAL': 'Manual',
     'LOGIN': 'Login',
     'LOGOUT': 'Logout',
     'CREATE': 'Create',
@@ -436,10 +557,37 @@ const getActionClass = (action: string) => {
 const getModuleClass = (module: string) => {
   const moduleClasses: { [key: string]: string } = {
     'TRAFFIC_CONTROL': 'module-traffic',
-    'AUTH': 'module-auth',
+    'AUTH': 'module-auth-blue',
     'USER_MANAGEMENT': 'module-user'
   }
   return moduleClasses[module] || 'module-default'
+}
+
+// Tooltip methods
+const showTooltip = (event: MouseEvent, text: string) => {
+  if (!text) return
+  
+  tooltipText.value = text
+  tooltipVisible.value = true
+  
+  // Position tooltip
+  const rect = (event.target as HTMLElement).getBoundingClientRect()
+  tooltipStyle.value = {
+    position: 'fixed',
+    left: `${rect.left + rect.width / 2}px`,
+    top: `${rect.bottom + 8}px`,
+    transform: 'translateX(-50%)',
+    zIndex: 99999,
+    maxWidth: '400px',
+    whiteSpace: 'normal',
+    wordWrap: 'break-word'
+  }
+}
+
+const hideTooltip = () => {
+  tooltipVisible.value = false
+  tooltipText.value = ''
+  tooltipStyle.value = {}
 }
 
 const goToPage = (page: number) => {
@@ -483,8 +631,43 @@ const handleSearch = () => {
   currentPage.value = 1
 }
 
-onMounted(() => {
-  fetchUserLogs()
+// 处理日期输入框点击，确保整个区域都可以打开日历
+const handleDateInputClick = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  // 强制打开日历选择器
+  try {
+    input.showPicker && input.showPicker()
+  } catch (e) {
+    // 如果showPicker不支持，就使用默认行为
+    input.focus()
+  }
+}
+
+onMounted(async () => {
+  // 先加载数据
+  try {
+    await fetchUserLogs()
+    // 等待DOM更新后计算分页
+    await nextTick()
+    // 初始计算
+    calculateDynamicLogsPerPage()
+  } catch (error) {
+    console.error('Failed to load initial data:', error)
+  }
+  
+  // 监听窗口大小变化 - 使用简单的防抖
+  let resizeTimer: ReturnType<typeof setTimeout>
+  const handleResize = () => {
+    clearTimeout(resizeTimer)
+    resizeTimer = setTimeout(calculateDynamicLogsPerPage, 500)
+  }
+  window.addEventListener('resize', handleResize)
+  
+  // 组件卸载时清理
+  onUnmounted(() => {
+    clearTimeout(resizeTimer)
+    window.removeEventListener('resize', handleResize)
+  })
 })
 
 // Header button handlers
@@ -543,6 +726,14 @@ const handleSignOut = () => {
   display: flex;
   overflow: hidden;
   margin-left: 2.4rem;
+  width: calc(100vw - 2.4rem);
+  transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  
+  // 当导航栏收起时的样式
+  &.nav-collapsed {
+    margin-left: 0.24rem;
+    width: calc(100vw - 0.24rem);
+  }
 }
 
 .logs-container {
@@ -554,6 +745,7 @@ const handleSignOut = () => {
   height: 100%;
   position: relative;
   overflow: hidden;
+  min-height: 0; // 确保flex布局正常工作
 }
 
 .page-title {
@@ -580,15 +772,34 @@ const handleSignOut = () => {
   display: flex;
   align-items: center;
   gap: 0.12rem;
-  padding: 0.08rem;
-  background-color: #2B2B3C;
+  padding: 0.08rem 0.08rem 0.08rem 0;
+  background-color: #1E1E2F;
   border-radius: 0.08rem;
+}
+
+.date-input-wrapper {
+  position: relative;
+  display: inline-block;
 }
 
 .date-label {
   color: #FFFFFF;
   font-size: 0.14rem;
   font-weight: 500;
+}
+
+.date-placeholder {
+  position: absolute;
+  left: 0.08rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #666;
+  font-size: 0.14rem;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.2s ease;
+  letter-spacing: 0.02rem; // 增加字母间距
+  font-family: monospace; // 使用等宽字体确保对齐
 }
 
 .date-input {
@@ -598,8 +809,10 @@ const handleSignOut = () => {
   border-radius: 0.04rem;
   color: #FFFFFF;
   font-size: 0.14rem;
-  width: 1.2rem;
+  width: 1.6rem;
   transition: all 0.3s ease;
+  position: relative;
+  cursor: pointer;
 
   &:hover {
     border-color: #00B4D8;
@@ -612,11 +825,86 @@ const handleSignOut = () => {
     background-color: #2B2B3C;
     box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
   }
+
+  // 完全隐藏原生日期显示，只保持功能
+  &::-webkit-datetime-edit {
+    width: 100%;
+    height: 100%;
+    color: transparent !important;
+    cursor: pointer;
+    opacity: 0 !important; // 完全隐藏
+  }
+  
+  &.has-value::-webkit-datetime-edit {
+    color: #FFFFFF !important;
+    opacity: 1 !important; // 有值时显示
+  }
+  
+  &::-webkit-datetime-edit-text {
+    color: transparent !important; // 隐藏分隔符
+    opacity: 0 !important;
+  }
+  
+  &.has-value::-webkit-datetime-edit-text {
+    color: #666 !important;
+    opacity: 1 !important;
+  }
+  
+  &::-webkit-datetime-edit-month-field,
+  &::-webkit-datetime-edit-day-field,
+  &::-webkit-datetime-edit-year-field {
+    color: transparent !important;
+    cursor: pointer;
+    opacity: 0 !important;
+  }
+  
+  &.has-value::-webkit-datetime-edit-month-field,
+  &.has-value::-webkit-datetime-edit-day-field,
+  &.has-value::-webkit-datetime-edit-year-field {
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+  }
+  
+  &::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) !important;
+    cursor: pointer;
+    width: 0.16rem;
+    height: 0.16rem;
+    opacity: 1 !important;
+    position: relative;
+    margin-left: 0.08rem;
+  }
+
+  &::-webkit-calendar-picker-indicator:hover {
+    background-color: rgba(0, 180, 216, 0.1) !important;
+    border-radius: 0.02rem;
+  }
+
+  // 确保整个输入框都可以点击
+  &::-webkit-datetime-edit-fields-wrapper {
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    opacity: 0 !important; // 隐藏包装器
+  }
+  
+  &.has-value::-webkit-datetime-edit-fields-wrapper {
+    opacity: 1 !important;
+  }
+
+  // focus时隐藏placeholder
+  &:focus + .date-placeholder {
+    opacity: 0;
+  }
+
+  // 点击时隐藏placeholder
+  &:active + .date-placeholder {
+    opacity: 0;
+  }
 }
 
 .clear-btn {
   padding: 0.06rem 0.12rem;
-  background-color: #6c757d;
   border: none;
   border-radius: 0.04rem;
   color: #FFFFFF;
@@ -624,9 +912,24 @@ const handleSignOut = () => {
   cursor: pointer;
   transition: all 0.3s ease;
 
-  &:hover {
-    background-color: #5a6268;
-    transform: translateY(-1px);
+  &.active {
+    background-color: #00B4D8;
+    
+    &:hover {
+      background-color: #0096c7;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.disabled {
+    background-color: #6c757d;
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    &:hover {
+      transform: none;
+      background-color: #6c757d;
+    }
   }
 
   &:active {
@@ -637,18 +940,20 @@ const handleSignOut = () => {
 .search-group {
   display: flex;
   align-items: center;
-  gap: 0.08rem;
+  gap: 0.1rem;
+  margin-left: 0.3rem;
 }
 
 .search-input {
   padding: 0.08rem 0.12rem;
   background-color: #2B2B3C;
   border: 1px solid #2B2B3C;
-  border-radius: 0.04rem;
+  border-radius: 0.2rem;
   color: #FFFFFF;
   font-size: 0.14rem;
-  width: 2rem;
+  width: 2.36rem;
   height: 0.4rem;
+  box-sizing: border-box;
   transition: all 0.3s ease;
 
   &::placeholder {
@@ -668,16 +973,31 @@ const handleSignOut = () => {
   }
 }
 
-.search-btn, .export-btn {
+.search-btn {
   background-color: #1E1E2F;
+  padding: 0.08rem 0.12rem;
+  border: none;
+  border-radius: 0.04rem;
+  color: #FFFFFF;
+  font-size: 0.3rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+.export-btn{
+  background-color: #00B4D8;
   padding: 0.08rem 0.12rem;
   border: none;
   border-radius: 0.04rem;
   color: #FFFFFF;
   font-size: 0.14rem;
   cursor: pointer;
-  height: 0.4rem;
   transition: all 0.3s ease;
+  margin-left: 0.16rem;
 
   &:hover:not(:disabled) {
     background-color: #0096c7;
@@ -687,7 +1007,17 @@ const handleSignOut = () => {
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    background-color: #00B4D8;
   }
+}
+
+.search-btn {
+  width: 0.3rem;
+  height: 0.3rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .export-btn {
@@ -704,11 +1034,19 @@ const handleSignOut = () => {
   position: relative;
   background: #1E1E2F;
   border-radius: 0.12rem;
-  overflow: hidden; // 禁止滚动条
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
 }
 
 .logs-content {
   flex: 1;
+  min-height: 0;
+  padding: 0.08rem 0;
+  overflow: hidden;
+  height: 100%;
 }
 
 .loading-container, .error-container, .no-data-container {
@@ -716,8 +1054,9 @@ const handleSignOut = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 200px;
+  flex: 1;
   gap: 0.16rem;
+  min-height: 200px;
 }
 
 .loading-spinner {
@@ -762,7 +1101,7 @@ const handleSignOut = () => {
 }
 
 .date-group {
-  margin-bottom: 0.32rem;
+  margin-bottom: 0.24rem;
 }
 
 .date-header {
@@ -775,15 +1114,45 @@ const handleSignOut = () => {
 }
 
 .table-header {
-  display: grid;
-  grid-template-columns: 0.8rem 1.5rem 1rem 1.5rem 1.5rem 3fr;
-  gap: 0.16rem;
+  position: relative;
+  height: 36px;
   color: #FFFFFF;
   font-size: 0.14rem;
-  font-weight: bold;
-  margin-bottom: 0.08rem;
-  padding: 0.08rem 0;
-  border-bottom: 1px solid #3A3A4D;
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+  
+  // 为所有标题元素添加平滑过渡
+  .header-time,
+  .header-account,
+  .header-name,
+  .header-action,
+  .header-module,
+  .header-details {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    height: 36px;
+    font-weight: bold;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  
+  // 默认状态下的列位置
+  .header-time { left: 0.26rem; }
+  .header-account { left: 2.0rem; }
+  .header-name { left: 4.5rem; }
+  .header-action { left: 7.0rem; }
+  .header-module { left: 9.8rem; }
+  .header-details { left: 12.8rem; }
+  
+  // 导航栏收起时的列位置
+  &.nav-collapsed {
+    .header-time { left: 0.26rem; }
+    .header-account { left: 2.5rem; }
+    .header-name { left: 5.5rem; }
+    .header-action { left: 8.5rem; }
+    .header-module { left: 11.5rem; }
+    .header-details { left: 14.8rem; }
+  }
 }
 
 .table-body {
@@ -792,30 +1161,72 @@ const handleSignOut = () => {
 }
 
 .log-row {
-  display: grid;
-  grid-template-columns: 0.8rem 1.5rem 1rem 1.5rem 1.5rem 3fr;
-  gap: 0.16rem;
-  padding: 0.12rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  transition: background-color 0.2s ease;
+  position: relative;
+  height: 36px;
+  color: #FFFFFF;
+  font-size: 0.14rem;
+  transition: all 0.3s ease;
+  margin: 0.08rem 0;
+  border-radius: 0.04rem;
+  display: flex; // 使用flex布局
+  align-items: center;
 
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.02);
-  }
-
-  .cell-time, .cell-account, .cell-name, .cell-action, .cell-module, .cell-details {
+  // 为所有单元格设置基本样式
+  .cell-time,
+  .cell-account,
+  .cell-name,
+  .cell-action,
+  .cell-module {
+    position: absolute;
     display: flex;
     align-items: center;
+    height: 36px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-
+  
+  // Detail列使用不同的布局方式
   .cell-details {
+    position: absolute;
+    height: 36px;
     color: #999;
-    white-space: normal;
-    overflow: visible;
-    text-overflow: unset;
+    cursor: help;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    // 确保省略号正确显示
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: flex !important;
+    align-items: center;
+  }
+  
+  // 默认状态下的列位置
+  .cell-time { left: 0.26rem; }
+  .cell-account { left: 2.0rem; }
+  .cell-name { left: 4.5rem; }
+  .cell-action { left: 7.0rem; }
+  .cell-module { left: 9.8rem; }
+  .cell-details { 
+    left: 12.8rem;
+    width: calc(100% - 13.4rem); // 留一些边距
+    right: 0.2rem;
+  }
+  
+  // 导航栏收起时的列位置
+  &.nav-collapsed {
+    .cell-time { left: 0.26rem; }
+    .cell-account { left: 2.5rem; }
+    .cell-name { left: 5.5rem; }
+    .cell-action { left: 8.5rem; }
+    .cell-module { left: 11.5rem; }
+    .cell-details { 
+      left: 14.8rem;
+      width: calc(100% - 15.0rem); // 留一些边距
+      right: 0.2rem;
+    }
   }
 }
 
@@ -891,6 +1302,15 @@ const handleSignOut = () => {
   font-weight: 500;
 }
 
+.module-auth-blue {
+  background-color: rgba(0, 180, 216, 0.15);
+  color: #00B4D8;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
 .module-user {
   background-color: rgba(40, 167, 69, 0.15);
   color: #28a745;
@@ -917,12 +1337,14 @@ const handleSignOut = () => {
   font-size: 0.14rem;
   gap: 0.3rem;
   padding: 0.16rem 0;
-  margin-top: auto; // 推到底部
+  margin-top: 0.08rem;
   border-top: 1px solid #3A3A4D;
   background-color: #1E1E2F;
   position: relative;
-  flex-shrink: 0; // 防止被压缩
-  transform: translateX(-0.2rem); // 左移0.2rem
+  flex-shrink: 0;
+  transform: translateX(-0.2rem);
+  z-index: 100; // 增加z-index确保始终在最上层
+  min-height: 60px; // 保证最小高度
 }
 
 .page-info {
@@ -1051,20 +1473,6 @@ const handleSignOut = () => {
 }
 
 
-.table-header {
-  position: relative !important;
-  height: 40px !important;
-  color: #FFFFFF !important;
-  font-size: 0.14rem !important;
-  font-weight: 600 !important;
-  display: block !important;
-  grid-template-columns: unset !important;
-  gap: unset !important;
-  margin-bottom: 0 !important;
-  padding: 0 !important;
-  border-bottom: none !important;
-}
-
 .table-divider {
   height: 0.02rem;
   background: linear-gradient(90deg, transparent, #00B4D8, transparent);
@@ -1080,38 +1488,73 @@ const handleSignOut = () => {
   font-size: 0.14rem !important;
   display: flex;
   flex-direction: column;
-  gap: 0.15rem; // 增加行间距从0.08rem到0.15rem
-  padding: 0.2rem 0; // 增加顶部和底部的padding
+  gap: 0.08rem;
+  padding: 0.12rem 0;
 }
 
-.log-row {
-  position: relative !important;
-  height: 40px !important;
-  color: #FFFFFF !important;
-  font-size: 0.14rem !important;
-  transition: all 0.3s ease !important;
-  display: block !important;
-  grid-template-columns: unset !important;
-  gap: unset !important;
-  padding: 0 !important;
+// 日历图标和基本样式
+:global(input[type="date"]::-webkit-calendar-picker-indicator) {
+  filter: brightness(0) invert(1) !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
 
-  &:hover {
-    transform: translateX(0.04rem) !important;
-  }
+// 设置暗色主题（尝试影响日历弹出框）
+:global(input[type="date"]) {
+  color-scheme: dark;
+}
 
-  .cell-time, .cell-account, .cell-name, .cell-action, .cell-module, .cell-details {
-    display: flex !important;
-    align-items: center !important;
-    position: absolute !important;
-    height: 40px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
+:global(html) {
+  color-scheme: dark;
+}
 
-  .cell-details {
-    color: #999 !important;
-    width: calc(100% - 9.5rem) !important;
+// Tooltip 样式
+.simple-tooltip {
+  position: fixed;
+  padding: 8px 12px;
+  background: rgba(45, 45, 45, 0.95) !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.4 !important;
+  border-radius: 6px;
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 400px;
+  z-index: 99999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  
+  // 小三角箭头
+  &::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid rgba(45, 45, 45, 0.95);
   }
 }
+
+// 强制Detail列的省略号显示
+.cell-details {
+  min-width: 0 !important;
+  flex-shrink: 1 !important;
+  
+  .detail-text {
+    display: block;
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
 </style>

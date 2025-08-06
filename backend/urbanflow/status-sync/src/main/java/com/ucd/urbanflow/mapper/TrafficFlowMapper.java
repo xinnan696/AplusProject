@@ -10,8 +10,8 @@ import java.util.List;
 @Mapper
 public interface TrafficFlowMapper {
     List<TrafficFlow> selectByJunctionAndTimeRange(
-            @Param("junctionId") String junctionId,
             @Param("start") Date start,
-            @Param("end") Date end
+            @Param("end") Date end,
+            @Param("junctionIds") List<String> junctionIds
             );
 }

@@ -42,10 +42,29 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
+
+// 动态调整弹窗位置的函数
+const adjustToastPosition = () => {
+  // 查找页面上的 toast 元素
+  const toastElements = document.querySelectorAll('.toast');
+  toastElements.forEach(toast => {
+    // 检查是否在登录页面（通过检查是否存在 .auth-page 元素）
+    if (document.querySelector('.auth-page')) {
+      toast.style.position = 'fixed';
+      toast.style.top = '1.44rem'; // 保持原来的高度位置
+      toast.style.left = '50%'; // 水平居中
+      toast.style.transform = 'translateX(-50%)'; // 只进行水平偏移
+      toast.style.zIndex = '9999';
+    }
+  });
+};
+
+// 使用 MutationObserver 监听 DOM 变化
+let observer: MutationObserver | null = null;
 
 
 const router = useRouter();
@@ -102,13 +121,54 @@ const handleLogin = async () => {
 const goToForgot = () => {
   router.push({ name: 'ForgetPassword' });
 };
+
+// 设置 DOM 监听器
+onMounted(() => {
+  // 创建 MutationObserver 来监听 DOM 变化
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        // 检查是否有新增的 toast 元素
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
+              // 延迟调整位置，确保元素已经渲染
+              setTimeout(adjustToastPosition, 50);
+            }
+          }
+        });
+      }
+    });
+  });
+
+  // 开始监听整个文档的变化
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // 初始检查是否已经有 toast 元素
+  setTimeout(adjustToastPosition, 100);
+});
+
+// 清理监听器
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+});
 </script>
 
 <style scoped>
 .auth-page { width: 100vw; height: 100vh; display: flex; justify-content: center; align-items: center; background-image: url('@/assets/images/LoginBg.png'); background-size: cover; background-position: center; }
 .auth-box {
   width: 420px;
-  padding: 40px;
+  padding: 35px;
+  padding-left: 45px;
+  padding-right: 45px;
+  padding-top: 20px;
   background-color: #2c2f48;
   border-radius: 16px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -118,16 +178,63 @@ const goToForgot = () => {
   flex-direction: column;
 }
 .logo-image {
-  width: 100px; /* Adjusted logo size */
+  width: 1.74rem; /* Adjusted logo size */
   height: auto;
-  margin: 0 auto 25px;
+  margin: 0 auto 0;
 }
-.system-title { font-size: 26px; font-weight: 600; color: #00e3ff; margin-bottom: 40px; letter-spacing: 1px; }
+.system-title { font-size: 26px; font-weight: 600; color: #00b4d8; margin-bottom: 40px; letter-spacing: 1px; }
 .input-group { position: relative; width: 100%; margin-bottom: 35px; }
 .input-icon { position: absolute; left: 18px; top: 14px; width: 20px; height: 20px; opacity: 0.6; }
-.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00e3ff; background-color: transparent; color: #fff; font-size: 16px; outline: none; }
-.input-group input::placeholder { color: rgba(255, 255, 255, 0.7); }
-.submit-button { width: 100%; padding: 14px; background-color: #00e3ff; color: #1E1E2F; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; font-size: 16px; margin-top: 10px; }
+.input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00b4d8; background-color: transparent; color: #FFFFFF; font-size: 16px; outline: none; }
+.input-group input::placeholder { color: #999999; }
+.submit-button { width: 100%; padding: 14px; background-color: #00b4d8; color: #FFFFFF; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: background-color 0.3s; font-size: 16px; margin-top: 10px; }
 .forgot-password { margin-top: 25px; font-size: 14px; color: rgba(255, 255, 255, 0.8); cursor: pointer; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
+</style>
+
+<!-- Override toast position for login page only -->
+<style>
+/* 更强的选择器优先级，确保在登录页面覆盖弹窗位置 */
+body .auth-page .toast,
+.auth-page .toast {
+  position: fixed !important;
+  top: 1.44rem !important; /* 保持原来的高度位置 */
+  left: 50% !important; /* 水平居中 */
+  transform: translateX(-50%) !important; /* 只进行水平偏移 */
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+/* 重写动画效果以配合新的定位 */
+body .auth-page .toast-fade-enter-active,
+body .auth-page .toast-fade-leave-active,
+.auth-page .toast-fade-enter-active,
+.auth-page .toast-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease !important;
+}
+
+body .auth-page .toast-fade-enter-from,
+.auth-page .toast-fade-enter-from {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-1rem) scale(0.8) !important;
+}
+
+body .auth-page .toast-fade-enter-to,
+.auth-page .toast-fade-enter-to {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-from,
+.auth-page .toast-fade-leave-from {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-to,
+.auth-page .toast-fade-leave-to {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-0.3rem) scale(0.95) !important;
+}
 </style>

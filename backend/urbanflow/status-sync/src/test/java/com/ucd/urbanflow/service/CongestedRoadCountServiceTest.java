@@ -8,51 +8,78 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+/**
+ * Unit tests for the CongestedRoadCountService.
+ * Focuses on verifying the daily aggregation of congested junction counts.
+ */
 @ExtendWith(MockitoExtension.class)
-public class CongestedRoadCountServiceTest {
-    @InjectMocks
-    private CongestedRoadCountService service;
+class CongestedRoadCountServiceTest {
 
     @Mock
-    private CongestedRoadCountMapper mapper;
+    private CongestedRoadCountMapper congestedRoadCountMapper;
+
+    @InjectMocks
+    private CongestedRoadCountService congestedRoadCountService;
 
     @Test
-    void testBuildDashboardData_bucket24Hours() {
-        List<CongestedRoadCount> mockList = List.of(
-                createItem(hourDate(2), 3),
-                createItem(hourDate(4), 5)
-        );
+    void buildDashboardData_shouldAggregateCountsByDayCorrectly() throws Exception {
+        // 1. Arrange: Prepare mock data
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date day1 = sdf.parse("2025-07-20");
+        Date day2 = sdf.parse("2025-07-21");
 
-        when(mapper.selectByTimeRange(any(), any())).thenReturn(mockList);
+        // Two records for the same day to test aggregation
+        CongestedRoadCount record1_day1 = new CongestedRoadCount();
+        record1_day1.setTimeBucket(day1);
+        record1_day1.setCongestedJunctionCount(5);
 
-        Map<String, Object> result = service.buildDashboardData("24hours");
-        List<Map<String, Object>> data = (List<Map<String, Object>>) result.get("data");
+        CongestedRoadCount record2_day1 = new CongestedRoadCount();
+        record2_day1.setTimeBucket(day1);
+        record2_day1.setCongestedJunctionCount(10);
 
-        assertEquals(12, data.size()); // 0–22 every 2 hours as a bucket
-    }
+        // One record for a different day
+        CongestedRoadCount record1_day2 = new CongestedRoadCount();
+        record1_day2.setTimeBucket(day2);
+        record1_day2.setCongestedJunctionCount(8);
 
-    private CongestedRoadCount createItem(Date time, int count) {
-        CongestedRoadCount item = new CongestedRoadCount();
-        item.setTimeBucket(time);
-        item.setCongestedJunctionCount(count);
-        return item;
-    }
+        // [FIXED] The mock setup now correctly matches the mapper's method signature,
+        // which only has two parameters: start and end dates.
+        when(congestedRoadCountMapper.selectByTimeRange(any(Date.class), any(Date.class)))
+                .thenReturn(Arrays.asList(record1_day1, record2_day1, record1_day2));
 
-    private Date hourDate(int hour) {
-        Calendar c = Calendar.getInstance();
-        c.set(Calendar.HOUR_OF_DAY, hour);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTime();
+        // 2. Act: Call the method being tested
+        Map<String, Object> result = congestedRoadCountService.buildDashboardData("oneweek");
+
+        // 3. Assert: Verify the results
+        assertNotNull(result);
+
+        // Extract the data and labels from the response
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> dataList = (List<Map<String, Object>>) result.get("data");
+        @SuppressWarnings("unchecked")
+        List<String> xAxisLabels = (List<String>) result.get("xAxisLabels");
+        assertNotNull(dataList);
+
+        // Find the index for day1 in the labels list
+        int day1Index = xAxisLabels.indexOf("2025-07-20");
+        assertTrue(day1Index != -1, "Label for 2025-07-20 should exist");
+
+        // [FIXED] Correctly get the map at the found index, then get the value from the map.
+        assertEquals(15, dataList.get(day1Index).get("congested_junction_count")); // 5 + 10 = 15
+
+        // Find the index for day2 and assert its value
+        int day2Index = xAxisLabels.indexOf("2025-07-21");
+        assertTrue(day2Index != -1, "Label for 2025-07-21 should exist");
+        assertEquals(8, dataList.get(day2Index).get("congested_junction_count"));
     }
 }

@@ -19,6 +19,8 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable()) // Disable CSRF protection
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/events/**").permitAll() // Allow event management APIs
+                    .requestMatchers("/ws/**").permitAll()
+                    .requestMatchers("/api/emergency-vehicles/**").permitAll()
                 .anyRequest().authenticated() // All other requests require authentication
             );
         

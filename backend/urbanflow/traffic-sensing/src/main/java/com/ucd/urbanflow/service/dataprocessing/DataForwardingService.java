@@ -2,15 +2,19 @@ package com.ucd.urbanflow.service.dataprocessing;
 
 import com.ucd.urbanflow.domain.dto.EnrichedTrafficEvent;
 import com.ucd.urbanflow.domain.tsdb.TrafficDataPoint;
-import com.ucd.urbanflow.respository.TrafficDataPointRepository;
-import jakarta.annotation.PostConstruct;
+import com.ucd.urbanflow.repository.TrafficDataPointRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-import reactor.core.scheduler.Schedulers;
 
-import java.time.Duration;
 import java.time.Instant;
+import java.util.Collections;
 
+/**
+ * Layer 2: Data Forwarding/Staging.
+ * This version is modified for debugging to force synchronous writes and expose hidden errors.
+ */
 @Slf4j
 @Service
 public class DataForwardingService {
@@ -22,22 +26,35 @@ public class DataForwardingService {
         this.tsdbRepository = tsdbRepository;
     }
 
-    @PostConstruct
-    public void setUpPipeline() {
-        log.info("Starting data forwarding pipeline: Redis -> InfluxDB");
+    /**
+     * The pipeline is now simplified to a direct, synchronous call
+     * for each event to ensure any exception is immediately caught and logged.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    public void startPipelineAfterStartup() {
+        log.info("Application is ready. Starting data forwarding pipeline in DEBUG mode.");
         pollingService.getEventStream()
-                .doOnNext(event -> {
-                    log.info(">>>> [LAYER 2 RECEIVED] ForwardingService received event for edge: {}", event.getEdgeId());
-                })
-                .publishOn(Schedulers.boundedElastic())
-                .map(this::transform)
-                .bufferTimeout(200, Duration.ofSeconds(5)) // Batch 200 items or every 5 seconds
-                .flatMap(tsdbRepository::saveAll)
-                .doOnError(e -> log.error("Data forwarding pipeline error", e))
-                .subscribe(
-                        success -> log.info("✅Successfully forwarded a batch of data to InfluxDB"),
-                        error -> log.error("❌Forwarding pipeline terminated with an error", error)
-                );
+                .subscribe(this::processAndSaveEventSynchronously);
+    }
+
+    /**
+     * This method processes and saves a single event within a try-catch block.
+     * @param event The event to process.
+     */
+    private void processAndSaveEventSynchronously(EnrichedTrafficEvent event) {
+        log.info(">>>> [LAYER 2 RECEIVED] Event for edge: {}", event.getEdgeId());
+        try {
+            TrafficDataPoint dataPoint = transform(event);
+            log.info(">>>> [REPOSITORY] Attempting to synchronously write 1 data point to InfluxDB for step {}", dataPoint.getSimulationStep());
+
+            // This is now a blocking call. If it fails, the exception will be caught below.
+            tsdbRepository.saveAll(Collections.singletonList(dataPoint)).block();
+
+            log.info(" Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
+        } catch (Exception e) {
+            // If the write fails, this log is guaranteed to be printed.
+            log.error("!!! [LAYER 2 FAILED] CRITICAL ERROR during synchronous InfluxDB write.", e);
+        }
     }
 
     private TrafficDataPoint transform(EnrichedTrafficEvent event) {
@@ -46,9 +63,10 @@ public class DataForwardingService {
                 .junctionName(event.getJunctionName())
                 .edgeId(event.getEdgeId())
                 .vehicleCount(event.getVehicleCount())
-                .waitTime(event.getWaitTime())
+                .waitingTime(event.getWaitingTime())
                 .waitingVehicleCount(event.getWaitingVehicleCount())
                 .congested(event.isCongested())
+                .occupancy(event.getOccupancy())
                 .simulationStep(event.getSimulationStep())
                 .time(Instant.now())
                 .build();

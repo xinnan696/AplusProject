@@ -3,23 +3,28 @@ package com.ucd.urbanflow.websocket;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ucd.urbanflow.service.EventService;
+import com.ucd.urbanflow.service.EmergencyVehicleService;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-
+import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
-
 import java.net.http.WebSocket;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component // 将其声明为Spring组件
+@RequiredArgsConstructor
 public class EventResultHandler extends TextWebSocketHandler {
     private static final Logger logger = LoggerFactory.getLogger(EventResultHandler.class);
 
     @Autowired
     private EventService eventService;
+    @Autowired
+    private EmergencyVehicleService emergencyVehicleService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -34,7 +39,7 @@ public class EventResultHandler extends TextWebSocketHandler {
         logger.info("Received from TraCI: {}", json);
         try {
             JsonNode node = objectMapper.readTree(json);
-//            String eventId = node.has("event_id") ? node.get("event_id").asText() : null;
+            String eventId = node.has("event_id") ? node.get("event_id").asText() : null;
             String status = node.has("status") ? node.get("status").asText() : "fail";
             String eventType = node.has("event_type") ? node.get("event_type").asText() : null;
             String msg = node.has("message") ? node.get("message").asText() : "";
@@ -53,7 +58,16 @@ public class EventResultHandler extends TextWebSocketHandler {
                 }
             }
 
-            eventService.handleEventResult(status, eventType, msg, vehicleIds, laneIds, json);
+            boolean isSuccess = "success".equalsIgnoreCase(status);
+
+            // 根据事件类型分发给不同的服务处理
+            if ("emergency_event".equalsIgnoreCase(eventType)) {
+                emergencyVehicleService.handleTriggerResult(eventId, isSuccess);
+            } else {
+                // 对于其他特殊事件，调用EventService
+                eventService.handleEventResult(status, eventType, msg, vehicleIds, laneIds, json);
+            }
+
         } catch (Exception e) {
             logger.error("Handling Python event result message exceptions", e);
         }

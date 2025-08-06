@@ -4,6 +4,7 @@ import com.ucd.urbanflow.dto.EventSchedulerEvent;
 import com.ucd.urbanflow.websocket.TraCIEventDispatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.ucd.urbanflow.dto.EmergencyVehicleEventDto;
 
 import java.util.List;
 
@@ -17,6 +18,10 @@ public class EventService {
     public void triggerEvent(EventSchedulerEvent event) {
         dispatcher.sendEvent(event);
     }
+    public void triggerEmergencyVehicleEvent(EmergencyVehicleEventDto event) {
+        // 底层同样调用通用的 dispatcher.sendEvent 方法
+        dispatcher.sendEvent(event);
+    }
 
 //    receive results
     public void handleEventResult(
@@ -28,4 +33,6 @@ public class EventService {
             String fullJson) {
         System.out.println("EventResult: status=" + status + ", eventType=" + eventType + ", msg=" + msg);
     }
+
+
 }

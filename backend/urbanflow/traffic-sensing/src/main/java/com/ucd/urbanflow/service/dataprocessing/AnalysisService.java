@@ -9,9 +9,8 @@ import com.ucd.urbanflow.mapper.CongestedDurationRankingMapper;
 import com.ucd.urbanflow.mapper.CongestionRoadCountMapper;
 import com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper;
 import com.ucd.urbanflow.mapper.TrafficFlowMapper;
-import com.ucd.urbanflow.respository.TrafficDataPointRepository;
+import com.ucd.urbanflow.repository.TrafficDataPointRepository;
 import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,7 +25,6 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AnalysisService {
 
     private static final int WINDOW_SIZE = 3; //280;
@@ -37,8 +35,7 @@ public class AnalysisService {
     private final CongestedDurationRankingMapper congestedDurationRankingMapper;
 
     // A stateful, atomic counter for the last processed simulation step.
-//    private final AtomicLong lastProcessedStep = new AtomicLong(0);
-    private final AtomicLong lastProcessedStep = new AtomicLong(259);
+    private final AtomicLong lastProcessedStep = new AtomicLong(0);
 
 
     // The configurable initial time for the aggregation buckets.
@@ -48,22 +45,57 @@ public class AnalysisService {
     // The stateful, current base time for the next aggregation window.
     private Date baseTime;
 
+    public AnalysisService(
+            TrafficDataPointRepository tsdbRepository,
+            TrafficFlowMapper trafficFlowMapper,
+            CongestionRoadCountMapper congestionRoadCountMapper,
+            TopCongestedSegmentsMapper topCongestedSegmentsMapper,
+            CongestedDurationRankingMapper congestedDurationRankingMapper,
+            @Value("${traffic.analysis.base-time}") String initialBaseTimeStr
+    ) {
+        this.tsdbRepository = tsdbRepository;
+        this.trafficFlowMapper = trafficFlowMapper;
+        this.congestionRoadCountMapper = congestionRoadCountMapper;
+        this.topCongestedSegmentsMapper = topCongestedSegmentsMapper;
+        this.congestedDurationRankingMapper = congestedDurationRankingMapper;
+        this.initialBaseTimeStr = initialBaseTimeStr;
+    }
+
     /**
      * Initializes the baseTime from the application properties after the bean is constructed.
      */
     @PostConstruct
-    public void initializeBaseTime() throws ParseException {
+    public void initializeState() {
+        // Initialize baseTime from properties
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+//            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             this.baseTime = sdf.parse(initialBaseTimeStr);
             log.info("Analysis baseTime initialized to: {}", this.baseTime);
         } catch (ParseException e) {
             log.error("Failed to parse initial base-time property. Using current time as fallback.", e);
             this.baseTime = new Date();
         }
+
+        // Synchronize lastProcessedStep with the database state
+        try {
+            log.info("Synchronizing processing state with InfluxDB...");
+            // .block() is acceptable in a @PostConstruct method for initial setup
+            Long latestStepInDB = tsdbRepository.findLatestStep().block();
+
+            if (latestStepInDB != null && latestStepInDB > 0) {
+                this.lastProcessedStep.set(latestStepInDB);
+                log.info("State synchronized. Analysis will resume processing after step: {}", latestStepInDB);
+            } else {
+                log.info("No existing data found in InfluxDB. Starting from step 0.");
+            }
+        } catch (Exception e) {
+            log.error("Failed to synchronize state with InfluxDB. Defaulting to step 0.", e);
+            this.lastProcessedStep.set(0);
+        }
     }
 
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(fixedRate = 15000)
     public void analysisTrigger() {
         tsdbRepository.findLatestStep().subscribe(latestStep -> {
             long currentLastProcessed = lastProcessedStep.get();
@@ -146,6 +178,7 @@ public class AnalysisService {
             if (congestionTimes > 0) {
                 TopCongestedSegments ctr = new TopCongestedSegments();
                 ctr.setTimeBucket(timeBucket);
+                ctr.setJunctionId(junctionId);
                 ctr.setJunctionName(points.get(0).getJunctionName());
                 ctr.setCongestionTimes((int) congestionTimes);
                 topCongestedSegmentsMapper.insert(ctr);
@@ -157,6 +190,7 @@ public class AnalysisService {
 
         data.forEach((junctionId, points) -> {
 
+            // Group data by simulationStep for efficient per-step processing.
             Map<Long, Map<String, TrafficDataPoint>> stepToEdgeDataMap = points.stream()
                     .collect(Collectors.groupingBy(
                             TrafficDataPoint::getSimulationStep,
@@ -168,41 +202,45 @@ public class AnalysisService {
 
             double totalAggregatedDurationInSeconds = 0.0;
 
+            // Iterate through each step in the window.
             for (long step = minStep; step <= maxStep; step++) {
                 Map<String, TrafficDataPoint> currentStepData = stepToEdgeDataMap.getOrDefault(step, Collections.emptyMap());
                 Map<String, TrafficDataPoint> prevStepData = stepToEdgeDataMap.getOrDefault(step - 1, Collections.emptyMap());
 
-                double maxAvgWaitTimeForStep = 0.0;
+                double maxDeltaWaitTimeForStep = 0.0;
 
+                // For the current step, find the maximum wait time delta across all incoming edges.
                 for (TrafficDataPoint currentPoint : currentStepData.values()) {
                     TrafficDataPoint prevPoint = prevStepData.get(currentPoint.getEdgeId());
 
-                    double prevWaitTime = (prevPoint != null && prevPoint.getWaitTime() != null) ? prevPoint.getWaitTime() : 0.0;
-                    double currentWaitTime = currentPoint.getWaitTime() != null ? currentPoint.getWaitTime() : 0.0;
+                    // The cumulative waitTime from Redis.
+                    double prevWaitTime = (prevPoint != null && prevPoint.getWaitingTime() != null) ? prevPoint.getWaitingTime() : 0.0;
+                    double currentWaitTime = currentPoint.getWaitingTime() != null ? currentPoint.getWaitingTime() : 0.0;
+
+                    // Calculate the wait time for this single step.
                     double deltaWaitTime = currentWaitTime - prevWaitTime;
 
-                    int waitingVehicleCount = currentPoint.getWaitingVehicleCount() != null ? currentPoint.getWaitingVehicleCount() : 0;
-
-                    if (waitingVehicleCount > 0 && deltaWaitTime > 0) {
-                        double avgWaitTime = deltaWaitTime / waitingVehicleCount;
-                        if (avgWaitTime > maxAvgWaitTimeForStep) {
-                            maxAvgWaitTimeForStep = avgWaitTime;
-                        }
+                    if (deltaWaitTime > maxDeltaWaitTimeForStep) {
+                        maxDeltaWaitTimeForStep = deltaWaitTime;
                     }
                 }
-                totalAggregatedDurationInSeconds += maxAvgWaitTimeForStep;
+                // Add the max delta from this step to the total sum.
+                totalAggregatedDurationInSeconds += maxDeltaWaitTimeForStep;
             }
 
-            double totalDurationInMinutes = totalAggregatedDurationInSeconds / 60.0;
-            double finalValue = Math.min(totalDurationInMinutes, 120.0);
+            // Cap the final value at 7200 seconds (2 hours).
+            double finalValueInSeconds = Math.min(totalAggregatedDurationInSeconds, 7200.0);
 
             CongestedDurationRanking cdr = new CongestedDurationRanking();
             cdr.setTimeBucket(timeBucket);
+            cdr.setJunctionId(junctionId);
             cdr.setJunctionName(points.get(0).getJunctionName());
 
-            cdr.setTotalCongestionDurationSeconds((int)finalValue);
+            // Set the final value, casting to Integer as required by your POJO.
+            cdr.setTotalCongestionDurationSeconds((float)finalValueInSeconds);
 
             congestedDurationRankingMapper.insert(cdr);
         });
     }
+
 }

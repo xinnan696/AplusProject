@@ -3,6 +3,7 @@ package com.ucd.urbanflow.service;
 
 import com.ucd.urbanflow.mapper.CongestedDurationRankingMapper;
 
+import com.ucd.urbanflow.mapper.JunctionRegionsMapper;
 import com.ucd.urbanflow.model.CongestedDurationRanking;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,23 +18,21 @@ import static io.lettuce.core.GeoArgs.Unit.m;
 public class CongestedDurationRankingService {
     @Autowired
     private CongestedDurationRankingMapper congestedDurationRankingMapper;
+    @Autowired
+    private JunctionRegionsMapper junctionRegionsMapper;
 
+    private static final int TOP_N = 6;
 
-    public Map<String, Object> buildDashboardData(String timeRange) {
-//        Date end = new Date();
-        Date end = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            end = sdf.parse("2024-07-07 22:00:00");
-        } catch (Exception e) {
-            e.printStackTrace();
-            end = new Date();
-        }
+    public Map<String, Object> buildDashboardData(String timeRange, String managedAreas) {
+        Date end = new Date();
+
         Calendar c = Calendar.getInstance();
         c.setTime(end);
         c.set(Calendar.MINUTE, 0);
         c.set(Calendar.SECOND, 0);
         c.set(Calendar.MILLISECOND, 0);
+
+        end = c.getTime();
 
         Date start;
 
@@ -59,25 +58,33 @@ public class CongestedDurationRankingService {
         }
         start = c.getTime();
 
-        List<CongestedDurationRanking> stats = congestedDurationRankingMapper.selectByTimeRange(start, end);
-
-        System.out.println("start = " + start + ", end = " + end);
-        System.out.println("stats.size() = " + stats.size());
-        if (!stats.isEmpty()) {
-            for (CongestedDurationRanking s : stats) {
-                System.out.println(s.getTimeBucket() + " " + s.getJunctionName() + " " + s.getTotalCongestionDurationSeconds());
+        List<String> junctionIdFilter = null;
+        if (managedAreas != null && !managedAreas.isEmpty()) {
+            junctionIdFilter = junctionRegionsMapper.findJunctionIdsByArea(managedAreas);
+            // If the filter is specified but returns no junctions, we can return an empty result early.
+            if (junctionIdFilter.isEmpty()) {
+                return createEmptyDashboardResponse(); // Return an empty but valid response structure
             }
         }
 
+        List<CongestedDurationRanking> stats = congestedDurationRankingMapper.selectByTimeRange(start, end, junctionIdFilter);
+
+
         Map<String, Double> durationByJunction = new HashMap<>();
-        for (CongestedDurationRanking s : stats) {
-            String name = s.getJunctionName();
-            double val = s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds();
-            durationByJunction.put(name, durationByJunction.getOrDefault(name, 0.0) + val);
+        if(!stats.isEmpty()){
+            for (CongestedDurationRanking s : stats) {
+                String name = s.getJunctionName();
+                double val = s.getTotalCongestionDurationSeconds() == null ? 0.0 : s.getTotalCongestionDurationSeconds();
+                durationByJunction.put(name, durationByJunction.getOrDefault(name, 0.0) + val);
+            }
         }
 
         List<Map.Entry<String, Double>> sorted = new ArrayList<>(durationByJunction.entrySet());
         sorted.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        if (sorted.size() > TOP_N) {
+            sorted = sorted.subList(0, TOP_N);
+        }
 
         List<String> yAxisLabels = new ArrayList<>();
         List<Map<String, Object>> data = new ArrayList<>();
@@ -106,6 +113,18 @@ public class CongestedDurationRankingService {
         resp.put("yAxisLabels", yAxisLabels);
         resp.put("xAxisConfig", xAxisConfig);
         resp.put("data", data);
+        return resp;
+    }
+
+    private Map<String, Object> createEmptyDashboardResponse() {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("yAxisLabels", Collections.emptyList());
+        Map<String, Object> xAxisConfig = new HashMap<>();
+        xAxisConfig.put("min", 0);
+        xAxisConfig.put("max", 0);
+        xAxisConfig.put("interval", 100);
+        resp.put("xAxisConfig", xAxisConfig);
+        resp.put("data", Collections.emptyList());
         return resp;
     }
 }

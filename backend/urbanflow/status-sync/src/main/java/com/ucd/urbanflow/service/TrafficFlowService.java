@@ -1,5 +1,6 @@
 package com.ucd.urbanflow.service;
 
+import com.ucd.urbanflow.mapper.JunctionRegionsMapper;
 import com.ucd.urbanflow.mapper.TrafficFlowMapper;
 import com.ucd.urbanflow.model.TrafficFlow;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,28 +8,25 @@ import org.springframework.stereotype.Service;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TrafficFlowService {
     @Autowired
     private TrafficFlowMapper mapper;
 
-    public Map<String, Object> buildDashboardData(String junctionId, String timeRange) {
-//        Date end = new Date();
-        Date end = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            end = sdf.parse("2024-07-07 22:00:00");
-        } catch (Exception e) {
-            e.printStackTrace();
-            end = new Date();
-        }
+    @Autowired
+    private JunctionRegionsMapper junctionRegionsMapper;
+
+    public Map<String, Object> buildDashboardData(String junctionId, String timeRange, String managedAreas) {
+        Date end = new Date();
+
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
+
+        end = cal.getTime();
 
         Date start;
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
@@ -49,8 +47,21 @@ public class TrafficFlowService {
         }
         start = cal.getTime();
 
+        List<String> junctionIdFilter = null;
 
-        List<TrafficFlow> stats = mapper.selectByJunctionAndTimeRange(junctionId, start, end);
+        // Priority 1: If a specific junctionId is requested, ALWAYS use it.
+        if (junctionId != null && !junctionId.isEmpty()) {
+            junctionIdFilter = Collections.singletonList(junctionId);
+        }
+        // Priority 2: If no specific junction is requested, but an area is, use the area.
+        else if (managedAreas != null && !managedAreas.isEmpty()) {
+            junctionIdFilter = junctionRegionsMapper.findJunctionIdsByArea(managedAreas);
+            if (junctionIdFilter.isEmpty()) {
+                return createEmptyDashboardResponse();
+            }
+        }
+
+        List<TrafficFlow> stats = mapper.selectByJunctionAndTimeRange(start, end, junctionIdFilter);
 
 
         List<String> xAxisLabels = new ArrayList<>();
@@ -59,7 +70,15 @@ public class TrafficFlowService {
 
         if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
             Map<Integer, Integer> flowByHour = new LinkedHashMap<>();
-            for (int i = 0; i < 24; i += 2) flowByHour.put(i, 0);
+            Calendar tempCal = Calendar.getInstance();
+            tempCal.setTime(start);
+            for (int i = 0; i < 24; i += 2) {
+                int hourBucket = tempCal.get(Calendar.HOUR_OF_DAY);
+                flowByHour.put((hourBucket / 2) * 2, 0);
+                xAxisLabels.add(String.valueOf((hourBucket / 2) * 2));
+                tempCal.add(Calendar.HOUR_OF_DAY, 2);
+            }
+
             for (TrafficFlow s : stats) {
                 Calendar c = Calendar.getInstance();
                 c.setTime(s.getTimeBucket());
@@ -68,9 +87,10 @@ public class TrafficFlowService {
                 flowByHour.put(hourBucket, flowByHour.getOrDefault(hourBucket, 0)
                         + (s.getFlowRateHourly() == null ? 0 : s.getFlowRateHourly()));
             }
-            for (int i = 0; i < 24; i += 2) {
-                xAxisLabels.add(String.valueOf(i));
-                int v = flowByHour.get(i);
+
+            for(String label : xAxisLabels) {
+                int hourKey = Integer.parseInt(label);
+                int v = flowByHour.getOrDefault(hourKey, 0);
                 data.add(v);
                 min = Math.min(min, v);
                 max = Math.max(max, v);
@@ -148,7 +168,7 @@ public class TrafficFlowService {
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
-        } else if ("one year".equalsIgnoreCase(timeRange)) {
+        } else if ("oneyear".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> flowByQuarter = new LinkedHashMap<>();
             Calendar calendar = Calendar.getInstance();
             calendar.setTime(start);
@@ -191,6 +211,18 @@ public class TrafficFlowService {
         resp.put("xAxisLabels", xAxisLabels);
         resp.put("yAxisConfig", yAxisConfig);
         resp.put("data", data);
+        return resp;
+    }
+
+    private Map<String, Object> createEmptyDashboardResponse() {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("xAxisLabels", Collections.emptyList());
+        Map<String, Object> yAxisConfig = new HashMap<>();
+        yAxisConfig.put("min", 0);
+        yAxisConfig.put("max", 0);
+        yAxisConfig.put("interval", 500);
+        resp.put("yAxisConfig", yAxisConfig);
+        resp.put("data", Collections.emptyList());
         return resp;
     }
 }

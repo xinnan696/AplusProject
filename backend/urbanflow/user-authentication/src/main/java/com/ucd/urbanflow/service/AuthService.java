@@ -5,6 +5,7 @@ import com.ucd.urbanflow.domain.dto.LoginRequest;
 import com.ucd.urbanflow.domain.dto.ResetPwdRequest;
 import com.ucd.urbanflow.domain.pojo.PasswordResetToken;
 import com.ucd.urbanflow.domain.pojo.User;
+import com.ucd.urbanflow.domain.vo.ApiResponse;
 import com.ucd.urbanflow.domain.vo.LoginResponse;
 import com.ucd.urbanflow.domain.vo.UserVO;
 import com.ucd.urbanflow.dto.AuthLogDTO;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -78,7 +80,11 @@ public class AuthService {
 
         String jwt = jwtService.generateToken(user);
         UserVO userVO = mapToUserVO(user);
-        userVO.setManagedAreas(areaManagementService.getUserManagedAreas(user.getId()));
+
+        List<String> managedAreas = areaManagementService.getUserManagedAreas(user.getId());
+        log.info("User {} (ID: {}) managed areas: {}", user.getAccountNumber(), user.getId(), managedAreas);
+        userVO.setManagedAreas(managedAreas);
+        
         return LoginResponse.builder().token(jwt).user(userVO).build();
     }
 
@@ -168,6 +174,14 @@ public class AuthService {
             // Log locally if the logging service is down, to avoid breaking the main flow
             log.error("Failed to send authentication log to logging service. Log data: {}", logDTO, e);
         }
+    }
+
+    /**
+     * 临时调试方法
+     */
+    public ApiResponse<Object> debugUserAreas(Long userId) {
+        Object result = areaManagementService.debugUserAreas(userId);
+        return ApiResponse.success(result);
     }
 
     /**

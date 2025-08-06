@@ -8,6 +8,12 @@
     <select id="selectByTimeRange" resultType="com.ucd.urbanflow.model.TopCongestedSegments">
         SELECT * FROM congested_times_ranking
         WHERE time_bucket BETWEEN #{start} AND #{end}
+        <if test="junctionIds != null and !junctionIds.isEmpty()">
+            AND junction_id IN
+            <foreach item="id" collection="junctionIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
     </select>
 
 </mapper>

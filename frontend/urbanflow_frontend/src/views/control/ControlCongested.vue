@@ -10,10 +10,12 @@
     </div>
 
     <div class="table-body">
+      <!-- 显示拥堵道路列表 -->
       <div
         class="table-row"
         v-for="(item, index) in displayedCongestedData"
         :key="`${item.junctionId}-${index}`"
+        v-if="displayedCongestedData.length > 0"
       >
         <span
             class="col location"
@@ -26,6 +28,11 @@
         <span class="col queue" :class="getQueueClass(item.congestionCount)">
           {{ animatedValues[item.junctionId] || item.congestionCount }}
         </span>
+      </div>
+
+      <!-- 空状态显示 -->
+      <div v-if="displayedCongestedData.length === 0" class="empty-state">
+        <div class="empty-text">No Congested Roads</div>
       </div>
     </div>
   </div>
@@ -62,6 +69,9 @@ const junctionAreaMap = ref<Record<string, string>>({})
 const animatedValues = ref<Record<string, number>>({})
 
 let socket: WebSocket | null = null
+let reconnectAttempts = 0
+const maxReconnectAttempts = 5
+let reconnectTimer: NodeJS.Timeout | null = null
 
 const fetchJunctionMappings = async () => {
   try {
@@ -102,13 +112,45 @@ const fetchJunctionMappings = async () => {
 const displayedCongestedData = computed(() => {
   let filteredData = [...allCongestedData.value]
 
-  if (authStore.isTrafficManager() && authStore.getManagedAreas().length > 0) {
+  // 根据用户角色和管理区域进行权限过滤
+  if (authStore.isTrafficManager()) {
     const managedAreas = authStore.getManagedAreas()
-    filteredData = filteredData.filter(item => {
-      const area = junctionAreaMap.value[item.junctionId]
-      return area && managedAreas.includes(area)
-    })
+    console.log('🔍 [CongestedRoads] Filtering by managed areas:', managedAreas)
+    
+    if (managedAreas.length > 0) {
+      filteredData = filteredData.filter(item => {
+        const area = junctionAreaMap.value[item.junctionId]
+        const hasAccess = area && managedAreas.includes(area)
+        
+        if (!hasAccess) {
+          console.log('🚫 [CongestedRoads] Filtered out junction:', {
+            junctionId: item.junctionId,
+            junctionName: item.junctionName,
+            area,
+            managedAreas
+          })
+        }
+        
+        return hasAccess
+      })
+      
+      console.log('✅ [CongestedRoads] After area filtering:', {
+        originalCount: allCongestedData.value.length,
+        filteredCount: filteredData.length,
+        managedAreas
+      })
+    }
+  } else if (authStore.isTrafficPlanner()) {
+    // Traffic Planner 可以查看所有区域，但只是查看
+    console.log('👀 [CongestedRoads] Traffic Planner - showing all areas (view-only)')
+  } else if (authStore.isAdmin()) {
+    // Admin 可以查看所有区域
+    console.log('👑 [CongestedRoads] Admin - showing all areas')
   }
+
+  // 过滤掉队列长度小于最小非绿色值的路口（即只显示真正拥堵的路口）
+  // 根据getQueueClass的逻辑，只有>=10的才是warning或danger，<10的都是normal（绿色）
+  filteredData = filteredData.filter(item => item.congestionCount >= 10)
 
   const displayCount = props.isAIMode ? 10 : 6
   return filteredData.slice(0, displayCount)
@@ -116,6 +158,67 @@ const displayedCongestedData = computed(() => {
 
 const handleLocationClick = (junctionId: string) => {
   emit('select-junction-by-name', junctionId)
+}
+
+const connectWebSocket = () => {
+  try {
+    socket = new WebSocket('ws://localhost:8087/api/status/ws')
+
+    socket.onopen = () => {
+      // WebSocket连接成功
+      reconnectAttempts = 0
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+
+        if (data.congested && Array.isArray(data.congested)) {
+          const processedData: CongestedItem[] = data.congested.map((item: any) => {
+            const junctionId = item.j || item.junctionId
+            const junctionName = junctionNameMap.value[junctionId] || junctionId
+            const congestionCount = item.q || item.congestionCount || 0
+            return {
+              junctionId,
+              junctionName,
+              congestionCount,
+              area: junctionAreaMap.value[junctionId]
+            }
+          })
+
+          processedData.forEach((item: CongestedItem) => {
+            const oldValue = animatedValues.value[item.junctionId] || 0
+            const newValue = item.congestionCount
+            if (oldValue !== newValue) {
+              animateNumber(item.junctionId, oldValue, newValue)
+            }
+          })
+
+          allCongestedData.value = processedData
+        }
+      } catch (e) {
+        console.error('WebSocket JSON parse error:', e)
+      }
+    }
+
+    socket.onerror = (err) => {
+      // WebSocket连接错误
+    }
+
+    socket.onclose = () => {
+      // WebSocket连接断开
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++
+        reconnectTimer = setTimeout(connectWebSocket, 3000)
+      }
+    }
+  } catch (error) {
+    // WebSocket创建失败
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++
+      reconnectTimer = setTimeout(connectWebSocket, 3000)
+    }
+  }
 }
 
 onMounted(async () => {
@@ -162,57 +265,17 @@ onMounted(async () => {
       totalJunctions: Object.keys(nameMap).length,
       leftJunctions: Object.values(areaMap).filter(area => area === 'Left').length,
       rightJunctions: Object.values(areaMap).filter(area => area === 'Right').length,
-      mapCenterX
+      mapCenterX,
+      userRole: authStore.userRole,
+      managedAreas: authStore.getManagedAreas(),
+      sampleJunctionAreas: Object.entries(areaMap).slice(0, 5)
     })
   } catch (err) {
     console.error('Failed to fetch junction data:', err)
   }
 
-  socket = new WebSocket('ws://localhost:8087/api/status/ws')
-
-  socket.onopen = () => {
-    console.log('WebSocket connected.')
-  }
-
-  socket.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data)
-
-      if (data.congested && Array.isArray(data.congested)) {
-        const processedData: CongestedItem[] = data.congested.map((item: any) => {
-          const junctionId = item.j || item.junctionId
-          const junctionName = junctionNameMap.value[junctionId] || junctionId
-          const congestionCount = item.q || item.congestionCount || 0
-          return {
-            junctionId,
-            junctionName,
-            congestionCount,
-            area: junctionAreaMap.value[junctionId]
-          }
-        })
-
-        processedData.forEach((item: CongestedItem) => {
-          const oldValue = animatedValues.value[item.junctionId] || 0
-          const newValue = item.congestionCount
-          if (oldValue !== newValue) {
-            animateNumber(item.junctionId, oldValue, newValue)
-          }
-        })
-
-        allCongestedData.value = processedData
-      }
-    } catch (e) {
-      console.error('WebSocket JSON parse error:', e)
-    }
-  }
-
-  socket.onerror = (err) => {
-    console.error('WebSocket error:', err)
-  }
-
-  socket.onclose = () => {
-    console.log('WebSocket disconnected.')
-  }
+  // 连接 WebSocket
+  connectWebSocket()
 })
 
 const animateNumber = (key: string, from: number, to: number) => {
@@ -232,6 +295,9 @@ const animateNumber = (key: string, from: number, to: number) => {
 }
 
 onUnmounted(() => {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+  }
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.close()
   }
@@ -264,9 +330,9 @@ const getQueueClass = (congestionCount: number) => {
     right: 0;
     bottom: 0;
     background:
-      radial-gradient(circle at 20% 20%, rgba(0, 180, 216, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(0, 200, 255, 0.03) 0%, transparent 50%),
-      linear-gradient(45deg, transparent 48%, rgba(0, 180, 216, 0.02) 49%, rgba(0, 180, 216, 0.02) 51%, transparent 52%);
+      radial-gradient(circle at 20% 20%, rgba(74, 85, 104, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(113, 128, 150, 0.03) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.02) 49%, rgba(74, 85, 104, 0.02) 51%, transparent 52%);
     pointer-events: none;
     z-index: 0;
   }
@@ -286,24 +352,11 @@ const getQueueClass = (congestionCount: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+
   position: relative;
 
   span {
     position: relative;
-
-    &::before {
-      content: '';
-      position: absolute;
-      left: -0.24rem;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 3px;
-      height: 0.2rem;
-      background: linear-gradient(to bottom, #00E5FF, #00B4D8);
-      border-radius: 2px;
-      box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
-    }
   }
 }
 
@@ -312,10 +365,10 @@ const getQueueClass = (congestionCount: number) => {
   justify-content: space-between;
   font-size: 0.16rem;
   font-weight: 600;
-  color: #B3E5FC;
+  color: #FFFFFF;
   line-height: 0.16rem;
   padding-bottom: 0.16rem;
-  text-shadow: 0 0 8px rgba(179, 229, 252, 0.6);
+
   letter-spacing: 0.02rem;
 
   .col {
@@ -338,20 +391,21 @@ const getQueueClass = (congestionCount: number) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
+  gap: 0; // 移除所有行间距
 }
 
 .table-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-shrink: 0;
-  height: 0.28rem;
-  line-height: 0.28rem;
-  padding-bottom: 0.12rem;
-  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-  border-radius: 0.06rem;
-  margin: 0 -0.05rem;
+  height: 0.28rem; // 保持原有高度
+  // 移除 padding-bottom 和 line-height
+  margin: 0 -0.05rem; // 保持水平margin
   padding-left: 0.05rem;
   padding-right: 0.05rem;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border-radius: 0.06rem;
   position: relative;
   overflow: visible;
 
@@ -361,36 +415,29 @@ const getQueueClass = (congestionCount: number) => {
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(0, 180, 216, 0.1) 49%, rgba(0, 180, 216, 0.1) 51%, transparent 52%);
+    bottom: 0; // 回到正常范围
+    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
   }
 
   &:hover {
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
-    transform: scale(1.02);
-    box-shadow: 0 2px 8px rgba(0, 180, 216, 0.2);
+    background: rgba(74, 85, 104, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     z-index: 10;
     position: relative;
 
     &::before {
       opacity: 1;
     }
-
-    .col.location {
-      transform: scale(1.05);
-      transform-origin: left center;
-      z-index: 11;
-      position: relative;
-    }
   }
 }
 
 .col {
   display: flex;
-  align-items: center;
+  align-items: center; // 确保内容垂直居中
+  height: 100%; // 占满父容器高度
 }
 
 .col.location {
@@ -400,49 +447,50 @@ const getQueueClass = (congestionCount: number) => {
   white-space: nowrap;
   overflow: visible;
   font-weight: 500;
-  text-shadow: 0 0 8px currentColor;
-  transform-origin: left center;
-
-  &:hover {
-    transform: scale(1.05);
-    transform-origin: left center;
-  }
+  // 继承父级的 flex 和 align-items: center
 }
 
 .col.queue {
   width: 25%;
   font-size: 0.14rem;
-  display: flex;
   justify-content: center;
-  align-items: center;
   font-weight: 700;
   position: relative;
   white-space: nowrap;
-  text-shadow: 0 0 8px currentColor;
+  // 继承父级的 flex 和 align-items: center
 }
 
 .danger {
   color: #FF4569;
-  text-shadow: 0 0 10px rgba(255, 69, 105, 0.6);
-  animation: dangerPulse 2s ease-in-out infinite;
+
 }
 
 .warning {
   color: #FFC107;
-  text-shadow: 0 0 8px rgba(255, 193, 7, 0.6);
+
 }
 
 .normal {
   color: #00E676;
-  text-shadow: 0 0 8px rgba(0, 230, 118, 0.6);
+
 }
 
-@keyframes dangerPulse {
-  0%, 100% {
-    text-shadow: 0 0 10px rgba(255, 69, 105, 0.6);
-  }
-  50% {
-    text-shadow: 0 0 15px rgba(255, 69, 105, 0.9);
+// 空状态样式，与AI面板保持一致
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 1.2rem; // 保证有足够的高度
+
+  .empty-text {
+    color: rgba(156, 163, 175, 0.6); // 与AI面板no-suggestion相同的灰色
+    font-size: 0.16rem;
+    font-style: italic;
+    font-weight: 500;
+    text-align: center;
   }
 }
+
+
 </style>

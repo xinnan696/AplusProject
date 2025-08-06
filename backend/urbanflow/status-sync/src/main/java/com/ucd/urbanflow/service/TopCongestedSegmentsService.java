@@ -1,5 +1,6 @@
 package com.ucd.urbanflow.service;
 
+import com.ucd.urbanflow.mapper.JunctionRegionsMapper;
 import com.ucd.urbanflow.mapper.TopCongestedSegmentsMapper;
 import com.ucd.urbanflow.model.TopCongestedSegments;
 import com.ucd.urbanflow.model.TrafficFlow;
@@ -14,25 +15,22 @@ import java.util.stream.Collectors;
 public class TopCongestedSegmentsService {
     @Autowired
     private TopCongestedSegmentsMapper topCongestedSegmentsMapper;
+    @Autowired
+    private JunctionRegionsMapper junctionRegionsMapper;
 
     private static final int TOP_N = 6;
 
-    public Map<String, Object> buildDashboardData(String timeRange) {
+    public Map<String, Object> buildDashboardData(String timeRange, String managedAreas) {
 
-//        Date end = new Date();
-        Date end = null;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            end = sdf.parse("2024-07-07 22:00:00");
-        } catch (Exception e) {
-            e.printStackTrace();
-            end = new Date();
-        }
+        Date end = new Date();
+
         Calendar cal = Calendar.getInstance();
         cal.setTime(end);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
+
+        end = cal.getTime();
 
         Date start;
         switch (timeRange == null ? "24hours" : timeRange.toLowerCase()) {
@@ -53,7 +51,16 @@ public class TopCongestedSegmentsService {
         }
         start = cal.getTime();
 
-        List<TopCongestedSegments> stats = topCongestedSegmentsMapper.selectByTimeRange(start, end);
+        List<String> junctionIdFilter = null;
+        if (managedAreas != null && !managedAreas.isEmpty()) {
+            junctionIdFilter = junctionRegionsMapper.findJunctionIdsByArea(managedAreas);
+            // If the filter is specified but returns no junctions, return an empty result early.
+            if (junctionIdFilter.isEmpty()) {
+                return createEmptyDashboardResponse();
+            }
+        }
+
+        List<TopCongestedSegments> stats = topCongestedSegmentsMapper.selectByTimeRange(start, end, junctionIdFilter);
 
 
         Map<String, Integer> sumByJunction = new HashMap<>();
@@ -95,6 +102,18 @@ public class TopCongestedSegmentsService {
         resp.put("xAxisLabels", xAxisLabels);
         resp.put("yAxisConfig", yAxisConfig);
         resp.put("data", data);
+        return resp;
+    }
+
+    private Map<String, Object> createEmptyDashboardResponse() {
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("xAxisLabels", Collections.emptyList());
+        Map<String, Object> yAxisConfig = new HashMap<>();
+        yAxisConfig.put("min", 0);
+        yAxisConfig.put("max", 0);
+        yAxisConfig.put("interval", 5);
+        resp.put("yAxisConfig", yAxisConfig);
+        resp.put("data", Collections.emptyList());
         return resp;
     }
 }

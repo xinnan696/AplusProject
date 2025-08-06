@@ -1,5 +1,9 @@
 <template>
-  <div class="traffic-status-bar">
+  <div 
+    v-if="isVisible" 
+    class="traffic-status-bar"
+    :class="{ 'has-manual-control': shouldShowManualControl }"
+  >
     <div class="status-content">
       <div class="status-info">
         <div class="status-text" :class="getLightClass(currentLight)">
@@ -9,8 +13,8 @@
 
       <div class="countdown-section">
         <div class="countdown-display">
-          <span class="countdown-number">{{ nextSwitchTime }}</span>
-          <span class="countdown-unit">steps</span>
+          <span class="countdown-number">{{ countdownSeconds }}</span>
+          <span class="countdown-unit">s</span>
         </div>
       </div>
 
@@ -29,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
 interface Props {
   junctionId?: string
@@ -47,18 +51,30 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const nextSwitchTime = ref(0)
 const currentLight = ref('')
+const countdownSeconds = ref(0)
+let countdownTimer: NodeJS.Timeout | null = null
+let previousLightState = ref('')
 
+// 计算是否显示手动控制信息
 const shouldShowManualControl = computed(() => {
   const hasManualControl = !!props.lastManualControl
-
   const isCorrectJunction = props.lastManualControl?.junctionName === props.junctionName
+  
+  console.log('🔍 [StatusBar] Manual control check:', {
+    hasManualControl,
+    lastManualControlJunction: props.lastManualControl?.junctionName,
+    currentJunction: props.junctionName,
+    isCorrectJunction,
+    shouldShow: hasManualControl && isCorrectJunction
+  })
+  
   return hasManualControl && isCorrectJunction
 })
 
+// 计算时间显示
 const formatTimeAgo = computed(() => {
-  if (!props.lastManualControl) return ''
+  if (!props.lastManualControl?.appliedTime) return ''
 
   const now = new Date()
   const diffMs = now.getTime() - props.lastManualControl.appliedTime.getTime()
@@ -70,37 +86,45 @@ const formatTimeAgo = computed(() => {
     const minutes = Math.floor(diffSeconds / 60)
     return `${minutes}m ago`
   } else {
-    return props.lastManualControl.appliedTime.toLocaleTimeString()
+    const hours = Math.floor(diffSeconds / 3600)
+    return `${hours}h ago`
   }
 })
 
-
+// 计算组件是否可见
 const isVisible = computed(() => {
-  const hasJunctionAndDirection = props.junctionId &&
-    props.directionIndex !== null &&
-    props.directionIndex !== undefined
-
-  const hasTrafficData = props.trafficLightData
+  const hasJunctionId = !!props.junctionId
+  const hasJunctionName = !!props.junctionName
+  const hasValidDirection = props.directionIndex !== null && props.directionIndex !== undefined
+  const hasTrafficData = !!props.trafficLightData
   const hasManualControl = shouldShowManualControl.value
+  
+  // 简化条件：只要有路口ID和有效方向就显示
+  const shouldShow = hasJunctionId && hasValidDirection
 
-  const visible = hasJunctionAndDirection && (hasTrafficData || hasManualControl)
-
-  console.log('🔍 [StatusBar] isVisible check:', {
+  console.log('🔍 [StatusBar] Visibility check:', {
     junctionId: props.junctionId,
+    junctionName: props.junctionName,
     directionIndex: props.directionIndex,
-    hasJunctionAndDirection,
-    hasTrafficData: !!props.trafficLightData,
+    hasJunctionId,
+    hasJunctionName,
+    hasValidDirection,
+    hasTrafficData,
     hasManualControl,
-    visible,
     trafficLightDataState: props.trafficLightData?.state,
-    shouldShowComponent: visible
+    shouldShow
   })
 
-  return visible
+  return shouldShow
 })
 
+
+
+
+// 获取交通灯颜色
 const getLightColor = (state: string, index: number): string => {
   if (!state || typeof state !== 'string' || index < 0 || index >= state.length) {
+    console.warn('🚨 [StatusBar] Invalid state or index:', { state, index })
     return 'unknown'
   }
 
@@ -113,9 +137,8 @@ const getLightColor = (state: string, index: number): string => {
     case 'y': return 'yellow'
     case 'o': return 'yellow'
     default: 
-      // 只有遇到未知字符时才输出调试信息
-      console.error('🚨 UNKNOWN CHARACTER IN STATUS BAR:', {
-        unknownChar: `"${char}"`,
+      console.warn('🚨 [StatusBar] Unknown character:', {
+        char: `"${char}"`,
         charCode: char.charCodeAt(0),
         fullState: `"${state}"`,
         index
@@ -124,6 +147,7 @@ const getLightColor = (state: string, index: number): string => {
   }
 }
 
+// 获取交通灯文本
 const getLightText = (color: string): string => {
   switch (color) {
     case 'green': return 'GREEN'
@@ -133,6 +157,7 @@ const getLightText = (color: string): string => {
   }
 }
 
+// 获取交通灯样式类
 const getLightClass = (color: string): string => {
   switch (color) {
     case 'green': return 'light-green'
@@ -142,23 +167,109 @@ const getLightClass = (color: string): string => {
   }
 }
 
-const updateStatus = () => {
-  if (!props.trafficLightData || props.directionIndex === null || props.directionIndex === undefined) {
-    return
+// 启动倒计时
+const startCountdown = (initialSeconds: number) => {
+  // 清除之前的计时器
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
   }
-  nextSwitchTime.value = props.trafficLightData.nextSwitchTime || 0
+  
+  countdownSeconds.value = initialSeconds
+  console.log('⏰ [StatusBar] Starting countdown from:', initialSeconds, 'seconds')
+  
+  countdownTimer = setInterval(() => {
+    if (countdownSeconds.value > 0) {
+      countdownSeconds.value--
+    } else {
+      // 倒计时到0时，清除计时器
+      if (countdownTimer) {
+        clearInterval(countdownTimer)
+        countdownTimer = null
+      }
+    }
+  }, 1000)
+}
 
-  if (props.trafficLightData.state && typeof props.trafficLightData.state === 'string') {
-    const newLight = getLightColor(props.trafficLightData.state, props.directionIndex)
-    currentLight.value = newLight
-
-  } else {
-    currentLight.value = 'unknown'
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+    console.log('⏹️ [StatusBar] Countdown stopped')
   }
 }
 
+// 更新状态
+const updateStatus = () => {
+  console.log('🔄 [StatusBar] Updating status:', {
+    trafficLightData: props.trafficLightData,
+    directionIndex: props.directionIndex,
+    state: props.trafficLightData?.state,
+    nextSwitchTime: props.trafficLightData?.nextSwitchTime
+  })
+
+  if (!props.trafficLightData || props.directionIndex === null || props.directionIndex === undefined) {
+    console.log('⚠️ [StatusBar] Missing data for status update')
+    currentLight.value = 'unknown'
+    countdownSeconds.value = 0
+    stopCountdown()
+    return
+  }
+
+  // 更新交通灯状态
+  if (props.trafficLightData.state && typeof props.trafficLightData.state === 'string') {
+    const newLight = getLightColor(props.trafficLightData.state, props.directionIndex)
+    const lightChanged = previousLightState.value !== newLight
+    
+    currentLight.value = newLight
+    
+    // 只有当灯色发生变化时，才重新计算倒计时
+    if (lightChanged || previousLightState.value === '') {
+      const steps = props.trafficLightData.nextSwitchTime || 0
+      const seconds = (steps + 1) * 9
+      
+      console.log('🚦 [StatusBar] Light changed or first time:', {
+        previousLight: previousLightState.value,
+        newLight,
+        steps,
+        calculatedSeconds: seconds,
+        lightChanged
+      })
+      
+      previousLightState.value = newLight
+      startCountdown(seconds)
+    } else {
+      console.log('🔄 [StatusBar] Light unchanged, continue countdown:', {
+        currentLight: newLight,
+        remainingSeconds: countdownSeconds.value
+      })
+    }
+    
+    console.log('✅ [StatusBar] Status updated:', {
+      newLight,
+      remainingSeconds: countdownSeconds.value,
+      state: props.trafficLightData.state,
+      directionIndex: props.directionIndex
+    })
+  } else {
+    console.warn('⚠️ [StatusBar] Invalid traffic light state')
+    currentLight.value = 'unknown'
+    previousLightState.value = ''
+    stopCountdown()
+  }
+}
+
+// 监听交通灯数据变化
 watch(() => props.trafficLightData, (newData, oldData) => {
-  if (newData && typeof newData.state === 'string' && typeof newData.nextSwitchTime === 'number') {
+  console.log('👀 [StatusBar] Traffic light data changed:', {
+    newData,
+    oldData,
+    hasNewData: !!newData,
+    newState: newData?.state,
+    newNextSwitchTime: newData?.nextSwitchTime
+  })
+
+  if (newData && typeof newData.state === 'string') {
     const shouldUpdate = !oldData ||
       oldData.state !== newData.state ||
       oldData.nextSwitchTime !== newData.nextSwitchTime
@@ -167,23 +278,28 @@ watch(() => props.trafficLightData, (newData, oldData) => {
       updateStatus()
     }
   } else {
-    nextSwitchTime.value = 0
+    console.log('⚠️ [StatusBar] No valid data, resetting status')
+    countdownSeconds.value = 0
     currentLight.value = 'unknown'
+    previousLightState.value = ''
+    stopCountdown()
   }
 }, { immediate: true, deep: true })
 
+// 监听方向索引变化
 watch(() => props.directionIndex, (newIndex, oldIndex) => {
-  if (newIndex !== oldIndex) {
-    console.log('💭 [StatusBar] Direction changed, updating status and checking manual control visibility')
+  console.log('👀 [StatusBar] Direction index changed:', { newIndex, oldIndex })
+  if (newIndex !== oldIndex && newIndex !== null && newIndex !== undefined) {
     updateStatus()
   }
 }, { immediate: true })
 
+// 监听路口和手动控制变化
 watch(() => [props.junctionName, props.lastManualControl], (newValues, oldValues) => {
   const [newJunctionName, newManualControl] = newValues
   const [oldJunctionName, oldManualControl] = oldValues || [null, null]
 
-  console.log('💭 [StatusBar] Junction or manual control changed:', {
+  console.log('👀 [StatusBar] Junction or manual control changed:', {
     newJunctionName,
     oldJunctionName,
     newManualControl: newManualControl ? {
@@ -194,6 +310,27 @@ watch(() => [props.junctionName, props.lastManualControl], (newValues, oldValues
     shouldShowManualControl: shouldShowManualControl.value
   })
 }, { immediate: true, deep: true })
+
+// 组件挂载时初始化
+onMounted(() => {
+  console.log('🚀 [StatusBar] Component mounted:', {
+    junctionId: props.junctionId,
+    junctionName: props.junctionName,
+    directionIndex: props.directionIndex,
+    trafficLightData: props.trafficLightData,
+    isVisible: isVisible.value
+  })
+  
+  if (props.trafficLightData && props.directionIndex !== null && props.directionIndex !== undefined) {
+    updateStatus()
+  }
+})
+
+// 组件卸载时清理计时器
+onUnmounted(() => {
+  console.log('🧹 [StatusBar] Component unmounted, cleaning up timer')
+  stopCountdown()
+})
 </script>
 
 <style scoped lang="scss">

@@ -9,7 +9,7 @@ import java.util.List;
 public interface JunctionMapper {
 
     /**
-     * 查询所有路口及其对应的入口道路信息
+     * Retrieves all junctions and their associated incoming edge information.
      * @return A list of all junction-edge relationships.
      */
     List<JunctionIncomingEdge> findAllJunctionEdges();
