@@ -184,31 +184,6 @@ public class AuthService {
         return ApiResponse.success(result);
     }
 
-    private void recordAuthLog(User user, String operationType, String operationResult, String resultMessage, HttpServletRequest request) {
-        recordAuthLog(user.getAccountNumber(), user.getUserName(), operationType, operationResult, resultMessage, request);
-    }
-
-    private void recordAuthLog(String accountNumber, String userName, String operationType, String operationResult, String resultMessage, HttpServletRequest request) {
-        AuthLogDTO logDTO = new AuthLogDTO();
-        logDTO.setAccountNumber(accountNumber);
-//        logDTO.setUserName(userName);
-        logDTO.setOperationType(operationType);
-        logDTO.setOperationResult(operationResult);
-        logDTO.setResultMessage(resultMessage);
-
-        if (request != null) {
-            logDTO.setIpAddress(request.getRemoteAddr());
-            logDTO.setUserAgent(request.getHeader("User-Agent"));
-        }
-
-        try {
-            logServiceClient.logAuth(logDTO);
-        } catch (Exception e) {
-            // Log locally if the logging service is down, to avoid breaking the main flow
-            log.error("Failed to send authentication log to logging service. Log data: {}", logDTO, e);
-        }
-    }
-
     /**
      * Private helper method to map a User POJO to a UserVO.
      */
