@@ -13,7 +13,6 @@
 
     <div class="tracking-content">
       <div v-if="trackedVehicleSnapshot" class="vehicle-info-section">
-        <!-- 车辆和路口信息展示区 -->
         <div class="info-display-section">
           <div class="info-item">
             <label class="info-label">Vehicle ID</label>
@@ -51,9 +50,7 @@
           </div>
         </div>
 
-        <!-- 简化的手动控制面板 -->
         <div class="simplified-control-section" v-if="isApproachingSignalizedJunction">
-          <!-- 灯光状态 -->
           <div class="info-item">
             <label class="info-label">Light State</label>
             <div class="light-buttons">
@@ -70,7 +67,6 @@
             </div>
           </div>
 
-          <!-- Duration -->
           <div class="form-row-duration">
             <div class="info-item">
               <label class="info-label">Duration</label>
@@ -90,13 +86,11 @@
                 </div>
               </div>
             </div>
-            <!-- 错误提示区域 -->
             <div class="duration-error-container">
               <div class="duration-error" v-if="durationError">⚠ The value must be between 5 and 300.</div>
             </div>
           </div>
 
-          <!-- 操作按钮 -->
           <div class="info-item">
             <div class="info-label"></div>
             <div class="action-buttons">
@@ -113,7 +107,6 @@
           </div>
         </div>
 
-        <!-- 当车辆不在信号路口附近时的提示 -->
         <div v-else class="waiting-message">
           <p class="waiting-text">Waiting for Junction Approach</p>
           <p class="waiting-subtext">Traffic light control will be available when the vehicle approaches a signalized junction</p>
@@ -155,25 +148,18 @@ const emit = defineEmits<{
 const emergencyStore = useEmergencyStore()
 const operationStore = useOperationStore()
 
-// 动画状态控制
 const isClosing = ref(false)
 
-// 用于存储映射数据
 const laneIdToEdgeName = ref<Record<string, string>>({})
 const junctionIdToName = ref<Record<string, string>>({})
 const junctionConnectionMap = ref<Map<string, any>>(new Map())
-
-// 创建一个本地ref来存储车辆数据的快照
 const trackedVehicleSnapshot = ref<VehicleTrackingData | null>(null)
-
-// 控制面板状态
 const selectedLight = ref('')
 const duration = ref<number | null>(null)
 const durationDisplay = ref('')
 const durationError = ref(false)
 const isApplying = ref(false)
 
-// 计算属性
 const isApproachingSignalizedJunction = computed(() => {
   return !!trackedVehicleSnapshot.value?.upcomingJunctionID
 })
@@ -216,7 +202,6 @@ const isFormComplete = computed(() =>
   isApproachingSignalizedJunction.value
 )
 
-// 数据获取函数
 const fetchLaneMappings = async () => {
   try {
     const response = await axios.get('/api-status/lane-mappings')
@@ -239,7 +224,6 @@ const fetchJunctions = async () => {
     const nameMap: Record<string, string> = {}
     junctionData.forEach((j: any) => {
       nameMap[j.junction_id] = j.junction_name || j.junction_id
-      // 存储连接信息用于计算lightIndex
       if (j.connection) {
         junctionConnectionMap.value.set(j.junction_id, j.connection)
       }
@@ -251,7 +235,6 @@ const fetchJunctions = async () => {
   }
 }
 
-// 计算lightIndex的函数（从ControlManual和ControlAI参考而来）
 const findLightIndex = (junctionId: string, fromLaneId: string, toLaneId: string): number => {
   const connections = junctionConnectionMap.value.get(junctionId)
   if (!connections) {
@@ -274,56 +257,31 @@ const findLightIndex = (junctionId: string, fromLaneId: string, toLaneId: string
   return 0
 }
 
-// 监听Store中的数据变化，并更新本地快照（仅更新数据，不自动触发状态）
 watch(() => emergencyStore.activelyTrackedVehicle, (currentVehicle, oldVehicle) => {
   if (currentVehicle) {
-    // 限制更新频率，只在重要数据变化时才更新
     const oldSnapshot = trackedVehicleSnapshot.value
-    const hasSignificantChange = !oldSnapshot || 
+    const hasSignificantChange = !oldSnapshot ||
       oldSnapshot.vehicleID !== currentVehicle.vehicleID ||
       oldSnapshot.upcomingJunctionID !== currentVehicle.upcomingJunctionID ||
       oldSnapshot.currentLaneID !== currentVehicle.currentLaneID ||
       oldSnapshot.nextLaneID !== currentVehicle.nextLaneID
-    
+
     if (hasSignificantChange) {
-      console.log('[TrackingPanel] 重要车辆数据变化，更新快照')
       trackedVehicleSnapshot.value = JSON.parse(JSON.stringify(currentVehicle))
-    } else {
-      console.log('[TrackingPanel] 车辆位置微小更新，跳过以避免干扰用户操作')
     }
   } else if (oldVehicle) {
     handleTrackingComplete(oldVehicle.vehicleID)
   }
 }, { deep: true, immediate: true })
 
-// 完全禁用这个watch以避免干扰用户的manual操作
-// 用户可以通过紧急车辆面板中的控制按钮手动操作交通灯
-/*
-watch(
-  () => [props.isVisible, trackedVehicleSnapshot.value],
-  ([isVisible, currentVehicle]) => {
-    if (isVisible && currentVehicle && currentVehicle.upcomingJunctionID) {
-      console.log('[TrackingPanel] 面板已打开，但暂时禁用自动发送事件以避免干扰用户操作')
-      // 略...
-    } else if (!isVisible) {
-      console.log('[TrackingPanel] 面板已关闭，清除交通灯状态')
-      emit('traffic-light-cleared')
-    }
-  },
-  { deep: true, immediate: false }
-)
-*/
-
-// 只保留面板关闭时的清理逻辑
 watch(() => props.isVisible, (isVisible) => {
   if (!isVisible) {
-    console.log('[TrackingPanel] 面板已关闭，清除交通灯状态')
     emit('traffic-light-cleared')
   }
-  // 完全禁用自动跳转功能，由用户手动控制
+
 })
 
-// 控制面板操作函数
+
 const selectLight = (color: string) => {
   selectedLight.value = color
 }
@@ -377,14 +335,9 @@ const decreaseDuration = () => {
 
 function handleTrackingComplete(vehicleId?: string) {
   const message = `Tracking Finished!`
-  
-  // 弹出提示框
   toast.success(message)
-  
-  // 调用 store action 清理全局状态和localStorage
   emergencyStore.completeTracking()
-  
-  // 延迟3秒后，自动关闭面板
+
   setTimeout(() => {
     closePanel()
   }, 3000)
@@ -392,18 +345,16 @@ function handleTrackingComplete(vehicleId?: string) {
 
 function startCloseAnimation() {
   isClosing.value = true
-  // 等待动画完成后再发出关闭事件
   setTimeout(() => {
     isClosing.value = false
     emit('close')
-  }, 400) // 与 CSS 动画时间一致
+  }, 400)
 }
 
 function closePanel() {
   emit('close')
 }
 
-// 应用交通灯控制
 const handleApply = async () => {
   if (!trackedVehicleSnapshot.value || !isApproachingSignalizedJunction.value) {
     toast.error('No junction information available')
@@ -421,17 +372,16 @@ const handleApply = async () => {
 
   isApplying.value = true
 
-  // 计算lightIndex
   const lightIndex = findLightIndex(junctionId, fromLaneId, toLaneId)
   const state = selectedLight.value === 'GREEN' ? 'G' : 'r'
 
-  // 构建请求体（参考ControlAI和ControlManual的实现）
+
   const requestBody = {
     junctionId: junctionId,
     lightIndex: lightIndex,
     duration: duration.value!,
     state: state,
-    source: 'emergency' // 标记为紧急车辆控制
+    source: 'emergency'
   }
 
   const junctionName = displayJunctionName.value
@@ -439,9 +389,8 @@ const handleApply = async () => {
   const toEdge = displayToName.value
   const lightColor = selectedLight.value === 'GREEN' ? 'Green' : 'Red'
 
-  // 记录操作
   const recordId = operationStore.addRecord({
-    description: `Emergency: Set ${junctionName} light from ${fromEdge} to ${toEdge} to ${lightColor} for ${duration.value}s`,
+    description: `Set ${junctionName} light from ${fromEdge} to ${toEdge} to ${lightColor} for ${duration.value}s`,
     source: 'emergency',
     junctionId: junctionId,
     junctionName: junctionName,
@@ -451,13 +400,11 @@ const handleApply = async () => {
   })
 
   try {
-    // 发送请求到后端（使用与ControlAI和ControlManual相同的端点）
     await apiClient.post('/signalcontrol/manual', requestBody)
-    
+
     operationStore.updateRecordStatus(recordId, 'success')
     toast.success('Emergency traffic light control applied successfully!')
 
-    // 发出手动控制应用事件
     const directionInfo = `${fromEdge} → ${toEdge}`
     emit('manual-control-applied', {
       junctionName,
@@ -466,7 +413,6 @@ const handleApply = async () => {
       duration: duration.value!
     })
 
-    // 部分重置表单
     selectedLight.value = ''
     duration.value = null
     durationDisplay.value = ''
@@ -482,14 +428,13 @@ const handleApply = async () => {
 
 onMounted(async () => {
   await Promise.all([fetchLaneMappings(), fetchJunctions()])
-  
-  // 确保组件完全初始化后再进行权限检查
+
   await nextTick()
-  
+
   const junctionId = trackedVehicleSnapshot.value?.upcomingJunctionID
   if (junctionId && manualControlRef.value) {
     manualControlRef.value.selectJunctionById(junctionId)
-    // 等待一段时间后刷新权限，确保 mapCenterX 已初始化
+
     setTimeout(() => {
       if (manualControlRef.value) {
         manualControlRef.value.forceRefreshPermissions()
@@ -516,8 +461,7 @@ onMounted(async () => {
   box-shadow: -0.08rem 0 0.3rem rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(0.1rem);
   animation: slideInRight 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
-  
-  // 添加统一的背景纹理效果（与ControlManual一致）
+
   &::before {
     content: '';
     position: absolute;
@@ -603,11 +547,7 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
 
-  &:hover {
-    background: rgba(74, 85, 104, 0.1);
-    color: #00E5FF;
-    transform: scale(1.1);
-  }
+
 
   svg {
     width: 0.2rem;
@@ -684,34 +624,27 @@ onMounted(async () => {
     pointer-events: none;
   }
 
-  &:hover {
-    border-color: rgba(113, 128, 150, 0.6);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-    background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
 
-    &::before {
-      opacity: 1;
-    }
-  }
+
 }
 
 .status-approaching {
-  color: #F97316 !important;
-  border-color: rgba(249, 115, 22, 0.5) !important;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
+  color: #00BCD4 !important; /* 统一使用青色 */
+  border-color: rgba(0, 188, 212, 0.5) !important;
+  background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
 
   &::before {
-    background: linear-gradient(45deg, transparent 48%, rgba(249, 115, 22, 0.1) 49%, rgba(249, 115, 22, 0.1) 51%, transparent 52%) !important;
+    background: linear-gradient(45deg, transparent 48%, rgba(0, 188, 212, 0.1) 49%, rgba(0, 188, 212, 0.1) 51%, transparent 52%) !important;
   }
 }
 
 .status-enroute {
-  color: #00E676 !important;
-  border-color: rgba(0, 230, 118, 0.5) !important;
-  background: linear-gradient(135deg, rgba(0, 230, 118, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
+  color: #00BCD4 !important; /* 统一使用青色 */
+  border-color: rgba(0, 188, 212, 0.5) !important;
+  background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
 
   &::before {
-    background: linear-gradient(45deg, transparent 48%, rgba(0, 230, 118, 0.1) 49%, rgba(0, 230, 118, 0.1) 51%, transparent 52%) !important;
+    background: linear-gradient(45deg, transparent 48%, rgba(0, 188, 212, 0.1) 49%, rgba(0, 188, 212, 0.1) 51%, transparent 52%) !important;
   }
 }
 
@@ -759,35 +692,21 @@ onMounted(async () => {
     transition: left 0.6s;
   }
 
-  &:hover::before {
-    left: 100%;
-  }
+
 }
 
 .red {
   color: #FF4569;
   border-color: rgba(255, 69, 105, 0.3);
 
-  &:hover:not(.active-red) {
-    background: linear-gradient(135deg, #FF4569 20%, #2A2D4A 80%);
-    color: #FFFFFF;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 69, 105, 0.6);
-  }
+
 }
 
 .green {
   color: #00E676;
   border-color: rgba(0, 230, 118, 0.3);
 
-  &:hover:not(.active-green) {
-    background: linear-gradient(135deg, #00E676 20%, #2A2D4A 80%);
-    color: #FFFFFF;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    border-color: rgba(0, 230, 118, 0.6);
-  }
+
 }
 
 .active-red {
@@ -816,6 +735,7 @@ onMounted(async () => {
 .duration-custom {
   display: flex;
   align-items: center;
+  width: 1.6rem;
   height: 0.4rem;
   border: 1px solid rgba(74, 85, 104, 0.4);
   border-radius: 0.06rem;
@@ -918,7 +838,7 @@ onMounted(async () => {
   color: #EF4444;
   font-size: 0.1rem;
   padding: 0.02rem 0.06rem;
-  margin-left: 1.16rem;
+  margin-left: 1.18rem; /* 与duration输入框左侧对齐 */
   white-space: nowrap;
   font-weight: 600;
   display: inline-block;
@@ -927,12 +847,13 @@ onMounted(async () => {
   max-width: 3rem;
 }
 
-/* Action Buttons - 与 ControlManual 完全一致 */
+/* Action Buttons - 与 ControlManual 完全一致的位置和间距 */
 .action-buttons {
   display: flex;
   justify-content: space-between;
-  gap: 0.3rem;
-  width: 100%;
+  width: 4.2rem; /* 与manual组件保持一致 */
+  margin: 0 auto;
+  margin-top: -0.2rem;
 }
 
 .apply-btn,
@@ -992,12 +913,7 @@ onMounted(async () => {
     font-weight: 700;
   }
 
-  &:not(:disabled):hover {
-    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
-    border-color: rgba(0, 180, 216, 0.8);
-  }
+
 }
 
 @keyframes spin {

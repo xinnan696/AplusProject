@@ -25,10 +25,40 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router'; // Import useRouter for navigation
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
+
+// 动态调整弹窗位置的函数
+const adjustToastPosition = () => {
+  // 查找页面上的 toast 元素
+  const toastElements = document.querySelectorAll('.toast');
+  toastElements.forEach(toast => {
+    // 检查是否在登录页面（通过检查是否存在 .auth-page 元素）
+    if (document.querySelector('.auth-page')) {
+      // 立即隐藏元素，避免闪烁
+      toast.style.visibility = 'hidden';
+      toast.style.opacity = '0';
+      
+      // 设置位置
+      toast.style.position = 'fixed';
+      toast.style.top = '1rem'; // 调整弹窗位置稍微往上
+      toast.style.left = '50%'; // 水平居中
+      toast.style.transform = 'translateX(-50%)'; // 只进行水平偏移
+      toast.style.zIndex = '9999';
+      
+      // 强制重绘后再显示
+      requestAnimationFrame(() => {
+        toast.style.visibility = 'visible';
+        toast.style.opacity = '1';
+      });
+    }
+  });
+};
+
+// 使用 MutationObserver 监听 DOM 变化
+let observer: MutationObserver | null = null;
 
 const router = useRouter(); // Initialize router
 const email = ref('');
@@ -67,6 +97,44 @@ const handleForgotPassword = async () => {
     loading.value = false;
   }
 };
+
+// 设置 DOM 监听器
+onMounted(() => {
+  // 创建 MutationObserver 来监听 DOM 变化
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        // 检查是否有新增的 toast 元素
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
+              // 立即调整位置，减少闪烁
+              adjustToastPosition();
+            }
+          }
+        });
+      }
+    });
+  });
+
+  // 开始监听整个文档的变化
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  // 初始检查是否已经有 toast 元素
+  setTimeout(adjustToastPosition, 100);
+});
+
+// 清理监听器
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -83,4 +151,62 @@ const handleForgotPassword = async () => {
 .submit-button.secondary { background-color: transparent; color: #00b4d8; border: 1px solid #00b4d8; }
 .submit-button:not(.secondary) { background-color: #00b4d8; color: #FFFFFF; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
+</style>
+
+<!-- Override toast position for forgot password page -->
+<style>
+/* 预设忘记密码页面中 toast 的初始状态，减少闪烁 */
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+/* 更强的选择器优先级，确保在忘记密码页面覆盖弹窗位置 */
+body .auth-page .toast,
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important; /* 调整弹窗位置稍微往上 */
+  left: 50% !important; /* 水平居中 */
+  transform: translateX(-50%) !important; /* 只进行水平偏移 */
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+/* 重写动画效果以配合新的定位 */
+body .auth-page .toast-fade-enter-active,
+body .auth-page .toast-fade-leave-active,
+.auth-page .toast-fade-enter-active,
+.auth-page .toast-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease !important;
+}
+
+body .auth-page .toast-fade-enter-from,
+.auth-page .toast-fade-enter-from {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-1rem) scale(0.8) !important;
+}
+
+body .auth-page .toast-fade-enter-to,
+.auth-page .toast-fade-enter-to {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-from,
+.auth-page .toast-fade-leave-from {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-to,
+.auth-page .toast-fade-leave-to {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-0.3rem) scale(0.95) !important;
+}
 </style>

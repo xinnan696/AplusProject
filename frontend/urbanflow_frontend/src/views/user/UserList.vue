@@ -70,7 +70,7 @@
           <div class="table-body">
             <div v-for="user in paginatedUsers" :key="user.id" class="user-row" :class="{ 'nav-collapsed': !isNavVisible }">
               <!-- Checkbox -->
-              <div class="cell-checkbox" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 40px;">
+              <div class="cell-checkbox" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 44.5px;">
                 <label class="custom-checkbox">
                   <input
                     type="checkbox"
@@ -82,16 +82,16 @@
               </div>
 
               <!-- ID -->
-              <div class="cell-id" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.id }}</div>
+              <div class="cell-id" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ user.id }}</div>
 
               <!-- Username -->
-              <div class="cell-username" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.accountNumber || user.username || 'N/A' }}</div>
+              <div class="cell-username" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ user.accountNumber || user.username || 'N/A' }}</div>
 
               <!-- Name -->
-              <div class="cell-name" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.userName || user.name || 'N/A' }}</div>
+              <div class="cell-name" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ user.userName || user.name || 'N/A' }}</div>
 
               <!-- Status Toggle -->
-              <div class="cell-status" style="position: absolute; display: flex; align-items: center; height: 40px;">
+              <div class="cell-status" style="position: absolute; display: flex; align-items: center; height: 44.5px;">
                 <div class="status-toggle">
                   <label class="switch">
                     <input
@@ -105,10 +105,10 @@
               </div>
 
               <!-- Role -->
-              <div class="cell-role" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.role || 'N/A' }}</div>
+              <div class="cell-role" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ user.role || 'N/A' }}</div>
 
               <!-- Actions -->
-              <div class="cell-actions" style="position: absolute; display: flex; align-items: center; height: 40px; gap: 0.08rem;">
+              <div class="cell-actions" style="position: absolute; display: flex; align-items: center; height: 44.5px; gap: 0.08rem;">
                 <button class="action-btn details-btn" @click="viewUserDetails(user)">
                   Details
                 </button>
@@ -127,7 +127,7 @@
         <div class="pagination">
           <span class="page-info">{{ startItem }}-{{ endItem }} of {{ totalItems }}</span>
           <div class="page-controls">
-            <button class="page-btn" :disabled="currentPage === 1" @click="previousPage">Previous</button>
+            <button class="page-btn previous-btn" :disabled="currentPage === 1" @click="previousPage">Previous</button>
             <span v-if="showStartEllipsis" class="page-dots">...</span>
             <button
               v-for="page in visiblePages"
@@ -139,7 +139,7 @@
               {{ page }}
             </button>
             <span v-if="showEndEllipsis" class="page-dots">...</span>
-            <button class="page-btn" :disabled="currentPage === totalPages" @click="nextPage">Next</button>
+            <button class="page-btn next-btn" :disabled="currentPage === totalPages" @click="nextPage">Next</button>
           </div>
         </div>
 
@@ -230,6 +230,23 @@ const users = computed(() => userStore.users)
 // Computed properties
 const filteredUsers = computed(() => {
   let filtered = users.value
+
+  // 🔥 隐藏admin用户：过滤掉所有admin相关的用户
+  filtered = filtered.filter(user => {
+    const accountNumber = user.accountNumber?.toLowerCase() || ''
+    const username = user.username?.toLowerCase() || ''
+    const userName = user.userName?.toLowerCase() || ''
+    const role = user.role?.toLowerCase() || ''
+
+    // 排除包含admin的账号、用户名或角色为admin的用户
+    return !(
+      accountNumber.includes('admin') ||
+      username.includes('admin') ||
+      userName.includes('admin') ||
+      role === 'admin' ||
+      role === 'ADMIN'
+    )
+  })
 
   if (searchTerm.value) {
     filtered = filtered.filter(user =>
@@ -340,11 +357,9 @@ const toggleUserStatus = async (user: any) => {
   console.log('Toggling status for user:', user.id, 'current enabled:', user.enabled)
 
   try {
-    // 调用 store 的方法切换状态
     const updatedUser = await userStore.toggleUserStatus(user.id)
     console.log('Status toggled successfully, new enabled:', updatedUser?.enabled)
 
-    // 确保本地状态与后端响应一致
     if (updatedUser) {
       user.enabled = updatedUser.enabled
       user.status = updatedUser.status
@@ -505,19 +520,8 @@ onMounted(async () => {
     console.log('Users fetched successfully, count:', userStore.users.length)
   } catch (error: any) {
     console.error('Failed to load users:', error)
-    
-    // 更友好的错误提示
-    if (error.message.includes('权限不足')) {
-      showCenterToast('权限不足：您需要管理员权限才能访问用户列表', 'error', 5000)
-    } else if (error.response?.status === 403) {
-      showCenterToast('Token可能已过期，请重新登录', 'error', 5000)
-      // 自动跳转到登录页
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    } else {
-      showCenterToast('Failed to load users: ' + (error.message || '未知错误'), 'error')
-    }
+
+
   }
 })
 </script>
@@ -545,8 +549,7 @@ onMounted(async () => {
   margin-left: 2.4rem;
   width: calc(100vw - 2.4rem);
   transition: all 0.3s ease;
-  
-  // 当导航栏收起时的样式
+
   &.nav-collapsed {
     margin-left: 0.24rem;
     width: calc(100vw - 0.24rem);
@@ -566,20 +569,19 @@ onMounted(async () => {
   box-sizing: border-box;
 }
 
-// 修复：将页面标题改为正常文档流
 .page-title {
   color: #FFFFFF;
   font-size: 0.28rem;
   font-weight: bold;
-  margin: 0rem 0 0.5rem 0.02rem; // 设置标题到按钮距离为0.5rem
-  flex-shrink: 0; // 防止被压缩
+  margin: 0rem 0 0.5rem 0.02rem;
+  flex-shrink: 0;
 }
 
 .controls-bar {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  margin-bottom: 0.58rem; // 恢复为0.58rem
+  margin-bottom: 0.58rem;
   margin-left: 0.02rem;
   flex-shrink: 0;
 }
@@ -653,7 +655,7 @@ onMounted(async () => {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300B4D8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
   background-position: right 0.08rem center;
   background-size: 0.14rem;
@@ -676,23 +678,34 @@ onMounted(async () => {
   }
 
   option {
-  background-color: #2B2B3C;
-  color: #FFFFFF;
-  padding-top: 0.08rem;
-  padding-bottom: 0.08rem;
-  padding-left: 0.2rem !important;  // 调整这个值
-  padding-right: 0.08rem;
-  border: none;
-  font-weight: normal;
-  text-align: left !important;      // 改为左对齐
+    background-color: #2B2B3C !important;
+    color: #FFFFFF !important;
+    padding-top: 0.08rem;
+    padding-bottom: 0.08rem;
+    padding-left: 0.2rem !important;
+    padding-right: 0.08rem;
+    border: none;
+    font-weight: normal;
+    text-align: left !important;
 
     &:hover {
-      background-color: #3A3A4D;
+      background-color: #1E1E2F !important;
+      color: #FFFFFF !important;
+    }
+
+    &:focus {
+      background-color: #1E1E2F !important;
+      color: #FFFFFF !important;
     }
 
     &:checked {
-      background-color: #00B4D8;
-      color: #FFFFFF;
+      background-color: #00B4D8 !important;
+      color: #FFFFFF !important;
+    }
+
+    &:selected {
+      background-color: #00B4D8 !important;
+      color: #FFFFFF !important;
     }
   }
 }
@@ -786,33 +799,30 @@ onMounted(async () => {
   color: #FFFFFF;
   font-size: 0.14rem;
   font-weight: 600;
-  
-  // 为所有标题元素添加平滑过渡
+
   .header-id,
-  .header-username, 
+  .header-username,
   .header-name,
   .header-status,
   .header-role,
   .header-actions {
     transition: all 0.3s ease;
   }
-  
-  // 默认状态下的列位置
+
   .header-id { left: 1.14rem; }
   .header-username { left: 3.2rem; }
   .header-name { left: 6.0rem; }
   .header-status { left: 8.8rem; }
   .header-role { left: 10.71rem; }
   .header-actions { left: 14.2rem; }
-  
-  // 导航栏收起时的列位置
+
   &.nav-collapsed {
     .header-id { left: 1.4rem; }
-    .header-username { left: 3.7rem; } // 缩小一点点
-    .header-name { left: 6.8rem; } // 缩小一点点
-    .header-status { left: 9.5rem; } // 缩小一点点
-    .header-role { left: 11.8rem; } // 缩小一点点
-    .header-actions { left: calc(100% - 2.6rem); } // Actions标题位置
+    .header-username { left: 3.7rem; }
+    .header-name { left: 6.8rem; }
+    .header-status { left: 9.5rem; }
+    .header-role { left: 11.8rem; }
+    .header-actions { left: calc(100% - 2.6rem); }
   }
 }
 
@@ -822,8 +832,7 @@ onMounted(async () => {
 }
 
 .table-body {
-  max-height: calc(100% - 3rem);
-  overflow-y: auto;
+  flex: 1;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
@@ -833,15 +842,14 @@ onMounted(async () => {
 
 .user-row {
   position: relative;
-  height: 40px;
+  height: 44.5px;
   color: #FFFFFF;
   font-size: 0.14rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
-  
-  // 除第一行外，每行都有0.5rem的上边距
+
   &:not(:first-child) {
-    margin-top: 0.2rem;
+    margin-top: 0.18rem;
   }
 
   &:last-child {
@@ -849,7 +857,6 @@ onMounted(async () => {
   }
 }
 
-// 美化复选框样式
 .custom-checkbox {
   position: relative;
   display: inline-block;
@@ -1022,14 +1029,6 @@ onMounted(async () => {
     background-color: transparent;
     color: #00B4D8;
 
-    &:hover:not(:disabled) {
-      color: #FF4757;
-    }
-
-    &:active:not(:disabled) {
-      color: #FF4757;
-    }
-
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
@@ -1074,7 +1073,7 @@ onMounted(async () => {
     left: 50%;
     top: 40%;
     transform: translate(-50%, -50%);
-    color: #00B4D8;
+    color: #FFFFFF;
     font-size: 0.2rem;
     margin: 0;
     width: 4.18rem;
@@ -1100,70 +1099,34 @@ onMounted(async () => {
   border-radius: 0.2rem;
   border: 1px solid;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
   text-transform: uppercase;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    transition: all 0.4s ease;
-  }
-
-  &:active::before {
-    width: 300%;
-    height: 300%;
-  }
-
   &.delete-confirm-btn {
-    background: linear-gradient(135deg, #00E5FF 0%, #00B4D8 100%);
+    background-color: #00B4D8;
     color: #FFFFFF;
-    border-color: rgba(0, 229, 255, 0.5);
-
-    &:not(:disabled):hover {
-      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(0, 229, 255, 0.8);
-    }
+    border-color: #00B4D8;
 
     &:disabled {
-      background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+      background-color: #4A5568;
       color: #A0AEC0;
-      border-color: rgba(74, 85, 104, 0.5);
+      border-color: #4A5568;
       cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-      text-shadow: none;
     }
   }
 
   &.cancel-btn {
-    background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
+    background-color: #718096;
     color: #FFFFFF;
-    border-color: rgba(113, 128, 150, 0.5);
-
-    &:hover {
-      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(113, 128, 150, 0.8);
-    }
+    border-color: #718096;
   }
 }
 
-// Pagination wrapper - 独立的分页区域
 .pagination-wrapper {
   position: fixed;
-  bottom: 0.56rem; // 距离底部0.56rem
-  left: 2.4rem; // 从导航栏右侧开始
+  bottom: 0.56rem;
+  left: 2.4rem;
   right: 0;
   height: 0.6rem;
   background-color: #1E1E2F;
@@ -1210,7 +1173,7 @@ onMounted(async () => {
   justify-content: center;
   transition: all 0.2s ease;
 
-  &:hover:not(:disabled) {
+  &:hover:not(:disabled):not(.previous-btn):not(.next-btn) {
     background-color: #00B4D8;
     color: #FFFFFF;
   }
@@ -1231,7 +1194,6 @@ onMounted(async () => {
     }
   }
 
-  // Previous/Next 按钮的特殊样式
   &.previous-btn,
   &.next-btn {
     width: auto;
@@ -1243,9 +1205,9 @@ onMounted(async () => {
     color: #00B4D8;
     border: none;
 
-    &:hover:not(:disabled) {
-      background-color: transparent;
-      color: #00B4D8;
+    &:hover {
+      background-color: transparent !important;
+      color: #00B4D8 !important;
     }
 
     &:disabled {
@@ -1254,8 +1216,8 @@ onMounted(async () => {
       background-color: transparent;
 
       &:hover {
-        background-color: transparent;
-        transform: none;
+        background-color: transparent !important;
+        color: #666 !important;
       }
     }
   }
@@ -1267,9 +1229,7 @@ onMounted(async () => {
   font-size: 0.12rem;
 }
 
-// 为用户行添加列位置样式
 .user-row {
-  // 为所有单元格添加平滑过渡
   .cell-id,
   .cell-username,
   .cell-name,
@@ -1278,16 +1238,14 @@ onMounted(async () => {
   .cell-actions {
     transition: all 0.3s ease;
   }
-  
-  // 默认状态下的列位置
+
   .cell-id { left: 1.14rem; }
   .cell-username { left: 3.2rem; }
   .cell-name { left: 6.0rem; }
   .cell-status { left: 8.8rem; }
   .cell-role { left: 10.71rem; }
   .cell-actions { left: 12.77rem; }
-  
-  // 导航栏收起时的列位置
+
   &.nav-collapsed {
     .cell-id { left: 1.4rem; }
     .cell-username { left: 3.7rem; }

@@ -30,7 +30,6 @@
         </span>
       </div>
 
-      <!-- 空状态显示 -->
       <div v-if="displayedCongestedData.length === 0" class="empty-state">
         <div class="empty-text">No Congested Roads</div>
       </div>
@@ -112,45 +111,19 @@ const fetchJunctionMappings = async () => {
 const displayedCongestedData = computed(() => {
   let filteredData = [...allCongestedData.value]
 
-  // 根据用户角色和管理区域进行权限过滤
   if (authStore.isTrafficManager()) {
     const managedAreas = authStore.getManagedAreas()
-    console.log('🔍 [CongestedRoads] Filtering by managed areas:', managedAreas)
-    
+
     if (managedAreas.length > 0) {
       filteredData = filteredData.filter(item => {
         const area = junctionAreaMap.value[item.junctionId]
         const hasAccess = area && managedAreas.includes(area)
-        
-        if (!hasAccess) {
-          console.log('🚫 [CongestedRoads] Filtered out junction:', {
-            junctionId: item.junctionId,
-            junctionName: item.junctionName,
-            area,
-            managedAreas
-          })
-        }
-        
         return hasAccess
       })
-      
-      console.log('✅ [CongestedRoads] After area filtering:', {
-        originalCount: allCongestedData.value.length,
-        filteredCount: filteredData.length,
-        managedAreas
-      })
     }
-  } else if (authStore.isTrafficPlanner()) {
-    // Traffic Planner 可以查看所有区域，但只是查看
-    console.log('👀 [CongestedRoads] Traffic Planner - showing all areas (view-only)')
-  } else if (authStore.isAdmin()) {
-    // Admin 可以查看所有区域
-    console.log('👑 [CongestedRoads] Admin - showing all areas')
   }
 
-  // 过滤掉队列长度小于最小非绿色值的路口（即只显示真正拥堵的路口）
-  // 根据getQueueClass的逻辑，只有>=10的才是warning或danger，<10的都是normal（绿色）
-  filteredData = filteredData.filter(item => item.congestionCount >= 10)
+  filteredData = filteredData.filter(item => item.congestionCount >= 0)
 
   const displayCount = props.isAIMode ? 10 : 6
   return filteredData.slice(0, displayCount)
@@ -165,7 +138,6 @@ const connectWebSocket = () => {
     socket = new WebSocket('ws://localhost:8087/api/status/ws')
 
     socket.onopen = () => {
-      // WebSocket连接成功
       reconnectAttempts = 0
     }
 
@@ -201,12 +173,9 @@ const connectWebSocket = () => {
       }
     }
 
-    socket.onerror = (err) => {
-      // WebSocket连接错误
-    }
+
 
     socket.onclose = () => {
-      // WebSocket连接断开
       if (reconnectAttempts < maxReconnectAttempts) {
         reconnectAttempts++
         reconnectTimer = setTimeout(connectWebSocket, 3000)
@@ -261,15 +230,7 @@ onMounted(async () => {
     junctionNameMap.value = nameMap
     junctionAreaMap.value = areaMap
 
-    console.log('Junction area mapping completed:', {
-      totalJunctions: Object.keys(nameMap).length,
-      leftJunctions: Object.values(areaMap).filter(area => area === 'Left').length,
-      rightJunctions: Object.values(areaMap).filter(area => area === 'Right').length,
-      mapCenterX,
-      userRole: authStore.userRole,
-      managedAreas: authStore.getManagedAreas(),
-      sampleJunctionAreas: Object.entries(areaMap).slice(0, 5)
-    })
+
   } catch (err) {
     console.error('Failed to fetch junction data:', err)
   }
@@ -304,8 +265,8 @@ onUnmounted(() => {
 })
 
 const getQueueClass = (congestionCount: number) => {
-  if (congestionCount >= 13) return 'danger'
-  if (congestionCount >= 10) return 'warning'
+  if (congestionCount >= 8) return 'danger'
+  if (congestionCount >= 6) return 'warning'
   return 'normal'
 }
 </script>
@@ -416,7 +377,7 @@ const getQueueClass = (congestionCount: number) => {
     left: 0;
     right: 0;
     bottom: 0; // 回到正常范围
-    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    background: transparent; /* 移除斜线条条效果 */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;

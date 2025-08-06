@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ userData.id }}</span>
                   </div>
                 </div>
@@ -141,9 +140,9 @@
                   <div class="area-selection">
                     <div class="area-options">
                       <label class="area-checkbox" v-for="area in availableAreas" :key="area">
-                        <input 
-                          type="checkbox" 
-                          :value="area" 
+                        <input
+                          type="checkbox"
+                          :value="area"
                           v-model="editData.managedAreas"
                           :disabled="!isAreaAvailable(area) && !editData.managedAreas.includes(area)"
                         >
@@ -267,13 +266,12 @@ const editData = ref({
   department: '',
   phoneNumber: '',
   role: '',
-  managedAreas: [] as string[], // 新增：管理区域
+  managedAreas: [] as string[],
   enabled: true
 })
 
-// 区域管理相关数据
-const availableAreas = ref(['Left', 'Right']) // 只支持两个区域
-const occupiedAreas = ref(new Map()) // 已被占用的区域及其管理者
+const availableAreas = ref(['Left', 'Right'])
+const occupiedAreas = ref(new Map())
 const loadingAreas = ref(false)
 
 // Form validation errors
@@ -329,21 +327,21 @@ const loadAreasInfo = async () => {
     console.log('API response:', response)
 
     if (response.statusCode === 200 && response.data) {
-    
+
       occupiedAreas.value.clear()
-  
+
       response.data.forEach(area => {
         // Only consider areas as occupied if they have a userId AND it's different from current user
         if (area && area.userId !== null && area.userId !== undefined && area.userId !== '') {
           const areaUserId = String(area.userId)
           const currentUserId = String(userData.value.id)
-          
+
           if (areaUserId !== currentUserId) {
             const userName = area.userName || 'Unknown User'
             const accountNumber = area.accountNumber || 'Unknown Account'
             const managerInfo = `${userName} (${accountNumber})`
             const areaName = area.areaName || 'Unknown Area'
-            
+
             occupiedAreas.value.set(areaName, managerInfo)
             console.log(`Area ${areaName} occupied by ${managerInfo}`)
           } else {
@@ -353,7 +351,7 @@ const loadAreasInfo = async () => {
           console.log(`Area ${area.areaName || 'Unknown'} is available (no userId)`)
         }
       })
-      
+
       console.log('Final occupiedAreas:', Array.from(occupiedAreas.value.entries()))
     } else {
       console.log('No occupied areas data or unsuccessful response')
@@ -389,7 +387,7 @@ const saveUser = async () => {
       department: editData.value.department?.trim() || '',
       phoneNumber: editData.value.phoneNumber?.trim() || '',
       role: editData.value.role,
-      managedAreas: editData.value.managedAreas || [], 
+      managedAreas: editData.value.managedAreas || [],
       enabled: editData.value.enabled
     })
 
@@ -442,21 +440,13 @@ onMounted(async () => {
     editData.value.department = user.department || ''
     editData.value.phoneNumber = user.phoneNumber || ''
     editData.value.role = user.role
-    editData.value.managedAreas = user.managedAreas || [] 
+    editData.value.managedAreas = user.managedAreas || []
     editData.value.enabled = user.enabled
 
     if (user.role === 'Traffic Manager' || user.role === 'ROLE_TRAFFIC_MANAGER') {
       await loadAreasInfo()
     }
 
-    console.log('EditUser - Loaded user data:', {
-      department: user.department,
-      phoneNumber: user.phoneNumber,
-      editDataDepartment: editData.value.department,
-      editDataPhoneNumber: editData.value.phoneNumber
-    })
-
-    console.log('Editing user:', user)
   } else {
     console.error('User not found')
     showCenterToast('User not found', 'error')
@@ -466,7 +456,6 @@ onMounted(async () => {
   }
 })
 
-// Header button handlers
 const toggleRecord = () => {
   isRecordVisible.value = !isRecordVisible.value
   if (isRecordVisible.value) {
@@ -527,7 +516,6 @@ const handleSignOut = () => {
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;
@@ -921,7 +909,6 @@ const handleSignOut = () => {
   }
 }
 
-/* 区域选择样式 */
 .area-selection {
   width: 100%;
 }

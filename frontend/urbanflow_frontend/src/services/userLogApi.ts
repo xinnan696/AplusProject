@@ -49,7 +49,6 @@ export class UserLogApiService {
 
   static async getUserLogs(params: UserLogQueryParams = {}): Promise<UserLogResponse> {
     try {
-      console.log('🔧 使用直接fetch方式绕过代理问题');
 
       const response = await fetch('/api/logs/userLogs', {
         method: 'GET',
@@ -62,8 +61,6 @@ export class UserLogApiService {
         }
       });
 
-      console.log('🔍 fetch响应状态:', response.status);
-      console.log('🔍 fetch响应头:', [...response.headers.entries()]);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -79,7 +76,6 @@ export class UserLogApiService {
       }
 
       if (Array.isArray(responseData)) {
-        console.log('🔄 检测到数组格式响应，转换为标准格式');
         return {
           code: 200,
           data: responseData

@@ -56,7 +56,6 @@ export const useEmergencyStore = defineStore('emergency', () => {
         nameMap[j.junction_id] = j.junction_name || j.junction_id
       })
       junctionIdToNameMap.value = nameMap
-      console.log('[Emergency Store] Junction mappings loaded:', nameMap)
     } catch (error) {
       console.error('[Emergency Store] Failed to load junction mappings:', error)
     }
@@ -72,7 +71,6 @@ export const useEmergencyStore = defineStore('emergency', () => {
         routesMap[route.vehicle_id] = route
       })
       emergencyRoutesMap.value = routesMap
-      console.log('[Emergency Store] Emergency routes loaded:', routesMap)
     } catch (error) {
       console.error('[Emergency Store] Failed to load emergency routes:', error)
     }
@@ -81,11 +79,6 @@ export const useEmergencyStore = defineStore('emergency', () => {
   // 计算属性：返回一个待处理的车辆列表（用户还未点击Approve或Reject）
   const pendingVehicles = computed(() => {
     const pending = Object.values(vehicleDataMap.value).filter(v => v.userStatus === 'pending')
-    console.log(`🚨 [Emergency Store] 当前待处理车辆数量: ${pending.length}`, pending.map(v => ({
-      vehicleID: v.vehicleID,
-      position: v.position,
-      organization: v.organization
-    })))
     return pending
   })
 
@@ -100,74 +93,89 @@ export const useEmergencyStore = defineStore('emergency', () => {
     // 初始化junction映射数据和紧急车辆路线数据
     initializeJunctionMappings()
     initializeEmergencyRoutes()
-    
+
     if (ws && ws.readyState === WebSocket.OPEN) {
-      console.log("🔗 [Emergency Store] WebSocket 已连接，无需重复连接。");
       return;
     }
 
     // 请确保这里的URL和端口与您的Java后端匹配
     const wsUrl = 'ws://localhost:8085/ws/tracking';
-    console.log(`🚀 [Emergency Store] 正在尝试连接到 WebSocket: ${wsUrl}`);
     ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
-      console.log('✅ [Emergency Store] WebSocket 连接成功建立！');
     }
 
     ws.onmessage = (event) => {
-      console.log('📥 [Emergency Store] 收到来自后端的原始消息:', event.data);
-      
+
       try {
         const rawDataMap = JSON.parse(event.data)
         const newVehicleIds = Object.keys(rawDataMap)
-        console.log(`🚗 [Emergency Store] 解析到 ${newVehicleIds.length} 辆车的数据，车辆ID:`, newVehicleIds);
 
         if (newVehicleIds.length === 0) {
-          console.log("⚪ [Emergency Store] 没有车辆数据，清空现有数据");
           vehicleDataMap.value = {}
           return
         }
 
         // 更新或添加车辆数据
-        newVehicleIds.forEach(vehicleId => {
+        newVehicleIds.forEach(async vehicleId => {
           const rawInfo: RawVehicleData = JSON.parse(rawDataMap[vehicleId])
-          console.log(`🔍 [Emergency Store] 车辆 ${vehicleId} 详细数据:`, rawInfo);
 
           if (!vehicleDataMap.value[vehicleId]) {
-            // 这是新出现的车辆，设置初始状态
-            console.log(`🆕 [Emergency Store] 新车辆 ${vehicleId} 首次出现`);
-            
-            // 从紧急车辆路线数据中获取signalized_junctions
-            const routeData = emergencyRoutesMap.value[vehicleId]
-            let junctionNames: string[] = []
-            
-            if (routeData && routeData.signalized_junctions) {
-              // 将junction ID转换为名称
-              junctionNames = routeData.signalized_junctions.map((jId: string) => 
-                junctionIdToNameMap.value[jId] || jId
-              )
-              console.log(`📍 [Emergency Store] 车辆 ${vehicleId} 路线信号灯路口:`, junctionNames)
-            } else {
-              console.warn(`⚠️ [Emergency Store] 车辆 ${vehicleId} 没有找到路线数据`)
-            }
-            
-            vehicleDataMap.value[vehicleId] = {
-              ...rawInfo,
-              userStatus: 'pending',
-              signalizedJunctions: junctionNames
+            // 新车辆，从 special-event-handling 模块获取静态数据
+            try {
+              const staticDataResponse = await axios.get(`/api/emergency-vehicles/${rawInfo.eventID}`)
+              const staticData = staticDataResponse.data
+
+              // 从紧急车辆路线数据中获取signalized_junctions（保持向后兼容）
+              const routeData = emergencyRoutesMap.value[vehicleId]
+              let junctionNames: string[] = []
+
+              if (staticData.signalized_junctions && staticData.signalized_junctions.length > 0) {
+                // 使用从API获取的路口ID，转换为名称
+                junctionNames = staticData.signalized_junctions.map((jId: string) =>
+                  junctionIdToNameMap.value[jId] || jId
+                )
+              } else if (routeData && routeData.signalized_junctions) {
+                // 备用方案：使用本地路线数据
+                junctionNames = routeData.signalized_junctions.map((jId: string) =>
+                  junctionIdToNameMap.value[jId] || jId
+                )
+              }
+
+              vehicleDataMap.value[vehicleId] = {
+                ...rawInfo,
+                userStatus: 'pending',
+                organization: staticData.organization || 'Emergency Services',
+                signalizedJunctions: junctionNames
+              }
+            } catch (error) {
+              console.error(`⚠️ [Emergency Store] 获取车辆 ${vehicleId} 静态数据失败:`, error)
+              
+              // 失败时使用备用方案
+              const routeData = emergencyRoutesMap.value[vehicleId]
+              let junctionNames: string[] = []
+
+              if (routeData && routeData.signalized_junctions) {
+                junctionNames = routeData.signalized_junctions.map((jId: string) =>
+                  junctionIdToNameMap.value[jId] || jId
+                )
+              }
+
+              vehicleDataMap.value[vehicleId] = {
+                ...rawInfo,
+                userStatus: 'pending',
+                organization: 'Emergency Services', // 默认值
+                signalizedJunctions: junctionNames
+              }
             }
           } else {
-            // 更新已有车辆数据
-            console.log(`🔄 [Emergency Store] 更新车辆 ${vehicleId} 位置: x=${rawInfo.position.x}, y=${rawInfo.position.y}`);
+            // 现有车辆，只更新动态数据
             Object.assign(vehicleDataMap.value[vehicleId], rawInfo)
           }
         })
 
-        // 移除已从Redis消失的车辆
         for (const existingId in vehicleDataMap.value) {
           if (!newVehicleIds.includes(existingId)) {
-            console.log(`🗑️ [Emergency Store] 移除已消失的车辆: ${existingId}`);
             delete vehicleDataMap.value[existingId]
             if (activelyTrackedVehicleId.value === existingId) {
               activelyTrackedVehicleId.value = null
@@ -175,11 +183,7 @@ export const useEmergencyStore = defineStore('emergency', () => {
           }
         }
 
-        console.log(`📊 [Emergency Store] 当前存储的所有车辆数据:`, {
-          总车辆数: Object.keys(vehicleDataMap.value).length,
-          车辆列表: Object.keys(vehicleDataMap.value),
-          待处理数量: pendingVehicles.value.length
-        });
+
 
       } catch (error) {
         console.error('❌ [Emergency Store] 解析WebSocket消息失败:', error);
@@ -199,7 +203,6 @@ export const useEmergencyStore = defineStore('emergency', () => {
   }
 
   function approveVehicle(vehicleId: string) {
-    console.log(`✅ [Emergency Store] 批准车辆: ${vehicleId}`);
     if (vehicleDataMap.value[vehicleId]) {
       vehicleDataMap.value[vehicleId].userStatus = 'approved'
       activelyTrackedVehicleId.value = vehicleId

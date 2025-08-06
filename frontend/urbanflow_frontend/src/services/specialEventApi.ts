@@ -59,20 +59,18 @@ export class EmergencyVehicleTracker {
       // 连接到special-event模块的WebSocket
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${wsProtocol}//localhost:8085/ws/tracking`
-      
+
       this.ws = new WebSocket(wsUrl)
 
       this.ws.onopen = () => {
-        console.log('🚑 紧急车辆追踪WebSocket连接成功')
         this.reconnectAttempts = 0
       }
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          console.log('🚑 收到紧急车辆追踪数据:', data)
-          
-          // 通知所有处理器
+
+
           this.messageHandlers.forEach(handler => {
             try {
               handler(data)
@@ -86,19 +84,16 @@ export class EmergencyVehicleTracker {
       }
 
       this.ws.onerror = (error) => {
-        console.error('🚑 紧急车辆追踪WebSocket错误:', error)
+        console.error(' 紧急车辆追踪WebSocket错误:', error)
       }
 
       this.ws.onclose = () => {
-        console.log('🚑 紧急车辆追踪WebSocket连接断开')
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           this.reconnectAttempts++
-          console.log(`🚑 尝试重连 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
           this.reconnectTimer = setTimeout(() => this.connect(), 3000)
         }
       }
     } catch (error) {
-      console.error('🚑 创建紧急车辆追踪WebSocket失败:', error)
       if (this.reconnectAttempts < this.maxReconnectAttempts) {
         this.reconnectAttempts++
         this.reconnectTimer = setTimeout(() => this.connect(), 3000)
@@ -115,12 +110,12 @@ export class EmergencyVehicleTracker {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
-    
+
     if (this.ws) {
       this.ws.close()
       this.ws = null
     }
-    
+
     this.messageHandlers = []
   }
 

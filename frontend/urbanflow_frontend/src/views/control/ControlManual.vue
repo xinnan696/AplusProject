@@ -83,7 +83,6 @@
       </div>
     </div>
 
-    <!-- 灯光状态 -->
     <div class="form-row">
       <label class="label">Light State</label>
       <div class="light-buttons">
@@ -100,7 +99,6 @@
       </div>
     </div>
 
-    <!-- Duration -->
     <div class="form-row-duration">
       <div class="form-row">
         <label class="label">Duration</label>
@@ -120,7 +118,6 @@
           </div>
         </div>
       </div>
-      <!-- 错误提示区域 - 固定高度的容器 -->
       <div class="duration-error-container">
         <div class="duration-error" v-if="durationError">⚠ The value must be between 5 and 300.</div>
       </div>
@@ -194,7 +191,7 @@ interface RawJunctionData {
 
 interface LaneShapeInfo {
   laneId: string
-  shape: string // e.g. "x1,y1 x2,y2 ..."
+  shape: string
 }
 
 interface Direction {
@@ -276,12 +273,10 @@ const canModifyLights = computed(() => {
     return false
   }
 
-  // 检查是否有路口坐标
   if (!currentJunction.value.junctionX || !currentJunction.value.junctionY) {
     return false
   }
 
-  // 如果 mapCenterX 还没有初始化（为0），等待初始化完成
   if (mapCenterX.value === 0) {
     return false
   }
@@ -386,11 +381,13 @@ watch(selectedDirectionIndex, () => {
   const idx = selectedDirectionIndex.value
 
   if (idx !== null && directionLanes.value[idx]) {
+    // 发送高亮信号给地图组件
+    // 注意：这里会触发地图组件的 setHighlightLanes 方法
+    // 地图组件会自动保持所有相连车道的紫色显示，并将选中方向的车道标记为绿色/灰色
     emit('highlight', directionLanes.value[idx].from, directionLanes.value[idx].to)
 
     if (currentJunction.value) {
       const junctionId = currentJunction.value.junction_id
-      // 选择方向时禁用zoom，因为已经在选择路口时zoom过了
       emit('trafficLightSelected', junctionId, idx, { disableZoom: true })
     }
   }
@@ -462,7 +459,7 @@ const selectJunction = (index: number) => {
 
 
   if (selectedJunctionIndex.value !== null && selectedJunctionIndex.value !== index) {
-    console.log('🧹 [Manual] Clearing previous selection before selecting new junction')
+    console.log('Manual: Clearing previous selection')
     emit('trafficLightCleared')
   }
 
@@ -471,10 +468,69 @@ const selectJunction = (index: number) => {
   junctionSearchQuery.value = ''
   selectedDirectionIndex.value = null
 
-
   if (junction) {
     const junctionName = junction.junction_name || junction.junction_id
+    
+    // 获取并高亮与junction相连的所有车道
+    highlightJunctionConnectedLanes(junction.junction_id)
+    
     emit('junctionSelected', junctionName, junction.junction_id)
+  }
+}
+
+// 获取并高亮与junction相连的所有车道
+const highlightJunctionConnectedLanes = async (junctionId: string) => {
+  try {
+    console.log('Manual: Getting junction connected lanes:', junctionId)
+    
+    // 获取junction数据
+    const response = await axios.get('/api-status/junctions')
+    const junctionsData = response.data
+    
+    // 找到对应的junction数据
+    let junctionData = null
+    for (const tlsId in junctionsData) {
+      const junction = junctionsData[tlsId]
+      if (junction.junction_id === junctionId) {
+        junctionData = junction
+        break
+      }
+    }
+    
+    if (!junctionData || !junctionData.connection) {
+      console.warn('Manual: Junction connection data not found:', junctionId)
+      return
+    }
+    
+    // 提取所有相连的车道
+    const allConnectedLanes = new Set<string>()
+    
+    if (Array.isArray(junctionData.connection)) {
+      junctionData.connection.forEach((connectionGroup: string[][]) => {
+        if (Array.isArray(connectionGroup)) {
+          connectionGroup.forEach((connection: string[]) => {
+            if (Array.isArray(connection) && connection.length >= 2) {
+              // 添加from车道和to车道
+              allConnectedLanes.add(connection[0])
+              allConnectedLanes.add(connection[1])
+            }
+          })
+        }
+      })
+    }
+    
+    const connectedLanesArray = Array.from(allConnectedLanes)
+    console.log('Manual: Found connected lanes count:', connectedLanesArray.length)
+    
+    if (connectedLanesArray.length > 0) {
+      // 发出高亮事件（使用紫色高亮所有相连车道，空的toLanes表示没有选中特定方向）
+      emit('highlight', connectedLanesArray, [])
+      
+      console.log('Manual: Junction lanes highlighted')
+    }
+    
+  } catch (error) {
+    console.error('Manual: Failed to get junction lanes:', error)
   }
 }
 
@@ -500,17 +556,12 @@ const onApply = async () => {
 
   isApplying.value = true
   const state = selectedLight.value === 'GREEN' ? 'G' : 'r'
-  // 将用户输入的秒数转换为后端需要的步长：步长 = 秒数 / 9 (取整)
   const steps = Math.floor(duration.value / 9)
-  console.log('🔄 [Manual] Converting duration to steps:', {
-    userInputSeconds: duration.value,
-    calculatedSteps: steps
-  })
-  
+
   const requestBody = {
     junctionId: junction.junction_id,
     lightIndex,
-    duration: steps, // 发送步长而不是秒数
+    duration: steps,
     state,
     source: 'manual'
   }
@@ -572,13 +623,13 @@ const fetchLaneMappings = async () => {
     laneIdToEdgeName.value = nameMap
     laneIdToShape.value = shapeMap
   } catch (error) {
-    console.error( error)
+    console.error('Manual: Error:', error)
   }
 }
 
 const fetchJunctions = async () => {
   try {
-    console.log('[Manual] Fetching junctions...')
+    console.log('Manual: Fetching junctions')
 
     const [junctionResponse, tlsJunctionResponse] = await Promise.all([
       axios.get('/api-status/junctions'),
@@ -612,14 +663,13 @@ const fetchJunctions = async () => {
       }
     })
 
-    console.log('[Manual] Processed junctions:', junctionDataList.value.length)
-    console.log(' [Manual] Sample junction with coords:', junctionDataList.value[0])
+
 
     const junctionsWithCoords = junctionDataList.value.filter(j => j.junctionX !== 0 || j.junctionY !== 0)
-    console.log('[Manual] Junctions with coordinates:', junctionsWithCoords.length)
+    console.log('Manual: Junctions with coordinates count:', junctionsWithCoords.length)
 
   } catch (error) {
-    console.error('[Manual] Failed to fetch junctions:', error)
+    console.error( error)
   }
 }
 
@@ -645,11 +695,10 @@ const initMapCenter = async () => {
       mapCenterX.value = (minX + maxX) / 2
 
     } else {
-      console.warn('⚠️ [Manual] Could not calculate map center, using default value 0')
       mapCenterX.value = 0
     }
   } catch (error) {
-    console.error('[Manual] Failed to fetch map center:', error)
+    console.error( error)
     mapCenterX.value = 0
   }
 }
@@ -666,9 +715,14 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
-watch(selectedJunctionIndex, () => {
-  selectedDirectionIndex.value = null
-  emit('trafficLightCleared')
+watch(selectedJunctionIndex, (newIndex, oldIndex) => {
+  // 只有当真正改变时才处理
+  if (newIndex !== oldIndex) {
+    selectedDirectionIndex.value = null
+    if (newIndex === null) {
+      emit('trafficLightCleared')
+    }
+  }
 })
 
 const onlyAllowNumbers = (e: KeyboardEvent) => {
@@ -716,11 +770,11 @@ defineExpose({
       j.junction_name === name || j.junction_id === name
     )
     if (index !== -1) {
-      console.log('[Manual] Found junction at index:', index, junctionDataList.value[index])
+      console.log('Manual: Found junction at index:', index)
       selectJunction(index)
     } else {
-      console.warn(' [Manual] Junction not found by name or ID:', name)
-      console.log(' [Manual] Available junctions:', junctionDataList.value.map(j => ({ name: j.junction_name, id: j.junction_id })))
+      console.warn('Manual: Junction not found:', name)
+
     }
   },
 
@@ -731,7 +785,7 @@ defineExpose({
 
       selectJunction(index)
     } else {
-      console.warn(' [Manual] Junction with ID not found:', id)
+      console.warn('Manual: Junction ID not found:', id)
     }
   },
 
@@ -740,25 +794,20 @@ defineExpose({
     resetForm()
   },
 
-  // 新增：获取路口名称的方法
   getJunctionNameById: (id: string) => {
     const junction = junctionDataList.value.find(j => j.junction_id === id)
     return junction ? (junction.junction_name || junction.junction_id) : null
   },
 
-  // 新增：选择路口的方法
   selectJunctionById: (id: string) => {
     const index = junctionDataList.value.findIndex(j => j.junction_id === id)
     if (index !== -1) {
       selectJunction(index)
-      console.log(`🎯 [Manual] Auto-selected junction: ${junctionDataList.value[index].junction_name || id}`)
+      console.log('Manual: Auto-selected junction:', junctionDataList.value[index].junction_name || id)
     }
   },
 
-  // 新增：强制刷新权限检查
   forceRefreshPermissions: () => {
-    // 触发所有计算属性的重新计算
-    console.log('🔄 [Manual] Force refreshing permissions, mapCenterX:', mapCenterX.value)
   }
 })
 </script>
@@ -974,7 +1023,7 @@ defineExpose({
   span {
     position: relative;
     z-index: 2;
-    font-weight: 700; // 加粗APPLY文字
+    font-weight: 700;
   }
 
   &:not(:disabled):hover {
@@ -1046,7 +1095,7 @@ defineExpose({
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    background: transparent; /* 移除斜线条条效果 */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -1257,7 +1306,7 @@ defineExpose({
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    background: transparent; /* 移除斜线条条效果 */
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -1350,14 +1399,13 @@ defineExpose({
   color: #EF4444;
   font-size: 0.1rem;
   padding: 0.02rem 0.06rem;
-  margin-left: 1.9rem; // 再左移一点
+  margin-left: 1.9rem;
   white-space: nowrap;
   font-weight: 600;
   display: inline-block;
   line-height: 1;
   height: auto;
   max-width: 3rem;
-  // 移除所有动画和荧光效果
 }
 
 select.common-box {

@@ -1,6 +1,6 @@
 <template>
   <div class="user-details-page">
-    <ControlHeader 
+    <ControlHeader
       @toggle-nav="toggleNav"
       @toggle-record="toggleRecord"
       @toggle-emergency="toggleEmergency"
@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ userData.id }}</span>
                   </div>
                 </div>
@@ -179,12 +178,10 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// Header button states
 const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 
-// 页面专用的 toast 函数
 const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
@@ -341,8 +338,6 @@ const handleSignOut = () => {
   box-sizing: border-box;
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
-
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;

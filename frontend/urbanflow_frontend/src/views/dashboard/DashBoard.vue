@@ -2,8 +2,12 @@
   <div class="dashboard-page">
     <ControlHeader 
       :isRecordPanelVisible="isRecordVisible"
-      @toggle-nav="toggleNav" 
+      :show-emergency-icon="showEmergencyIcon"
+      :has-new-requests="hasNewRequests"
+      @toggle-nav="toggleNav"
       @toggle-record="toggleRecord"
+      @emergency-icon-clicked="handleEmergencyIconClick"
+      @mode-changed="handleModeChange"
       @sign-out="handleSignOut"
     />
     <ControlNav :isVisible="isNavVisible" />
@@ -13,7 +17,7 @@
         <DashboardCard
           title="Congested Junction Count Trend"
           titleTooltip="This chart shows the trend in the number of congested junctions over time for the selected time range."
-          class="card-third-height"
+          class="card-full-width"
         >
           <template #filters>
             <CustomSelect
@@ -30,7 +34,7 @@
         <DashboardCard
           title="Junction Congestion Duration Ranking"
           titleTooltip="This chart ranks junctions by total congestion duration, showing the junctions with the most persistent congestion."
-          class="card-third-height"
+          class="card-full-width"
         >
           <template #filters>
             <CustomSelect
@@ -89,15 +93,13 @@
       </div>
     </div>
 
-    <!-- Record Panel -->
     <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
 import ControlRecord from '@/views/control/ControlRecord.vue'
@@ -109,31 +111,63 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
+import { useAuthStore } from '@/stores/auth'
+import { useEmergencyStore } from '@/stores/emergency'
+//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
 import { getJunctions } from '@/services/dashboard_api'
 
+// 初始化路由和stores
 const router = useRouter()
-const authStore = useAuthStore()
+const emergencyStore = useEmergencyStore()
 
-// UI State
+// 状态管理
 const isRecordVisible = ref(false)
 
+// 修改点：初始化 Store 并获取 managedAreas
+const authStore = useAuthStore()
+
+// 计算属性 - 紧急车辆状态
+const hasPendingEmergencies = computed(() => emergencyStore.pendingVehicles.length > 0)
+const hasNewRequests = computed(() => emergencyStore.pendingVehicles.length > 0)
+// 显示图标的条件：有新请求 或 有正在进行的会话 或 有正在追踪的车辆
+const showEmergencyIcon = computed(() => {
+  const hasNew = hasNewRequests.value
+  const hasActive = emergencyStore.hasActiveSession
+  const hasTracking = Object.keys(emergencyStore.vehicleDataMap || {}).length > 0
+  return hasNew || hasActive || hasTracking
+})
+// 使用 computed 确保当 store 中的状态变化时，这里的值也能响应式更新
+const managedAreas = computed(() => authStore.getManagedAreas())
+console.log('managedAreas:', managedAreas.value);
+//模拟测试
+//const managedAreas = ['Left']
+
+// 修改点：将 managedAreas 添加到所有 filters 对象中
 // Filters State
 const trafficFlowFilters = reactive({
   // 1. 将 junctionId 初始值设置为空
   junctionId: null,
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0], // 模拟测试代码
 })
 
 const topSegmentsFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const junctionCountFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const durationRankingFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 // Filter Options
@@ -158,7 +192,12 @@ const durationRankingTimeRangeOptions = ref([
 
 // Fetch initial data for filters
 onMounted(async () => {
-  const junctions = await getJunctions()
+  // 修改点：在获取路口列表时，传入管辖区域参数
+  //const junctions = await getJunctions()
+  //修改后代码
+  const junctions = await getJunctions({ managedAreas: managedAreas.value[0] })
+  //模拟测试代码
+  //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
   // 3. 核心逻辑：获取数据后，设置默认值并填充选项
   if (junctions && junctions.length > 0) {
@@ -171,31 +210,68 @@ onMounted(async () => {
       label: j.junctionName
     }))
   }
+
+  //模拟
+  // if (junctions && junctions.length > 0) {
+  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+  //   trafficFlowFilters.junctionId = junctions[0].junction_id
+  //
+  //   // 使用获取到的路口列表，完整地构建下拉框的选项
+  //   junctionOptions.value = junctions.map(j => ({
+  //     value: j.junction_id,
+  //     label: j.junction_name
+  //   }))
+  // }
 })
 
-// Event Handlers
-const toggleRecord = () => {
+// 事件处理函数
+function handleEmergencyIconClick() {
+  console.log('Emergency icon clicked in dashboard')
+  // 在仪表板中，我们可以简单地显示一个提示或者跳转到其他页面
+  if (hasNewRequests.value) {
+    console.log(`有 ${emergencyStore.pendingVehicles.length} 个新的紧急车辆请求`)
+    // 可以添加一个模态框显示紧急车辆信息
+  } else if (emergencyStore.hasActiveSession || Object.keys(emergencyStore.vehicleDataMap || {}).length > 0) {
+    console.log('有正在进行的紧急车辆追踪会话')
+  }
+}
+function toggleRecord() {
   isRecordVisible.value = !isRecordVisible.value
+  console.log('Record panel toggled:', isRecordVisible.value)
 }
 
-const handleSignOut = () => {
-  console.log('🚪 [Dashboard] Signing out...')
-  authStore.logout()
+function handleModeChange(isAI: boolean) {
+  console.log('Mode changed to:', isAI ? 'AI Mode' : 'Manual Mode')
+  // 在这里可以添加模式切换的具体逻辑
 }
+
+function handleSignOut() {
+  localStorage.removeItem('authToken')
+  router.push({ name: 'Login' })
+}
+
+// 组件挂载和卸载
+onMounted(() => {
+  // 连接紧急车辆WebSocket
+  emergencyStore.connectWebSocket()
+})
+
+onBeforeUnmount(() => {
+  // 这里可以添加清理逻辑，但store的WebSocket会自动处理重连
+})
 </script>
 
 <style scoped lang="scss">
 // 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
 // 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
-  //position: fixed;
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -204,19 +280,13 @@ const handleSignOut = () => {
 }
 
 .main-area {
-  //height: calc(100% - 64px); // 假设Header高度为64px
-  //display: flex;
-  //overflow-y: auto;
-  //overflow-x: hidden;
-  //padding: 0 1.01rem; // 对应左右间隙 101px
-  //justify-content: center;
-
   position: absolute;
-  top: 40px; // 假设Header高度为64px
+  top: 40px;
   bottom: 0;
-  overflow: hidden; // 改为hidden，不允许滚动
+  overflow: hidden;
   display: flex;
   justify-content: center;
+  height: calc(100vh - 40px);
 
   // 定义两个变量，用于导航栏的宽度
   $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
@@ -236,33 +306,37 @@ const handleSignOut = () => {
   }
 }
 
+
 .dashboard-container {
   width: 14.80rem; // 对应 1680px
-  height: 100%; // 占满父容器高度
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 0.15rem; // 中间上下间隙 15px
   padding: 0.22rem 0; // 对应上下间隙 22px
-  box-sizing: border-box; // 确保padding不会撑大容器
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
   gap: 0.18rem; // 中间左右间隙 18px
-  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
+  flex: 1;
+  min-height: 0;
 }
 
-// 替换原来的 .card-full-width
-.card-third-height {
-  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
-  flex-shrink: 0;
+.card-full-width {
+  flex: 1;
+  min-height: 0;
+  max-height: 30%;
+  overflow: hidden;
 }
 
 .card-half-width {
-  width: 50%; // Will be calculated by flex
-  flex-grow: 1;
-  height: 100%; // 占满父容器(.card-row)的高度
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .filter-select {

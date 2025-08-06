@@ -144,12 +144,22 @@ const userDisplayInfo = computed(() => {
     initial = user.email.trim().charAt(0).toUpperCase()
   }
 
-  const roleTitle = {
-    'ADMIN': 'System Administrator',
-    'Traffic Manager': 'Traffic Manager',
-    'Traffic Planner': 'Traffic Planner',
-    'USER': 'User'
-  }[user.role] || 'User'
+  // 修复：统一角色名称大小写处理
+  const normalizeRole = (role: string) => {
+    const lowerRole = role.toLowerCase();
+    switch (lowerRole) {
+      case 'admin':
+        return 'System Administrator';
+      case 'traffic manager':
+        return 'Traffic Manager';
+      case 'traffic planner':
+        return 'Traffic Planner';
+      default:
+        return 'User';
+    }
+  }
+
+  const roleTitle = normalizeRole(user.role || '')
 
 
   const displayName = user.userName || user.accountNumber || 'Unknown User'

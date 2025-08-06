@@ -239,17 +239,17 @@ const selectRecord = (record: OperationRecord) => {
   box-shadow: 0 0.02rem 0.04rem rgba(0, 0, 0, 0.2);
   
   &.manual {
-    color: #4A5568;
-    background: linear-gradient(135deg, rgba(74, 85, 104, 0.2) 0%, rgba(74, 85, 104, 0.1) 100%);
-    border: 0.01rem solid rgba(74, 85, 104, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(74, 85, 104, 0.2);
+    color: #00B4D8;
+    background: linear-gradient(135deg, rgba(0, 180, 216, 0.2) 0%, rgba(0, 180, 216, 0.1) 100%);
+    border: 0.01rem solid rgba(0, 180, 216, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(0, 180, 216, 0.2);
   }
   
   &.ai {
-    color: #7C3AED;
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%);
-    border: 0.01rem solid rgba(124, 58, 237, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(124, 58, 237, 0.2);
+    color: #9C27B0;
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.2) 0%, rgba(156, 39, 176, 0.1) 100%);
+    border: 0.01rem solid rgba(156, 39, 176, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(156, 39, 176, 0.2);
   }
 }
 

@@ -54,11 +54,22 @@ const adjustToastPosition = () => {
   toastElements.forEach(toast => {
     // 检查是否在登录页面（通过检查是否存在 .auth-page 元素）
     if (document.querySelector('.auth-page')) {
+      // 立即隐藏元素，避免闪烁
+      toast.style.visibility = 'hidden';
+      toast.style.opacity = '0';
+      
+      // 设置位置
       toast.style.position = 'fixed';
-      toast.style.top = '1.44rem'; // 保持原来的高度位置
+      toast.style.top = '1rem'; // 调整弹窗位置稍微往上
       toast.style.left = '50%'; // 水平居中
       toast.style.transform = 'translateX(-50%)'; // 只进行水平偏移
       toast.style.zIndex = '9999';
+      
+      // 强制重绘后再显示
+      requestAnimationFrame(() => {
+        toast.style.visibility = 'visible';
+        toast.style.opacity = '1';
+      });
     }
   });
 };
@@ -133,8 +144,8 @@ onMounted(() => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
             if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
-              // 延迟调整位置，确保元素已经渲染
-              setTimeout(adjustToastPosition, 50);
+              // 立即调整位置，减少闪烁
+              adjustToastPosition();
             }
           }
         });
@@ -194,11 +205,22 @@ onUnmounted(() => {
 
 <!-- Override toast position for login page only -->
 <style>
+/* 预设登录页面中 toast 的初始状态，减少闪烁 */
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
 /* 更强的选择器优先级，确保在登录页面覆盖弹窗位置 */
 body .auth-page .toast,
 .auth-page .toast {
   position: fixed !important;
-  top: 1.44rem !important; /* 保持原来的高度位置 */
+  top: 1rem !important; /* 调整弹窗位置稍微往上 */
   left: 50% !important; /* 水平居中 */
   transform: translateX(-50%) !important; /* 只进行水平偏移 */
   z-index: 9999 !important;

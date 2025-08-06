@@ -9,13 +9,17 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+//import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
 import { getCongestionDurationRanking } from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
 const props = defineProps<{
-  filters: { timeRange: string }
+  filters: {
+    timeRange: string
+    managedAreas?: string | null
+  }
 }>()
 
 /**
@@ -101,7 +105,10 @@ const chartOption = ref({
 })
 
 async function fetchData() {
-  const response = await getCongestionDurationRanking({ time_range: props.filters.timeRange });
+  const response = await getCongestionDurationRanking({
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
+  });
 
   // if (response && response.data && response.labels) {
   //   // For horizontal bar chart, reverse the data so the highest value is at the top
@@ -155,9 +162,9 @@ async function fetchData() {
   //   chartOption.value.series[0].data = [];
   // }
 
-  if (response && response.data && response.labels) {
+  if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
     // 对于横向条形图，反转数据使最大值显示在顶部
-    chartOption.value.yAxis.data = [...response.labels].reverse();
+    chartOption.value.yAxis.data = [...response.yAxisLabels].reverse();
     // 假设 API 返回 'total_congestion_duration_seconds'，将其转换为分钟。
     const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds);
     const reversedData = [...dataInMinutes].reverse();

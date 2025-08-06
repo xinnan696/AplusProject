@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ nextUserId }}</span>
                   </div>
                 </div>
@@ -149,9 +148,9 @@
                   <div class="area-selection">
                     <div class="area-options">
                       <label class="area-checkbox" v-for="area in availableAreas" :key="area">
-                        <input 
-                          type="checkbox" 
-                          :value="area" 
+                        <input
+                          type="checkbox"
+                          :value="area"
                           v-model="formData.managedAreas"
                           :disabled="!isAreaAvailable(area)"
                         >
@@ -270,7 +269,7 @@ const formData = ref({
   email: '',
   phoneNumber: '',
   role: '',
-  managedAreas: [], // 新增：管理区域列表
+  managedAreas: [],
   enabled: true
 })
 
@@ -279,12 +278,11 @@ const errors = ref({
   name: '',
   email: '',
   role: '',
-  managedAreas: '' // 新增：区域错误信息
+  managedAreas: ''
 })
 
-// 区域管理相关数据
-const availableAreas = ref(['Left', 'Right']) // 只支持两个区域
-const occupiedAreas = ref(new Map()) // 已被占用的区域及其管理者
+const availableAreas = ref(['Left', 'Right'])
+const occupiedAreas = ref(new Map())
 const loadingAreas = ref(false)
 
 const validateForm = () => {
@@ -310,8 +308,7 @@ const validateForm = () => {
     errors.value.role = 'Role is required'
     isValid = false
   }
-  
-  // 验证Traffic Manager的区域选择
+
   if (formData.value.role === 'Traffic Manager') {
     if (!formData.value.managedAreas || formData.value.managedAreas.length === 0) {
       errors.value.managedAreas = 'Please select at least one area to manage'
@@ -322,28 +319,24 @@ const validateForm = () => {
   return isValid
 }
 
-// 区域管理相关方法
 const loadAreasInfo = async () => {
   try {
     loadingAreas.value = true
     console.log('Loading areas info...')
-    
-    // 获取已占用的区域信息
+
     const response = await AreaApiService.getOccupiedAreas()
     console.log('API response:', response)
-    
-    // 修复：检查 statusCode 而不是 success
+
     if (response.statusCode === 200 && response.data) {
-      // 清空现有数据
+
       occupiedAreas.value.clear()
-      
-      // 填充已占用的区域信息
+
       response.data.forEach(area => {
         const managerInfo = `${area.userName} (${area.accountNumber})`
         occupiedAreas.value.set(area.areaName, managerInfo)
         console.log(`Area ${area.areaName} occupied by ${managerInfo}`)
       })
-      
+
       console.log('Final occupiedAreas:', Array.from(occupiedAreas.value.entries()))
     } else {
       console.log('No occupied areas data or unsuccessful response')
@@ -356,29 +349,24 @@ const loadAreasInfo = async () => {
   }
 }
 
-// 检查区域是否可用
 const isAreaAvailable = (area: string): boolean => {
   return !occupiedAreas.value.has(area)
 }
 
-// 获取区域管理者
 const getAreaManager = (area: string): string => {
   return occupiedAreas.value.get(area) || ''
 }
 
-// 组件挂载时加载区域信息
 onMounted(() => {
   loadAreasInfo()
 })
 
-// 角色变更时的处理
 const onRoleChange = () => {
   if (formData.value.role !== 'Traffic Manager') {
-    // 如果不是Traffic Manager，清空区域选择
     formData.value.managedAreas = []
     errors.value.managedAreas = ''
   } else {
-    // 如果是Traffic Manager，重新加载区域信息
+
     loadAreasInfo()
   }
 }
@@ -484,7 +472,6 @@ const handleSignOut = () => {
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;
@@ -656,25 +643,20 @@ const handleSignOut = () => {
     padding: 0.08rem;
     border: none;
   }
-
-  /* 当没有选择任何值时，显示placeholder样式 */
   &:invalid {
     color: rgba(179, 179, 179, 0.6);
   }
 
-  /* 确保placeholder option的样式 */
   option[value=""] {
     color: rgba(179, 179, 179, 0.6);
     background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
     background-color: #32344A;
   }
 
-  /* 当选择为空值时的样式 */
   &[value=""] {
     color: rgba(179, 179, 179, 0.6);
   }
 
-  /* placeholder状态的样式 */
   &.placeholder {
     color: rgba(179, 179, 179, 0.6) !important;
   }
