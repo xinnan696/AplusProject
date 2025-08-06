@@ -32,7 +32,7 @@ public class DataForwardingService {
      */
     @EventListener(ApplicationReadyEvent.class)
     public void startPipelineAfterStartup() {
-        log.info("Application is ready. Starting data forwarding pipeline in DEBUG mode.");
+//        log.info("Application is ready. Starting data forwarding pipeline in DEBUG mode.");
         pollingService.getEventStream()
                 .subscribe(this::processAndSaveEventSynchronously);
     }
@@ -42,15 +42,15 @@ public class DataForwardingService {
      * @param event The event to process.
      */
     private void processAndSaveEventSynchronously(EnrichedTrafficEvent event) {
-        log.info(">>>> [LAYER 2 RECEIVED] Event for edge: {}", event.getEdgeId());
+//        log.info(">>>> [LAYER 2 RECEIVED] Event for edge: {}", event.getEdgeId());
         try {
             TrafficDataPoint dataPoint = transform(event);
-            log.info(">>>> [REPOSITORY] Attempting to synchronously write 1 data point to InfluxDB for step {}", dataPoint.getSimulationStep());
+//            log.info(">>>> [REPOSITORY] Attempting to synchronously write 1 data point to InfluxDB for step {}", dataPoint.getSimulationStep());
 
             // This is now a blocking call. If it fails, the exception will be caught below.
             tsdbRepository.saveAll(Collections.singletonList(dataPoint)).block();
 
-            log.info(" Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
+//            log.info(" Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
         } catch (Exception e) {
             // If the write fails, this log is guaranteed to be printed.
             log.error("!!! [LAYER 2 FAILED] CRITICAL ERROR during synchronous InfluxDB write.", e);

@@ -12,7 +12,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-// [FIX] Import Mockito's argument matchers
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +53,6 @@ class TrafficFlowServiceTest {
         record3.setTimeBucket(time3);
         record3.setFlowRateHourly(200);
 
-        // [FIXED] Use argument matchers to make the stubbing flexible.
         when(trafficFlowMapper.selectByJunctionAndTimeRange(any(Date.class), any(Date.class), any()))
                 .thenReturn(Arrays.asList(record1, record2, record3));
 
