@@ -68,10 +68,10 @@ const selectRecord = (record: OperationRecord) => {
   position: fixed;
   top: 0.64rem;
   right: 0;
-  width: 5.6rem; 
+  width: 35%; // 与controlboard一样的宽度（35%）
   height: calc(100vh - 0.64rem);
   background: #1E1E2F;
-  border-left: 0.01rem solid #00b4d8;
+  border-left: 0.01rem solid #4A5568;
   z-index: 9999;
   display: flex;
   flex-direction: column;
@@ -120,16 +120,16 @@ const selectRecord = (record: OperationRecord) => {
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba(0, 180, 216, 0.1);
+    background: rgba(74, 85, 104, 0.1);
     border-radius: 0.02rem;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #00b4d8 0%, #0090aa 100%);
+    background: linear-gradient(180deg, #4A5568 0%, #374151 100%);
     border-radius: 0.02rem;
 
     &:hover {
-      background: linear-gradient(180deg, #00d4f8 0%, #00b4d8 100%);
+      background: linear-gradient(180deg, #6B7280 0%, #4A5568 100%);
     }
   }
 }
@@ -137,8 +137,8 @@ const selectRecord = (record: OperationRecord) => {
 .record-item {
   padding: 0.18rem 0.16rem;
   margin-bottom: 0.14rem;
-  background: linear-gradient(135deg, rgba(0, 180, 216, 0.1) 0%, rgba(0, 180, 216, 0.05) 100%);
-  border: 0.01rem solid rgba(0, 180, 216, 0.2);
+  background: linear-gradient(135deg, rgba(74, 85, 104, 0.1) 0%, rgba(74, 85, 104, 0.05) 100%);
+  border: 0.01rem solid rgba(74, 85, 104, 0.2);
   border-radius: 0.12rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -154,7 +154,7 @@ const selectRecord = (record: OperationRecord) => {
     top: 0;
     bottom: 0;
     width: 0.04rem;
-    background: linear-gradient(180deg, #00b4d8 0%, #0090aa 100%);
+    background: linear-gradient(180deg, #4A5568 0%, #374151 100%);
     transform: scaleY(0);
     transition: transform 0.3s ease;
     border-radius: 0 0.02rem 0.02rem 0;
@@ -173,10 +173,10 @@ const selectRecord = (record: OperationRecord) => {
   }
 
   &:hover {
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.18) 0%, rgba(0, 180, 216, 0.12) 100%);
-    border-color: rgba(0, 180, 216, 0.4);
+    background: rgba(74, 85, 104, 0.18);
+    border-color: rgba(74, 85, 104, 0.4);
     transform: translateX(0.06rem) translateY(-0.02rem);
-    box-shadow: 0 0.06rem 0.16rem rgba(0, 180, 216, 0.25);
+    box-shadow: 0 0.06rem 0.16rem rgba(0, 0, 0, 0.25);
 
     &::before {
       transform: scaleY(1);
@@ -188,14 +188,14 @@ const selectRecord = (record: OperationRecord) => {
   }
 
   &.selected {
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.25) 0%, rgba(0, 180, 216, 0.18) 100%);
-    border-color: #00b4d8;
-    box-shadow: 0 0.06rem 0.2rem rgba(0, 180, 216, 0.4);
+    background: rgba(74, 85, 104, 0.25);
+    border-color: #4A5568;
+    box-shadow: 0 0.06rem 0.2rem rgba(0, 0, 0, 0.4);
     transform: translateX(0.04rem);
 
     &::before {
       transform: scaleY(1);
-      background: linear-gradient(180deg, #00d4f8 0%, #00b4d8 100%);
+      background: linear-gradient(180deg, #6B7280 0%, #4A5568 100%);
     }
 
     &::after {
@@ -239,17 +239,17 @@ const selectRecord = (record: OperationRecord) => {
   box-shadow: 0 0.02rem 0.04rem rgba(0, 0, 0, 0.2);
   
   &.manual {
-    color: #00B4D8;
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.2) 0%, rgba(0, 180, 216, 0.1) 100%);
-    border: 0.01rem solid rgba(0, 180, 216, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(0, 180, 216, 0.2);
+    color: #4A5568;
+    background: linear-gradient(135deg, rgba(74, 85, 104, 0.2) 0%, rgba(74, 85, 104, 0.1) 100%);
+    border: 0.01rem solid rgba(74, 85, 104, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(74, 85, 104, 0.2);
   }
   
   &.ai {
-    color: #a855f7;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(168, 85, 247, 0.1) 100%);
-    border: 0.01rem solid rgba(168, 85, 247, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(168, 85, 247, 0.2);
+    color: #7C3AED;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%);
+    border: 0.01rem solid rgba(124, 58, 237, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(124, 58, 237, 0.2);
   }
 }
 
@@ -263,24 +263,24 @@ const selectRecord = (record: OperationRecord) => {
   box-shadow: 0 0.02rem 0.04rem rgba(0, 0, 0, 0.2);
   
   &.success {
-    color: #4ade80;
-    background: linear-gradient(135deg, rgba(74, 222, 128, 0.2) 0%, rgba(74, 222, 128, 0.1) 100%);
-    border: 0.01rem solid rgba(74, 222, 128, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(74, 222, 128, 0.2);
+    color: #10B981;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border: 0.01rem solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(16, 185, 129, 0.2);
   }
   
   &.failed {
-    color: #f87171;
-    background: linear-gradient(135deg, rgba(248, 113, 113, 0.2) 0%, rgba(248, 113, 113, 0.1) 100%);
-    border: 0.01rem solid rgba(248, 113, 113, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(248, 113, 113, 0.2);
+    color: #EF4444;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+    border: 0.01rem solid rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(239, 68, 68, 0.2);
   }
   
   &.pending {
-    color: #fbbf24;
-    background: linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(251, 191, 36, 0.1) 100%);
-    border: 0.01rem solid rgba(251, 191, 36, 0.4);
-    box-shadow: 0 0.02rem 0.04rem rgba(251, 191, 36, 0.2);
+    color: #F59E0B;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+    border: 0.01rem solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 0.02rem 0.04rem rgba(245, 158, 11, 0.2);
   }
 }
 
@@ -365,13 +365,13 @@ const selectRecord = (record: OperationRecord) => {
 
 @media (max-width: 1200px) {
   .record-panel {
-    width: 4.8rem;
+    width: 40%; // 小屏幕下稍微放大一点
   }
 }
 
 @media (max-width: 768px) {
   .record-panel {
-    width: 100vw;
+    width: 100vw; // 手机端占满屏幕
     right: 0;
   }
 }</style>

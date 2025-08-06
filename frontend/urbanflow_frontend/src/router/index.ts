@@ -1,28 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Dashboard from '@/views/dashboard/Dashboard.vue'
-import Control from '@/views/control/ControlHome.vue'
 
 const routes = [
-
-  // 紧急车辆追踪页面的路由
-  {
-    path: '/control/tracking',
-    name: 'PriorityVehicleTracking',
-    component: () => import('@/views/control/PriorityVehicleTracking.vue'),
-    meta: {
-      requiresAuth: true,
-      // 权限与主控制页面保持一致
-      roles: ['ADMIN', 'Traffic Manager'],
-      title: 'Vehicle Tracking - UrbanFlow'
-    }
-  },
-
   {
     path: '/',
     redirect: '/login'
-    // path: '/', // 根路径
-    // name: 'dashboard-home',
-    // component: Dashboard
   },
 
 
@@ -206,7 +187,6 @@ router.beforeEach((to, from) => {
       const hasPermission = (to.meta.roles as string[]).includes(user.role)
 
       if (!hasPermission) {
-        // @ts-ignore
         console.log(`Access denied: ${user.role} cannot access ${to.name}`)
 
         const defaultPage = getDefaultPageForRole(user.role)

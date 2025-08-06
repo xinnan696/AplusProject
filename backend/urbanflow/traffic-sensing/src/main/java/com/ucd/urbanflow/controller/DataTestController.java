@@ -22,7 +22,7 @@ public class DataTestController {
                 .junctionName("Test Junction")
                 .simulationStep(System.currentTimeMillis())
                 .vehicleCount(10)
-                .waitTime(12.3)
+                .waitingTime(12.3)
                 .waitingVehicleCount(3)
                 .congested(false)
                 .build();

@@ -9,7 +9,6 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { LineChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-//import { getTrafficFlow } from '@/mocks/mockDashboardData'
 import { getTrafficFlow } from '@/services/dashboard_api'
 
 use([CanvasRenderer, LineChart, TitleComponent, TooltipComponent, GridComponent]);
@@ -18,16 +17,12 @@ const props = defineProps<{
   filters: {
     junctionId: string
     timeRange: string
-    managedAreas?: string | null
   }
 }>()
 
 const chartOption = ref({
   tooltip: {
     trigger: 'axis',
-    axisPointer: {
-      type: 'none'
-    },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,
@@ -65,16 +60,6 @@ const chartOption = ref({
     name: 'Traffic Flow',
     type: 'line',
     smooth: true,
-    showSymbol: false, // 默认不显示数据点
-    emphasis: {
-      focus: 'series',
-      // 在高亮（悬浮）时显示数据点
-      itemStyle: {
-        color: '#FFFFFF',
-        borderColor: '#4D7BFF',
-        borderWidth: 2,
-      },
-    },
     data: [],
     itemStyle: { color: '#4D7BFF' },
     areaStyle: { color: 'rgba(77, 123, 255, 0.2)' },
@@ -83,13 +68,11 @@ const chartOption = ref({
 
 async function fetchData() {
   const params = {
-    junction_id: props.filters.junctionId,
-    time_range: props.filters.timeRange,
-    managedAreas: props.filters.managedAreas
+    junction_id: props.filters.junctionId === 'total_city' ? undefined : props.filters.junctionId,
+    time_range: props.filters.timeRange
   };
 
   const response = await getTrafficFlow(params);
-  console.log('📦 Received mock response for Traffic Flow:', response);
 
   // if (response && response.data && response.labels) {
   //   chartOption.value.xAxis.data = response.labels;

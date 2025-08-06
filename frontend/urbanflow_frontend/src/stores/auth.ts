@@ -148,16 +148,18 @@ async function login(credentials: LoginRequest) {
         if (apiResponse.statusCode === 200) {
           const responseData = apiResponse.data;
 
-          console.log('✅ [Auth] Login successful, received token:', {
+          console.log('✅ [Auth] Login successful, received data:', {
             tokenPreview: responseData.token.substring(0, 20) + '...',
             user: responseData.user.userName,
-            role: responseData.user.role
+            role: responseData.user.role,
+            managedAreas: responseData.user.managedAreas // 📍 检查这个字段
           });
 
           // 🔧 使用新的 updateToken 方法
           updateToken(responseData.token);
           user.value = responseData.user;
 
+          console.log('✅ [Auth] User data to be saved:', responseData.user);
           localStorage.setItem('user', JSON.stringify(user.value));
 
           console.log('✅ [Auth] User data saved to localStorage');

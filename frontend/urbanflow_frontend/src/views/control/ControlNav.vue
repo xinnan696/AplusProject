@@ -16,7 +16,7 @@
         @click="navigateTo('Dashboard')"
       />
 
-    
+
       <NavGroup
         v-if="canAccess('Administration')"
         title="Administration"
@@ -25,7 +25,6 @@
         @sub-click="handleAdminClick"
       />
 
-      <!-- Help - 所有角色都可见 -->
       <NavItem
         v-if="canAccess('Help')"
         label="Help"
@@ -100,7 +99,7 @@ const handleAdminClick = (item: string) => {
 <style scoped lang="scss">
 .control-nav {
   position: absolute;
-  top: 0.64rem;  
+  top: 0.64rem;
   left: 0;
   width: 2.4rem;
   height: calc(100vh - 0.64rem);

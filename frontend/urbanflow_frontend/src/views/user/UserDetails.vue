@@ -10,12 +10,10 @@
     />
     <ControlNav :isVisible="isNavVisible" />
 
-    <div class="main-area">
+    <div class="main-area" :class="{ 'nav-collapsed': !isNavVisible }">
       <div class="user-details-container">
-        <!-- Page title with tech effect -->
+        <!-- Page title -->
         <h1 class="page-title">User Details</h1>
-        <div class="title-divider"></div>
-        <div class="scan-line"></div>
 
         <!-- User Details Form (Read-only) -->
         <div class="form-container">
@@ -26,13 +24,11 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">ID</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
                     <span class="id-prefix">#</span>
                     <span class="id-value">{{ userData.id }}</span>
-                    <div class="data-stream"></div>
                   </div>
                 </div>
               </div>
@@ -41,7 +37,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Account Number</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -54,7 +49,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Name</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -67,7 +61,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Department</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -83,7 +76,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Email</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -96,7 +88,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Phone Number</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -109,7 +100,6 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Role</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -122,7 +112,6 @@
               <div class="form-group" v-if="userData.role === 'Traffic Manager' || userData.role === 'ROLE_TRAFFIC_MANAGER'">
                 <label class="form-label">
                   <span class="label-text">Managed Areas</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
                   <div class="readonly-display">
@@ -135,11 +124,15 @@
               <div class="form-group">
                 <label class="form-label">
                   <span class="label-text">Status</span>
-                  <div class="label-glow"></div>
                 </label>
                 <div class="form-input-wrapper">
-                  <div class="status-display">
-                    <div class="status-indicator" :class="{ 'online': userData.status === 'active' }"></div>
+                  <div class="status-toggle">
+                    <label class="cyber-switch">
+                      <input type="checkbox" :checked="userData.status === 'active'" disabled>
+                      <span class="switch-slider">
+                        <span class="switch-core"></span>
+                      </span>
+                    </label>
                     <span class="status-text" :class="{ 'active': userData.status === 'active' }">
                       {{ userData.status ? userData.status.toUpperCase() : 'INACTIVE' }}
                     </span>
@@ -148,22 +141,20 @@
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Action Buttons -->
-          <div class="form-actions">
-            <button class="action-btn edit-btn" @click="editUser">
-              <div class="btn-content">
-                <span class="btn-text">EDIT</span>
-                <div class="btn-glow"></div>
-              </div>
-            </button>
-            <button class="action-btn back-btn" @click="goBack">
-              <div class="btn-content">
-                <span class="btn-text">BACK</span>
-                <div class="btn-glow"></div>
-              </div>
-            </button>
-          </div>
+        <!-- Action Buttons -->
+        <div class="form-actions">
+          <button class="action-btn edit-btn" @click="editUser">
+            <div class="btn-content">
+              <span class="btn-text">EDIT</span>
+            </div>
+          </button>
+          <button class="action-btn back-btn" @click="goBack">
+            <div class="btn-content">
+              <span class="btn-text">BACK</span>
+            </div>
+          </button>
         </div>
       </div>
     </div>
@@ -348,6 +339,13 @@ const handleSignOut = () => {
   margin-left: 2.4rem;
   width: calc(100vw - 2.4rem);
   box-sizing: border-box;
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* 导航栏收起时的样式 */
+.main-area.nav-collapsed {
+  margin-left: 0;
+  width: 100vw;
 }
 
 .user-details-container {
@@ -362,19 +360,6 @@ const handleSignOut = () => {
   position: relative;
   height: 100%;
   max-height: calc(100vh - 0.64rem);
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background:
-      radial-gradient(circle at 20% 80%, rgba(0, 180, 216, 0.03) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, rgba(0, 212, 248, 0.03) 0%, transparent 50%);
-    pointer-events: none;
-  }
 }
 
 .page-title {
@@ -382,37 +367,8 @@ const handleSignOut = () => {
   font-size: 0.28rem;
   font-weight: bold;
   margin: 0.16rem 0 0.12rem 0;
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
   position: relative;
   z-index: 2;
-}
-
-.title-divider {
-  width: 100%;
-  max-width: 11rem;
-  height: 2px;
-  background: linear-gradient(90deg, transparent 0%, #00B4D8 20%, #00E5FF 50%, #00B4D8 80%, transparent 100%);
-  margin-bottom: 0.32rem;
-  box-shadow: 0 0 8px rgba(0, 180, 216, 0.5);
-  position: relative;
-  z-index: 2;
-}
-
-.scan-line {
-  position: absolute;
-  top: 0.44rem;
-  left: 0;
-  width: 100%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0, 180, 216, 0.8), transparent);
-  animation: scan 3s ease-in-out infinite;
-  z-index: 1;
-}
-
-@keyframes scan {
-  0% { transform: translateX(-100%); opacity: 0; }
-  50% { opacity: 1; }
-  100% { transform: translateX(100%); opacity: 0; }
 }
 
 .form-container {
@@ -422,43 +378,18 @@ const handleSignOut = () => {
   background: linear-gradient(135deg, rgba(43, 43, 60, 0.4) 0%, rgba(30, 30, 47, 0.6) 100%);
   border-radius: 0.16rem;
   border: 1px solid rgba(0, 180, 216, 0.2);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
-  animation: fadeIn 0.8s ease-out;
   position: relative;
   overflow: hidden;
   margin-bottom: 0.24rem;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent 0%, #00B4D8 30%, #00D4F8 50%, #00B4D8 70%, transparent 100%);
-    opacity: 0.8;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.02) 0%, transparent 50%, rgba(0, 212, 248, 0.02) 100%);
-    pointer-events: none;
-  }
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.32rem;
-  margin-bottom: 0.32rem;
+  margin-bottom: 0;
 }
 
 .form-column {
@@ -471,14 +402,6 @@ const handleSignOut = () => {
   display: flex;
   flex-direction: column;
   position: relative;
-  animation: slideInUp 0.6s ease-out;
-  animation-fill-mode: both;
-
-  &:nth-child(1) { animation-delay: 0.1s; }
-  &:nth-child(2) { animation-delay: 0.2s; }
-  &:nth-child(3) { animation-delay: 0.3s; }
-  &:nth-child(4) { animation-delay: 0.4s; }
-  &:nth-child(5) { animation-delay: 0.5s; }
 }
 
 .form-label {
@@ -490,27 +413,9 @@ const handleSignOut = () => {
     color: #E3F2FD;
     font-size: 0.15rem;
     font-weight: 600;
-    text-shadow: 0 0 8px rgba(227, 242, 253, 0.4);
     letter-spacing: 0.5px;
     position: relative;
     z-index: 2;
-  }
-
-  .label-glow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 180, 216, 0.1);
-    border-radius: 0.04rem;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    z-index: 1;
-  }
-
-  &:hover .label-glow {
-    opacity: 1;
   }
 }
 
@@ -527,37 +432,21 @@ const handleSignOut = () => {
   background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
   border: 2px solid rgba(0, 180, 216, 0.3);
   border-radius: 0.08rem;
-  color: #00E5FF;
+  color: #FFFFFF;
   font-size: 0.16rem;
   font-weight: bold;
-  text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
   position: relative;
   overflow: hidden;
 
   .id-prefix {
-    color: rgba(0, 180, 216, 0.8);
+    color: #FFFFFF;
     margin-right: 0.04rem;
   }
 
   .id-value {
-    color: #00E5FF;
+    color: #FFFFFF;
   }
-
-  .data-stream {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(0, 180, 216, 0.3), transparent);
-    animation: dataFlow 2s ease-in-out infinite;
-  }
-}
-
-@keyframes dataFlow {
-  0% { left: -100%; }
-  100% { left: 100%; }
 }
 
 .readonly-display {
@@ -578,90 +467,124 @@ const handleSignOut = () => {
     font-weight: 500;
     flex: 1;
   }
-
-  .readonly-indicator {
-    color: rgba(105, 105, 105, 0.8);
-    font-size: 0.11rem;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    padding: 0.02rem 0.06rem;
-    background: rgba(105, 105, 105, 0.1);
-    border-radius: 0.04rem;
-    border: 1px solid rgba(105, 105, 105, 0.2);
-  }
 }
 
-.status-display {
+.status-toggle {
   display: flex;
   align-items: center;
   gap: 0.16rem;
-  padding: 0.12rem 0.16rem;
-  background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
-  border: 2px solid rgba(105, 105, 105, 0.3);
-  border-radius: 0.08rem;
-  height: 0.48rem;
+  padding: 0.12rem 0;
 }
 
-.status-indicator {
-  width: 0.08rem;
-  height: 0.08rem;
-  border-radius: 50%;
-  background: #666;
-  transition: all 0.3s ease;
-  box-shadow: 0 0 0.04rem rgba(102, 102, 102, 0.5);
+.cyber-switch {
+  position: relative;
+  display: inline-block;
+  width: 0.56rem;
+  height: 0.28rem;
 
-  &.online {
-    background: #00E5FF;
-    box-shadow: 0 0 0.12rem rgba(0, 229, 255, 0.8);
-    animation: statusPulse 2s ease-in-out infinite;
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .switch-slider {
+    position: absolute;
+    cursor: not-allowed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+    transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+    border-radius: 0.28rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+
+    .switch-core {
+      position: absolute;
+      height: 0.20rem;
+      width: 0.20rem;
+      left: 0.04rem;
+      bottom: 0.04rem;
+      background: linear-gradient(135deg, #FFFFFF 0%, #F0F0F0 100%);
+      transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  input:checked + .switch-slider {
+    background: linear-gradient(135deg, #00B4D8 0%, #00E5FF 100%);
+
+    .switch-core {
+      transform: translateX(0.28rem);
+    }
+  }
+
+  input:disabled + .switch-slider {
+    opacity: 0.8;
+    cursor: not-allowed;
   }
 }
 
 .status-text {
-  color: #FFFFFF;
+  color: #6B7280;
   font-size: 0.15rem;
   font-weight: 600;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
   text-transform: uppercase;
   letter-spacing: 0.02em;
   transition: all 0.3s ease;
 
   &.active {
     color: #00E5FF;
-    text-shadow: 0 0 8px rgba(0, 229, 255, 0.5);
   }
-}
-
-@keyframes statusPulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
 }
 
 .form-actions {
   display: flex;
   justify-content: center;
-  gap: 0.24rem;
+  gap: 0.4rem;
   margin-top: 0.32rem;
-  padding-top: 0.24rem;
-  border-top: 1px solid rgba(0, 180, 216, 0.2);
+  width: 100%;
+  max-width: 11rem;
 }
 
 .action-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.08rem;
-  padding: 0.14rem 0.32rem;
-  border: none;
-  border-radius: 0.12rem;
+  width: 1.4rem;
+  height: 0.4rem;
+  font-size: 0.14rem;
+  font-weight: 700;
+  border-radius: 0.2rem;
+  border: 1px solid;
   cursor: pointer;
-  font-size: 0.16rem;
-  font-weight: bold;
   transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s ease;
+  }
+
+  &:active::before {
+    width: 300%;
+    height: 300%;
+  }
 
   .btn-content {
     position: relative;
@@ -671,77 +594,28 @@ const handleSignOut = () => {
     gap: 0.08rem;
   }
 
-  .btn-glow {
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.6s ease;
-    z-index: 1;
-  }
-
-  &:hover .btn-glow {
-    left: 100%;
-  }
-
   &.edit-btn {
-    background: linear-gradient(135deg, #00B4D8 0%, #00E5FF 100%);
+    background: linear-gradient(135deg, #00E5FF 0%, #00B4D8 100%);
     color: #FFFFFF;
-    box-shadow: 0 4px 15px rgba(0, 180, 216, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+    border-color: rgba(0, 229, 255, 0.5);
 
     &:hover {
-      background: linear-gradient(135deg, #00D4F8 0%, #40E0FF 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 180, 216, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    }
-
-    &:active {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(0, 180, 216, 0.6), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(0, 229, 255, 0.8);
     }
   }
 
   &.back-btn {
-    background: linear-gradient(135deg, #6B7280 0%, #9CA3AF 100%);
+    background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
     color: #FFFFFF;
-    box-shadow: 0 4px 15px rgba(107, 114, 128, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+    border-color: rgba(113, 128, 150, 0.5);
 
     &:hover {
-      background: linear-gradient(135deg, #8B92A0 0%, #B5BCC9 100%);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(113, 128, 150, 0.8);
     }
-
-    &:active {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 15px rgba(107, 114, 128, 0.5), inset 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
   }
 }
 

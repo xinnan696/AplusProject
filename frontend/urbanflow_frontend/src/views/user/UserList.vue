@@ -10,7 +10,7 @@
     />
     <ControlNav :isVisible="isNavVisible" />
 
-    <div class="main-area">
+    <div class="main-area" :class="{ 'nav-collapsed': !isNavVisible }">
       <div class="users-container">
         <!-- Page title -->
         <h1 class="page-title">Users</h1>
@@ -40,7 +40,6 @@
 
           <!-- Delete Selected Button -->
           <button
-            v-if="selectedUsers.length > 0"
             class="delete-selected-btn"
             @click="confirmDeleteSelected"
           >
@@ -51,25 +50,25 @@
         <!-- Users table -->
         <div class="users-table-container">
           <!-- Table header -->
-          <div class="table-header">
+          <div class="table-header" :class="{ 'nav-collapsed': !isNavVisible }">
             <div class="header-checkbox" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 40px;">
               <label class="custom-checkbox">
                 <input type="checkbox" :checked="isAllSelected" @change="toggleSelectAll">
                 <span class="checkmark"></span>
               </label>
             </div>
-            <div class="header-id" style="position: absolute; left: 1.14rem; display: flex; align-items: center; height: 40px; font-weight: bold;">ID</div>
-            <div class="header-username" style="position: absolute; left: 3.2rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Account Number</div>
-            <div class="header-name" style="position: absolute; left: 6.0rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Name</div>
-            <div class="header-status" style="position: absolute; left: 8.8rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Status</div>
-            <div class="header-role" style="position: absolute; left: 10.71rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Role</div>
-            <div class="header-actions" style="position: absolute; left: 14.2rem; display: flex; align-items: center; height: 40px; font-weight: bold;">Actions</div>
+            <div class="header-id" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">ID</div>
+            <div class="header-username" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">Account Number</div>
+            <div class="header-name" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">Name</div>
+            <div class="header-status" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">Status</div>
+            <div class="header-role" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">Role</div>
+            <div class="header-actions" style="position: absolute; display: flex; align-items: center; height: 40px; font-weight: bold;">Actions</div>
           </div>
 
           <div class="table-divider"></div>
 
           <div class="table-body">
-            <div v-for="user in paginatedUsers" :key="user.id" class="user-row">
+            <div v-for="user in paginatedUsers" :key="user.id" class="user-row" :class="{ 'nav-collapsed': !isNavVisible }">
               <!-- Checkbox -->
               <div class="cell-checkbox" style="position: absolute; left: 0.26rem; display: flex; align-items: center; height: 40px;">
                 <label class="custom-checkbox">
@@ -83,16 +82,16 @@
               </div>
 
               <!-- ID -->
-              <div class="cell-id" style="position: absolute; left: 1.14rem; display: flex; align-items: center; height: 40px;">{{ user.id }}</div>
+              <div class="cell-id" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.id }}</div>
 
               <!-- Username -->
-              <div class="cell-username" style="position: absolute; left: 3.2rem; display: flex; align-items: center; height: 40px;">{{ user.accountNumber || user.username || 'N/A' }}</div>
+              <div class="cell-username" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.accountNumber || user.username || 'N/A' }}</div>
 
               <!-- Name -->
-              <div class="cell-name" style="position: absolute; left: 6.0rem; display: flex; align-items: center; height: 40px;">{{ user.userName || user.name || 'N/A' }}</div>
+              <div class="cell-name" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.userName || user.name || 'N/A' }}</div>
 
               <!-- Status Toggle -->
-              <div class="cell-status" style="position: absolute; left: 8.8rem; display: flex; align-items: center; height: 40px;">
+              <div class="cell-status" style="position: absolute; display: flex; align-items: center; height: 40px;">
                 <div class="status-toggle">
                   <label class="switch">
                     <input
@@ -106,10 +105,10 @@
               </div>
 
               <!-- Role -->
-              <div class="cell-role" style="position: absolute; left: 10.71rem; display: flex; align-items: center; height: 40px;">{{ user.role || 'N/A' }}</div>
+              <div class="cell-role" style="position: absolute; display: flex; align-items: center; height: 40px;">{{ user.role || 'N/A' }}</div>
 
               <!-- Actions -->
-              <div class="cell-actions" style="position: absolute; left: 12.77rem; display: flex; align-items: center; height: 40px; gap: 0.08rem;">
+              <div class="cell-actions" style="position: absolute; display: flex; align-items: center; height: 40px; gap: 0.08rem;">
                 <button class="action-btn details-btn" @click="viewUserDetails(user)">
                   Details
                 </button>
@@ -544,20 +543,27 @@ onMounted(async () => {
   display: flex;
   overflow: hidden;
   margin-left: 2.4rem;
-  width: calc(100vw - 2.4rem); // 明确设置宽度
+  width: calc(100vw - 2.4rem);
+  transition: all 0.3s ease;
+  
+  // 当导航栏收起时的样式
+  &.nav-collapsed {
+    margin-left: 0.24rem;
+    width: calc(100vw - 0.24rem);
+  }
 }
 
 .users-container {
   flex: 1;
-  padding: 0.24rem; // 统一四边padding
+  padding: 0.24rem 0.48rem 0.24rem 0.24rem;
   background-color: #1E1E2F;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100%;
   position: relative;
-  width: 100%; // 确保占满宽度
-  box-sizing: border-box; // 重要：包含padding
+  width: 100%;
+  box-sizing: border-box;
 }
 
 // 修复：将页面标题改为正常文档流
@@ -595,15 +601,11 @@ onMounted(async () => {
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #00D4F8;
-    color: #FFFFFF;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 180, 216, 0.3);
+    background-color: #2B2C3D;
   }
 
   &:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 10px rgba(0, 180, 216, 0.4);
+    background-color: #2B2C3D;
   }
 
   .add-icon {
@@ -615,7 +617,7 @@ onMounted(async () => {
 .delete-selected-btn {
   height: 0.4rem;
   padding: 0 0.16rem;
-  background-color: #FF4757;
+  background-color: #00B4D8;
   color: #FFFFFF;
   border: none;
   border-radius: 0.08rem;
@@ -625,14 +627,11 @@ onMounted(async () => {
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #FF3742;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+    background-color: #00B4D8;
   }
 
   &:active {
-    transform: translateY(0);
-    box-shadow: 0 3px 10px rgba(255, 71, 87, 0.5);
+    background-color: #00B4D8;
   }
 }
 
@@ -664,20 +663,16 @@ onMounted(async () => {
   &:hover {
     background-color: #3A3A4D;
     border-color: #3A3A4D;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
   }
 
   &:focus {
     outline: none;
     border-color: #3A3A4D;
     background-color: #3A3A4D;
-    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
   }
 
   &:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 6px rgba(0, 180, 216, 0.4);
+    background-color: #3A3A4D;
   }
 
   option {
@@ -728,8 +723,6 @@ onMounted(async () => {
   &:hover {
     background-color: #3A3A4D;
     border-color: #3A3A4D;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.15);
 
     &::placeholder {
       color: #888;
@@ -740,8 +733,6 @@ onMounted(async () => {
     outline: none;
     border-color: #3A3A4D;
     background-color: #3A3A4D;
-    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.1);
-    transform: translateY(-1px);
 
     &::placeholder {
       color: #999;
@@ -749,7 +740,7 @@ onMounted(async () => {
   }
 
   &:active {
-    transform: translateY(0);
+    background-color: #3A3A4D;
   }
 }
 
@@ -771,21 +762,17 @@ onMounted(async () => {
 
   &:hover {
     color: #00B4D8;
-    background-color: rgba(0, 180, 216, 0.1);
-    transform: translateY(-1px) scale(1.1);
-    box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
   }
 
   &:active {
-    transform: translateY(0) scale(1.05);
-    box-shadow: 0 2px 6px rgba(0, 180, 216, 0.3);
+    color: #00B4D8;
   }
 }
 
 .users-table-container {
-  flex: 1; // 占据剩余所有空间
-  min-height: 0; // 允许收缩
-  margin-bottom: 0.16rem; // 减少底部边距，为分页留空间
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 0.16rem;
   margin-right: 0;
   position: relative;
   background: #1E1E2F;
@@ -799,11 +786,39 @@ onMounted(async () => {
   color: #FFFFFF;
   font-size: 0.14rem;
   font-weight: 600;
+  
+  // 为所有标题元素添加平滑过渡
+  .header-id,
+  .header-username, 
+  .header-name,
+  .header-status,
+  .header-role,
+  .header-actions {
+    transition: all 0.3s ease;
+  }
+  
+  // 默认状态下的列位置
+  .header-id { left: 1.14rem; }
+  .header-username { left: 3.2rem; }
+  .header-name { left: 6.0rem; }
+  .header-status { left: 8.8rem; }
+  .header-role { left: 10.71rem; }
+  .header-actions { left: 14.2rem; }
+  
+  // 导航栏收起时的列位置
+  &.nav-collapsed {
+    .header-id { left: 1.4rem; }
+    .header-username { left: 3.7rem; } // 缩小一点点
+    .header-name { left: 6.8rem; } // 缩小一点点
+    .header-status { left: 9.5rem; } // 缩小一点点
+    .header-role { left: 11.8rem; } // 缩小一点点
+    .header-actions { left: calc(100% - 2.6rem); } // Actions标题位置
+  }
 }
 
 .table-divider {
   height: 0.02rem;
-  background: linear-gradient(90deg, transparent, #00B4D8, transparent);
+  background-color: #FFFFFF;
 }
 
 .table-body {
@@ -812,7 +827,8 @@ onMounted(async () => {
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  padding-top: 0.2rem; // 第一行到分割线的距离
+  padding-top: 0.2rem;
+  padding-right: 0.5rem;
 }
 
 .user-row {
@@ -826,10 +842,6 @@ onMounted(async () => {
   // 除第一行外，每行都有0.5rem的上边距
   &:not(:first-child) {
     margin-top: 0.2rem;
-  }
-  
-  &:hover {
-    transform: translateX(0.04rem);
   }
 
   &:last-child {
@@ -889,18 +901,17 @@ onMounted(async () => {
   }
 
   input:hover ~ .checkmark {
-    border-color: #00D4F8;
+    border-color: #00B4D8;
     background-color: #2B2B3C;
-    transform: scale(1.05);
   }
 
   input:checked:hover ~ .checkmark {
-    background-color: #00D4F8;
-    border-color: #00D4F8;
+    background-color: #00B4D8;
+    border-color: #00B4D8;
   }
 
   input:focus ~ .checkmark {
-    box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.2);
+    border-color: #00B4D8;
   }
 }
 
@@ -960,6 +971,7 @@ onMounted(async () => {
   display: flex;
   gap: 0.08rem;
   align-items: center;
+  position: relative;
 }
 
 .action-btn {
@@ -972,75 +984,50 @@ onMounted(async () => {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.5s ease;
-  }
-
-  &:hover::before {
-    left: 100%;
-  }
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  line-height: 1;
+  height: 0.28rem;
+  box-sizing: border-box;
 
   &.details-btn {
     background-color: transparent;
     color: #00B4D8;
-    text-decoration: underline;
 
     &:hover {
-      background-color: rgba(0, 180, 216, 0.1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
-      text-decoration: none;
+      color: #00B4D8;
     }
 
     &:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0, 180, 216, 0.3);
+      color: #00B4D8;
     }
   }
 
   &.edit-btn {
     background-color: transparent;
     color: #00B4D8;
-    text-decoration: underline;
 
     &:hover {
-      color: #00D4F8;
-      background-color: rgba(0, 180, 216, 0.1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 180, 216, 0.2);
-      text-decoration: none;
+      color: #00B4D8;
     }
 
     &:active {
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(0, 180, 216, 0.3);
+      color: #00B4D8;
     }
   }
 
   &.delete-btn {
     background-color: transparent;
     color: #00B4D8;
-    text-decoration: underline;
 
     &:hover:not(:disabled) {
       color: #FF4757;
-      background-color: rgba(255, 71, 87, 0.1);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.2);
-      text-decoration: none;
     }
 
     &:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 2px 6px rgba(255, 71, 87, 0.3);
+      color: #FF4757;
     }
 
     &:disabled {
@@ -1102,69 +1089,72 @@ onMounted(async () => {
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 1.4rem;
+  gap: 0.4rem;
 }
 
 .modal-btn {
-  border: none;
-  border-radius: 0.15rem;
-  cursor: pointer;
-  font-size: 0.2rem;
   width: 1.4rem;
   height: 0.4rem;
-  transition: all 0.3s ease;
+  font-size: 0.14rem;
+  font-weight: 700;
+  border-radius: 0.2rem;
+  border: 1px solid;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
   overflow: hidden;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
 
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.5s ease;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s ease;
   }
 
-  &:hover::before {
-    left: 100%;
+  &:active::before {
+    width: 300%;
+    height: 300%;
   }
 
   &.delete-confirm-btn {
-    background-color: #00B4D8;
+    background: linear-gradient(135deg, #00E5FF 0%, #00B4D8 100%);
     color: #FFFFFF;
+    border-color: rgba(0, 229, 255, 0.5);
 
-    &:hover:not(:disabled) {
-      background-color: #00D4F8;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 180, 216, 0.3);
-    }
-
-    &:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 3px 10px rgba(0, 180, 216, 0.4);
+    &:not(:disabled):hover {
+      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(0, 229, 255, 0.8);
     }
 
     &:disabled {
-      opacity: 0.6;
+      background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+      color: #A0AEC0;
+      border-color: rgba(74, 85, 104, 0.5);
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      text-shadow: none;
     }
   }
 
   &.cancel-btn {
-    background-color: #D7D7D7;
-    color: #000000;
+    background: linear-gradient(135deg, #718096 0%, #4A5568 100%);
+    color: #FFFFFF;
+    border-color: rgba(113, 128, 150, 0.5);
 
     &:hover {
-      background-color: #C0C0C0;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(215, 215, 215, 0.3);
-    }
-
-    &:active {
-      transform: translateY(0);
-      box-shadow: 0 3px 10px rgba(215, 215, 215, 0.4);
+      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(113, 128, 150, 0.8);
     }
   }
 }
@@ -1223,7 +1213,6 @@ onMounted(async () => {
   &:hover:not(:disabled) {
     background-color: #00B4D8;
     color: #FFFFFF;
-    transform: scale(1.05);
   }
 
   &.current {
@@ -1256,8 +1245,7 @@ onMounted(async () => {
 
     &:hover:not(:disabled) {
       background-color: transparent;
-      color: #00D4F8;
-      transform: none;
+      color: #00B4D8;
     }
 
     &:disabled {
@@ -1277,5 +1265,36 @@ onMounted(async () => {
   color: #FFF9F9;
   margin: 0 0.04rem;
   font-size: 0.12rem;
+}
+
+// 为用户行添加列位置样式
+.user-row {
+  // 为所有单元格添加平滑过渡
+  .cell-id,
+  .cell-username,
+  .cell-name,
+  .cell-status,
+  .cell-role,
+  .cell-actions {
+    transition: all 0.3s ease;
+  }
+  
+  // 默认状态下的列位置
+  .cell-id { left: 1.14rem; }
+  .cell-username { left: 3.2rem; }
+  .cell-name { left: 6.0rem; }
+  .cell-status { left: 8.8rem; }
+  .cell-role { left: 10.71rem; }
+  .cell-actions { left: 12.77rem; }
+  
+  // 导航栏收起时的列位置
+  &.nav-collapsed {
+    .cell-id { left: 1.4rem; }
+    .cell-username { left: 3.7rem; }
+    .cell-name { left: 6.8rem; }
+    .cell-status { left: 9.5rem; }
+    .cell-role { left: 11.8rem; }
+    .cell-actions { left: calc(100% - 3.5rem); }
+  }
 }
 </style>

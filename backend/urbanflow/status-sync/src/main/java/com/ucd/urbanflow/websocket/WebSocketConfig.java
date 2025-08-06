@@ -19,8 +19,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
         registry.addHandler(statusHandler, "/api/status/ws")
                 .setAllowedOrigins("*")
                 .setAllowedOriginPatterns("*");
-        
-        // SockJS 回退支持（使用不同的路径）
+
         registry.addHandler(statusHandler, "/api/status/sockjs")
                 .setAllowedOrigins("*")
                 .setAllowedOriginPatterns("*")

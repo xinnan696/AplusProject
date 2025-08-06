@@ -10,8 +10,8 @@
         <div class="custom-select" :class="{ 'open': isJunctionDropdownOpen }">
           <div class="select-display">
             {{ selectedJunctionIndex !== null && junctionDataList[selectedJunctionIndex]
-            ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
-            : 'Please Select a Junction' }}
+               ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
+               : 'Please Select a Junction' }}
           </div>
           <div class="select-arrow" :class="{ 'rotated': isJunctionDropdownOpen }">
             <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
@@ -54,8 +54,8 @@
         <div class="custom-select" :class="{ 'open': isDirectionDropdownOpen }">
           <div class="select-display">
             {{ selectedDirectionIndex !== null && currentDirections[selectedDirectionIndex]
-            ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
-            : 'Select Traffic Light Direction' }}
+               ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
+               : 'Select Traffic Light Direction' }}
           </div>
           <div class="select-arrow" :class="{ 'rotated': isDirectionDropdownOpen }">
             <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
@@ -156,7 +156,7 @@ import PermissionIndicator from '@/components/PermissionIndicator.vue'
 
 const emit = defineEmits<{
   (e: 'highlight', fromLanes: string[], toLanes: string[]): void
-  (e: 'trafficLightSelected', junctionId: string, directionIndex: number, triggerSource?: 'junction' | 'direction'): void
+  (e: 'trafficLightSelected', junctionId: string, directionIndex: number, options?: { disableZoom?: boolean }): void
   (e: 'trafficLightCleared'): void
   (e: 'junctionSelected', junctionName: string, junctionId: string): void
   (e: 'manualControlApplied', data: { junctionName: string, directionInfo: string, lightColor: string, duration: number }): void
@@ -390,7 +390,8 @@ watch(selectedDirectionIndex, () => {
 
     if (currentJunction.value) {
       const junctionId = currentJunction.value.junction_id
-      emit('trafficLightSelected', junctionId, idx, 'direction')
+      // 选择方向时禁用zoom，因为已经在选择路口时zoom过了
+      emit('trafficLightSelected', junctionId, idx, { disableZoom: true })
     }
   }
 })
@@ -499,10 +500,17 @@ const onApply = async () => {
 
   isApplying.value = true
   const state = selectedLight.value === 'GREEN' ? 'G' : 'r'
+  // 将用户输入的秒数转换为后端需要的步长：步长 = 秒数 / 9 (取整)
+  const steps = Math.floor(duration.value / 9)
+  console.log('🔄 [Manual] Converting duration to steps:', {
+    userInputSeconds: duration.value,
+    calculatedSteps: steps
+  })
+  
   const requestBody = {
     junctionId: junction.junction_id,
     lightIndex,
-    duration: duration.value,
+    duration: steps, // 发送步长而不是秒数
     state,
     source: 'manual'
   }
@@ -525,7 +533,7 @@ const onApply = async () => {
   })
 
   try {
-    await apiClient.post('/signalcontrol/manual', requestBody)
+    const response = await apiClient.post('/signalcontrol/manual', requestBody)
     operationStore.updateRecordStatus(recordId, 'success')
     toast.success('Traffic light settings updated successfully!')
 
@@ -539,8 +547,7 @@ const onApply = async () => {
 
     partialResetForm()
   } catch (error) {
-    console.error( error)
-
+    console.error('Failed to update traffic light:', error)
     operationStore.updateRecordStatus(recordId, 'failed', 'Failed to send data to backend')
     toast.error('Failed to send data to backend.')
   } finally {
@@ -779,9 +786,9 @@ defineExpose({
     right: 0;
     bottom: 0;
     background:
-      radial-gradient(circle at 20% 20%, rgba(0, 180, 216, 0.05) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, rgba(0, 200, 255, 0.03) 0%, transparent 50%),
-      linear-gradient(45deg, transparent 48%, rgba(0, 180, 216, 0.02) 49%, rgba(0, 180, 216, 0.02) 51%, transparent 52%);
+      radial-gradient(circle at 20% 20%, rgba(74, 85, 104, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(113, 128, 150, 0.03) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.02) 49%, rgba(74, 85, 104, 0.02) 51%, transparent 52%);
     pointer-events: none;
     z-index: 0;
   }
@@ -805,21 +812,8 @@ defineExpose({
   margin-bottom: 0.1rem;
   padding-left: 0.24rem;
   line-height: 0.2rem;
-  text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
-  position: relative;
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 3px;
-    height: 0.2rem;
-    background: linear-gradient(to bottom, #00E5FF, #00B4D8);
-    border-radius: 2px;
-    box-shadow: 0 0 8px rgba(0, 229, 255, 0.6);
-  }
+  position: relative;
 }
 
 .form-row {
@@ -832,10 +826,10 @@ defineExpose({
 .label {
   width: 1.6rem;
   font-size: 0.14rem;
-  color: #B3E5FC;
+  color: #FFFFFF;
   font-weight: 600;
-  padding-left: 0.24rem;
-  text-shadow: 0 0 8px rgba(179, 229, 252, 0.3);
+  padding-left: 0.4rem;
+
   letter-spacing: 0.02rem;
 }
 
@@ -858,7 +852,7 @@ defineExpose({
   transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+
 
   &::before {
     content: '';
@@ -884,9 +878,7 @@ defineExpose({
     background: linear-gradient(135deg, #FF4569 20%, #2A2D4A 80%);
     color: #FFFFFF;
     transform: translateY(-2px) scale(1.02);
-    box-shadow:
-      0 6px 20px rgba(255, 69, 105, 0.4),
-      0 0 20px rgba(255, 69, 105, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     border-color: rgba(255, 69, 105, 0.6);
   }
 }
@@ -899,9 +891,7 @@ defineExpose({
     background: linear-gradient(135deg, #00E676 20%, #2A2D4A 80%);
     color: #FFFFFF;
     transform: translateY(-2px) scale(1.02);
-    box-shadow:
-      0 6px 20px rgba(0, 230, 118, 0.4),
-      0 0 20px rgba(0, 230, 118, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
     border-color: rgba(0, 230, 118, 0.6);
   }
 }
@@ -910,24 +900,16 @@ defineExpose({
   background: linear-gradient(135deg, #FF4569 0%, #E91E63 100%);
   color: #FFFFFF;
   border-color: rgba(255, 69, 105, 0.8);
-  box-shadow:
-    0 6px 20px rgba(255, 69, 105, 0.5),
-    0 0 25px rgba(255, 69, 105, 0.3),
-    inset 0 1px 3px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .active-green {
   background: linear-gradient(135deg, #00E676 0%, #4CAF50 100%);
   color: #FFFFFF;
   border-color: rgba(0, 230, 118, 0.8);
-  box-shadow:
-    0 6px 20px rgba(0, 230, 118, 0.5),
-    0 0 25px rgba(0, 230, 118, 0.3),
-    inset 0 1px 3px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
   transform: translateY(-1px);
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
 .action-buttons {
@@ -972,9 +954,9 @@ defineExpose({
 }
 
 .apply-btn {
-  background: linear-gradient(135deg, #00E5FF 0%, #00B4D8 100%);
+  background: linear-gradient(135deg, #00B4D8 0%, #0090aa 100%);
   color: #FFFFFF;
-  border-color: rgba(0, 229, 255, 0.5);
+  border-color: rgba(0, 180, 216, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -992,15 +974,14 @@ defineExpose({
   span {
     position: relative;
     z-index: 2;
+    font-weight: 700; // 加粗APPLY文字
   }
 
   &:not(:disabled):hover {
-    background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
+    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
     transform: translateY(-2px) scale(1.02);
-    box-shadow:
-      0 8px 25px rgba(0, 229, 255, 0.4),
-      0 0 30px rgba(0, 229, 255, 0.3);
-    border-color: rgba(0, 229, 255, 0.8);
+    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
+    border-color: rgba(0, 180, 216, 0.8);
   }
 }
 
@@ -1027,16 +1008,15 @@ defineExpose({
   &:hover {
     background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
     transform: translateY(-2px) scale(1.02);
-    box-shadow:
-      0 6px 20px rgba(113, 128, 150, 0.3),
-      0 0 20px rgba(113, 128, 150, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     border-color: rgba(113, 128, 150, 0.8);
   }
 }
 
 .select-wrapper {
   position: relative;
-  width: 3.6rem;
+  flex: 1;
+  max-width: calc(100% - 2rem - 0.3rem - 0.24rem);
   cursor: pointer;
   z-index: 100;
 
@@ -1049,7 +1029,7 @@ defineExpose({
   width: 100%;
   height: 0.4rem;
   background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
-  border: 1px solid rgba(0, 180, 216, 0.4);
+  border: 1px solid rgba(74, 85, 104, 0.4);
   border-radius: 0.06rem;
   display: flex;
   align-items: center;
@@ -1066,7 +1046,7 @@ defineExpose({
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(0, 180, 216, 0.1) 49%, rgba(0, 180, 216, 0.1) 51%, transparent 52%);
+    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -1074,10 +1054,8 @@ defineExpose({
 
   &.open,
   &:hover {
-    border-color: rgba(0, 229, 255, 0.6);
-    box-shadow:
-      0 0 15px rgba(0, 180, 216, 0.2),
-      inset 0 1px 3px rgba(0, 229, 255, 0.1);
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
 
     &::before {
@@ -1086,9 +1064,7 @@ defineExpose({
   }
 
   &.open {
-    box-shadow:
-      0 0 20px rgba(0, 229, 255, 0.3),
-      inset 0 1px 3px rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -1101,21 +1077,19 @@ defineExpose({
   text-overflow: ellipsis;
   padding-right: 0.1rem;
   font-weight: 500;
-  text-shadow: 0 0 8px rgba(227, 242, 253, 0.3);
+
 }
 
 .select-arrow {
   width: 0.15rem;
   height: 0.15rem;
-  color: #00E5FF;
+  color: #9CA3AF;
   transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
   flex-shrink: 0;
-  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.4));
 
   &.rotated {
     transform: rotate(180deg);
-    color: #00FFFF;
-    filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.6));
+    color: #D1D5DB;
   }
 
   svg {
@@ -1130,7 +1104,7 @@ defineExpose({
   left: 0;
   right: 0;
   background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
-  border: 1px solid rgba(0, 229, 255, 0.4);
+  border: 1px solid rgba(74, 85, 104, 0.4);
   border-top: none;
   border-radius: 0 0 0.06rem 0.06rem;
   z-index: 10;
@@ -1138,7 +1112,7 @@ defineExpose({
   overflow: hidden;
   box-shadow:
     0 8px 25px rgba(0, 0, 0, 0.4),
-    0 0 20px rgba(0, 180, 216, 0.2);
+    0 0 20px rgba(0, 0, 0, 0.2);
   animation: slideDown 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
   backdrop-filter: blur(10px);
 }
@@ -1164,7 +1138,7 @@ defineExpose({
   width: 100%;
   height: 0.3rem;
   background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
-  border: 1px solid rgba(0, 180, 216, 0.3);
+  border: 1px solid rgba(74, 85, 104, 0.3);
   border-radius: 0.06rem;
   color: #E3F2FD;
   font-size: 0.12rem;
@@ -1175,15 +1149,13 @@ defineExpose({
   font-weight: 500;
 
   &:focus {
-    border-color: rgba(0, 229, 255, 0.6);
-    box-shadow:
-      0 0 10px rgba(0, 180, 216, 0.2),
-      inset 0 1px 3px rgba(0, 229, 255, 0.1);
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
     background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
   }
 
   &::placeholder {
-    color: rgba(179, 229, 252, 0.6);
+    color: rgba(156, 163, 175, 0.6);
   }
 }
 
@@ -1200,9 +1172,9 @@ defineExpose({
   }
 
   &::-webkit-scrollbar-thumb {
-    background: linear-gradient(to bottom, #00E5FF, #00B4D8);
+    background: linear-gradient(to bottom, #4A5568, #374151);
     border-radius: 2px;
-    box-shadow: 0 0 4px rgba(0, 229, 255, 0.4);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -1223,16 +1195,15 @@ defineExpose({
     top: 0;
     bottom: 0;
     width: 0;
-    background: linear-gradient(90deg, rgba(0, 229, 255, 0.1), transparent);
+    background: linear-gradient(90deg, rgba(113, 128, 150, 0.1), transparent);
     transition: width 0.3s ease;
   }
 
   &:hover {
-    background: linear-gradient(135deg, rgba(0, 180, 216, 0.15) 0%, rgba(0, 229, 255, 0.05) 100%);
-    border-left-color: #00E5FF;
+    background: rgba(74, 85, 104, 0.15);
+    border-left-color: #9CA3AF;
     transform: translateX(4px);
     color: #FFFFFF;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 
     &::before {
       width: 100%;
@@ -1240,16 +1211,15 @@ defineExpose({
   }
 
   &.selected {
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 180, 216, 0.1) 100%);
-    border-left-color: #00FFFF;
+    background: rgba(113, 128, 150, 0.2);
+    border-left-color: #D1D5DB;
     color: #FFFFFF;
     font-weight: 700;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
-    box-shadow: inset 0 1px 3px rgba(0, 229, 255, 0.2);
+    box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
 
     &::before {
       width: 100%;
-      background: linear-gradient(90deg, rgba(0, 255, 255, 0.2), transparent);
+      background: linear-gradient(90deg, rgba(209, 213, 219, 0.2), transparent);
     }
   }
 }
@@ -1273,7 +1243,7 @@ defineExpose({
   display: flex;
   align-items: center;
   height: 0.4rem;
-  border: 1px solid rgba(0, 180, 216, 0.4);
+  border: 1px solid rgba(74, 85, 104, 0.4);
   border-radius: 0.06rem;
   background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
   overflow: hidden;
@@ -1287,17 +1257,15 @@ defineExpose({
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(0, 180, 216, 0.1) 49%, rgba(0, 180, 216, 0.1) 51%, transparent 52%);
+    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
   }
 
   &:focus-within {
-    border-color: rgba(0, 229, 255, 0.6);
-    box-shadow:
-      0 0 15px rgba(0, 180, 216, 0.2),
-      inset 0 1px 3px rgba(0, 229, 255, 0.1);
+    border-color: rgba(113, 128, 150, 0.6);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
 
     &::before {
@@ -1323,7 +1291,7 @@ defineExpose({
   z-index: 1;
 
   &::placeholder {
-    color: rgba(179, 229, 252, 0.6);
+    color: rgba(156, 163, 175, 0.6);
     transition: color 0.3s ease;
   }
 }
@@ -1334,7 +1302,7 @@ defineExpose({
   justify-content: center;
   height: 100%;
   background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
-  border-left: 1px solid rgba(0, 180, 216, 0.2);
+  border-left: 1px solid rgba(74, 85, 104, 0.2);
 }
 
 .triangle-btn {
@@ -1342,7 +1310,7 @@ defineExpose({
   width: 0.4rem;
   border: none;
   background: transparent;
-  color: #00E5FF;
+  color: #9CA3AF;
   font-size: 0.14rem;
   cursor: pointer;
   line-height: 1;
@@ -1351,19 +1319,18 @@ defineExpose({
   font-weight: 700;
 
   &:hover {
-    background: linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(0, 180, 216, 0.05) 100%);
-    color: #00FFFF;
+    background: rgba(113, 128, 150, 0.15);
+    color: #D1D5DB;
     transform: scale(1.2);
-    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
   }
 
   &:active {
     transform: scale(1.05);
-    background: linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 229, 255, 0.1) 100%);
+    background: rgba(209, 213, 219, 0.2);
   }
 
   &:first-child {
-    border-bottom: 1px solid rgba(0, 180, 216, 0.2);
+    border-bottom: 1px solid rgba(74, 85, 104, 0.2);
   }
 }
 
@@ -1380,35 +1347,17 @@ defineExpose({
 }
 
 .duration-error {
-  color: #FF6B9D;
-  background: linear-gradient(135deg, rgba(255, 107, 157, 0.1) 0%, rgba(255, 138, 128, 0.05) 100%);
-  border: 1px solid rgba(255, 107, 157, 0.3);
-  border-radius: 0.04rem;
+  color: #EF4444;
   font-size: 0.1rem;
   padding: 0.02rem 0.06rem;
-  margin-left: 1.9rem;
+  margin-left: 1.9rem; // 再左移一点
   white-space: nowrap;
   font-weight: 600;
-  box-shadow:
-    0 2px 8px rgba(255, 107, 157, 0.2),
-    0 0 10px rgba(255, 107, 157, 0.1);
   display: inline-block;
   line-height: 1;
   height: auto;
   max-width: 3rem;
-  text-shadow: 0 0 6px rgba(255, 107, 157, 0.4);
-  animation: errorPulse 2s ease-in-out infinite;
-}
-
-@keyframes errorPulse {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
+  // 移除所有动画和荧光效果
 }
 
 select.common-box {

@@ -16,7 +16,14 @@
 
     <div class="main-area">
       <div class="map-contain">
-        <ControlMap ref="mapRef" :isSidebarOpen="isNavVisible" @signal-light-clicked="handleSignalLightClicked" />
+        <ControlMap 
+          ref="mapRef" 
+          :isSidebarOpen="isNavVisible" 
+          :isPriorityTrackingOpen="isPriorityVisible"
+          @signal-light-clicked="handleSignalLightClicked"
+          @emergency-approved="handleEmergencyApproved"
+          @emergency-rejected="handleEmergencyRejected"
+        />
       </div>
 
       <div class="control-board">
@@ -34,37 +41,16 @@
 
     <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
 
-    <!-- 紧急车辆请求信息框 -->
-    <transition name="dialog">
-      <div v-if="isEmergencyDialogVisible && firstPendingVehicle" class="tracking-request-dialog">
-        <div class="dialog-title">
-          Priority Vehicle Tracking Request
-        </div>
-        <div class="dialog-content">
-          <span class="info-label">Vehicle ID</span>
-          <span class="info-value">{{ firstPendingVehicle.vehicleID }}</span>
-
-          <span class="info-label">Organization</span>
-          <span class="info-value">{{ firstPendingVehicle.organization }}</span>
-
-          <span class="info-label route-label">Estimated Route</span>
-          <div class="info-value route-list">
-            <div v-for="(junctionId, index) in firstPendingVehicle.signalizedJunctions" :key="junctionId" class="route-item">
-              <span>{{ getJunctionName(junctionId) }}</span>
-              <span v-if="index === 0" class="tag start">START</span>
-              <span v-if="index === firstPendingVehicle.signalizedJunctions.length - 1" class="tag destination">DESTINATION</span>
-            </div>
-          </div>
-
-          <span class="info-label request-label">Request</span>
-          <span class="info-value request-value">Green Light Priority</span>
-        </div>
-        <div class="dialog-actions">
-          <button class="btn-approve" @click="handleApprove">APPROVE</button>
-          <button class="btn-reject" @click="handleReject">REJECT</button>
-        </div>
-      </div>
-    </transition>
+    <!-- 优先车辆追踪面板 -->
+    <PriorityVehicleTracking 
+      :isVisible="isPriorityVisible" 
+      @close="togglePriority"
+      @highlight="handleHighlight"
+      @traffic-light-selected="handleTrafficLightSelected"
+      @traffic-light-cleared="handleTrafficLightCleared"
+      @junction-selected="handleJunctionSelected"
+      @manual-control-applied="handleManualControlApplied"
+    />
   </div>
 </template>
 
@@ -86,7 +72,7 @@ import ControlBoard from './ControlBoard.vue'
 import ControlNav from './ControlNav.vue'
 import ControlRecord from './ControlRecord.vue'
 import { isNavVisible, toggleNav } from '@/utils/navState'
-import PriorityVehicleTracking from '@/views/control/PriorityVehicleTracking.vue'
+import PriorityVehicleTracking from './PriorityVehicleTracking.vue'
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 
 const router = useRouter()
@@ -100,7 +86,9 @@ const controlBoardRef = ref()
 const isRecordVisible = ref(false)
 const isPriorityVisible = ref(false)
 const isAIMode = ref(false)
-const isEmergencyDialogVisible = ref(false)
+// 禁用手动操作保护机制
+// const userIsManuallyOperating = ref(false)
+// let manualOperationTimer: NodeJS.Timeout | null = null
 
 // Junction映射表
 const junctionIdToNameMap = ref<Record<string, string>>({})
@@ -123,7 +111,6 @@ const showEmergencyIcon = computed(() => {
 
   return hasNew || hasActive || hasTracking
 })
-const firstPendingVehicle = computed(() => hasNewRequests.value ? emergencyStore.pendingVehicles[0] : null)
 
 // Junction数据获取和转换
 const fetchJunctions = async () => {
@@ -142,77 +129,63 @@ const fetchJunctions = async () => {
 };
 
 const getJunctionName = (junctionId: string) => {
-  return junctionIdToNameMap.value[junctionId] || junctionId;
+  // 优先使用emergencyStore中的映射数据，如果没有再使用本地的
+  return emergencyStore.junctionIdToNameMap[junctionId] || junctionIdToNameMap.value[junctionId] || junctionId;
 };
 
 // 智能紧急车辆图标点击处理
-function handleEmergencyIconClick() {
+const handleEmergencyIconClick = () => {
   console.log("🚨 Emergency icon clicked");
 
-  // 检查当前路由
-  const currentRoute = router.currentRoute.value.name;
-
-  if (currentRoute === 'PriorityVehicleTracking') {
-    // 如果当前在紧急车辆页面，返回到control页面
-    console.log('📍 从紧急车辆页面返回到Control页面');
-    router.push({ name: 'Control' });
-  } else {
-    // 如果不在紧急车辆页面（在Control页面）
-    if (hasNewRequests.value) {
-      // 有新的待处理事件，优先显示信息框
-      console.log('📋 显示新的紧急车辆请求对话框');
-      isEmergencyDialogVisible.value = true;
-    } else if (emergencyStore.hasActiveSession || Object.keys(emergencyStore.vehicleDataMap || {}).length > 0) {
-      // 没有新事件，但有正在追踪的任务，跳转到追踪页面
-      console.log('🔄 跳转到正在进行的紧急车辆追踪页面');
-      router.push({ name: 'PriorityVehicleTracking' });
+  if (hasNewRequests.value) {
+    // 有新的待处理事件，调用地图组件显示弹窗
+    console.log('📋 有新的紧急车辆请求，显示请求弹窗');
+    mapRef.value?.showEmergencyRequestDialog();
+    // 关闭其他面板
+    isRecordVisible.value = false;
+    isPriorityVisible.value = false;
+  } else if (emergencyStore.hasActiveSession || Object.keys(emergencyStore.vehicleDataMap || {}).length > 0) {
+    // 没有新事件，但有正在追踪的任务，切换追踪面板显示状态
+    console.log('🔄 切换紧急车辆追踪面板显示状态');
+    isPriorityVisible.value = !isPriorityVisible.value;
+    // 如果打开追踪面板，关闭其他面板
+    if (isPriorityVisible.value) {
+      isRecordVisible.value = false;
     }
   }
 }
 
 // 兼容性方法 - 简单切换显示
-function toggleEmergency() {
-  console.log("🚨 Toggle emergency dialog");
-  isEmergencyDialogVisible.value = !isEmergencyDialogVisible.value;
-  if (isEmergencyDialogVisible.value) {
-    isRecordVisible.value = false;
-    isPriorityVisible.value = false;
-  }
+const toggleEmergency = () => {
+  console.log("🚨 Toggle emergency - 调用智能处理");
+  handleEmergencyIconClick();
 }
 
-// 紧急车辆请求处理
-function handleApprove() {
-  console.log("✅ 用户批准紧急车辆请求");
-  if (firstPendingVehicle.value) {
-    emergencyStore.approveVehicle(firstPendingVehicle.value.vehicleID);
-
-    // 通知地图高亮车辆
-    if (mapRef.value && typeof mapRef.value.highlightVehicle === 'function') {
-      mapRef.value.highlightVehicle(firstPendingVehicle.value);
-    }
-
-    isEmergencyDialogVisible.value = false;
-    router.push({ name: 'PriorityVehicleTracking' });
-  }
+// 紧急车辆处理方法
+const handleEmergencyApproved = (vehicleId: string) => {
+  console.log(`✅ [ControlHome] 批准紧急车辆: ${vehicleId}`);
+  emergencyStore.approveVehicle(vehicleId);
+  // 关闭其他面板，显示追踪面板
+  isRecordVisible.value = false;
+  isPriorityVisible.value = true;
+  
+  // 批准后不自动打开侧边栏，让用户自己决定是否需要打开
+  console.log('📱 [ControlHome] 紧急车辆已批准，追踪面板已显示');
 }
 
-function handleReject() {
-  console.log("❌ 用户拒绝紧急车辆请求");
-  if (firstPendingVehicle.value) {
-    emergencyStore.rejectVehicle(firstPendingVehicle.value.vehicleID);
-    // 如果没有更多待处理事件，关闭对话框
-    if (!hasNewRequests.value) {
-      isEmergencyDialogVisible.value = false;
-    }
-  }
+const handleEmergencyRejected = (vehicleId: string) => {
+  console.log(`❌ [ControlHome] 拒绝紧急车辆: ${vehicleId}`);
+  emergencyStore.rejectVehicle(vehicleId);
 }
 
 // 地图和控制板交互处理
 const handleHighlight = (fromLanes: string[], toLanes: string[]) => {
+  console.log('🎨 [Home] Highlight lanes:', { fromLanes, toLanes })
   mapRef.value?.setHighlightLanes(fromLanes, toLanes)
 }
 
 const handleSignalLightClicked = (junctionName: string) => {
+  console.log('📍 [Home] Signal light clicked:', junctionName)
   if (junctionName) {
     controlBoardRef.value?.selectJunctionByName(junctionName)
     mapRef.value?.setSelectedJunction(junctionName)
@@ -222,9 +195,23 @@ const handleSignalLightClicked = (junctionName: string) => {
   }
 }
 
-const handleTrafficLightSelected = (junctionId: string, directionIndex: number, triggerSource?: 'junction' | 'direction') => {
-  console.log('🎯 [Home] Traffic light selected:', { junctionId, directionIndex, triggerSource })
-  mapRef.value?.setSelectedTrafficLight(junctionId, directionIndex)
+const handleTrafficLightSelected = (junctionId: string, directionIndex: number, options?: { disableZoom?: boolean }) => {
+  console.log('🎯 [Home] Traffic light selected:', { junctionId, directionIndex, options })
+  
+  // 完全禁用保护机制，确保ControlManual功能完全正常
+  /*
+  const isEmergencyEvent = options?.disableZoom === true
+  const shouldIgnore = isEmergencyEvent && userIsManuallyOperating.value
+  
+  if (shouldIgnore) {
+    console.log('🚫 [Home] 用户正在手动操作，忽略紧急车辆事件')
+    return
+  }
+  */
+  
+  // 所有事件都正常处理，不做任何拦截
+  console.log('✅ [Home] 处理交通灯选择事件')
+  mapRef.value?.setSelectedTrafficLight(junctionId, directionIndex, options)
 }
 
 const handleTrafficLightCleared = () => {
@@ -233,30 +220,59 @@ const handleTrafficLightCleared = () => {
 }
 
 const handleJunctionSelected = (junctionName: string, junctionId: string) => {
-  console.log('🎯 [Home] Junction selected for zoom:', { junctionName, junctionId })
-  mapRef.value?.zoomToJunctionById(junctionId)
+  console.log('🎯 [Home] Junction selected (no zoom for emergency):', { junctionName, junctionId })
+  // 移除 zoom 功能，紧急车辆情况下不需要 zoom 动画
+  // mapRef.value?.zoomToJunctionById(junctionId) // 已移除
   mapRef.value?.setSelectedJunctionOnly(junctionId)
 }
 
 const handleManualControlApplied = (data: { junctionName: string, directionInfo: string, lightColor: string, duration: number }) => {
   console.log('🎯 [Home] Manual control applied:', data)
-  mapRef.value?.handleManualControlApplied(data)
+  // 直接传递给 ControlMap 的 lastManualControl 状态
+  // 但是 ControlMap 没有这个方法，所以去掉这个调用
+  // mapRef.value?.handleManualControlApplied(data)
 }
+
+// 禁用保护机制相关函数
+/*
+// 新增：设置用户手动操作状态
+const setUserManuallyOperating = () => {
+  userIsManuallyOperating.value = true
+  console.log('👤 [Home] 用户开始手动操作，2秒保护期')
+  
+  // 清除之前的计时器
+  if (manualOperationTimer) {
+    clearTimeout(manualOperationTimer)
+  }
+  
+  // 2秒后清除手动操作状态（调短保护时间）
+  manualOperationTimer = setTimeout(() => {
+    userIsManuallyOperating.value = false
+    console.log('👤 [Home] 用户手动操作保护期结束')
+  }, 2000)
+}
+*/
 
 // 面板切换功能
 const toggleRecord = () => {
   isRecordVisible.value = !isRecordVisible.value
   if (isRecordVisible.value) {
-    isEmergencyDialogVisible.value = false
     isPriorityVisible.value = false
+    // 当打开Record面板时，清除交通灯状态
+    mapRef.value?.clearTrafficStatus()
   }
 }
 
 const togglePriority = () => {
+  const wasVisible = isPriorityVisible.value
   isPriorityVisible.value = !isPriorityVisible.value
+  
   if (isPriorityVisible.value) {
     isRecordVisible.value = false
-    isEmergencyDialogVisible.value = false
+  } else if (wasVisible) {
+    // 当关闭紧急车辆追踪面板时，清除交通灯状态
+    console.log('🧹 [ControlHome] 关闭紧急车辆追踪面板，清除交通灯状态')
+    mapRef.value?.clearTrafficStatus()
   }
 }
 
@@ -280,34 +296,155 @@ const handleSignOut = () => {
   router.push({ name: 'Login' })
 }
 
+// 显示键盘快捷键帮助
+const showKeyboardHelp = () => {
+  const helpMessage = `
+📋 键盘快捷键帮助：
+
+基本操作：
+• Esc - 关闭所有面板，清除状态
+• 1   - 切换记录面板
+• 2   - 切换紧急车辆处理
+• 3   - 切换优先车辆追踪面板
+• N   - 切换导航面板
+
+清除操作：
+• R   - 刷新地图状态
+• C   - 清除所有选择
+
+其他：
+• H   - 显示此帮助信息
+• F   - 聚焦搜索（如果可用）
+
+系统快捷键：
+• Ctrl+C - 复制（正常功能）
+• Ctrl+F - 查找（正常功能）
+  `
+  
+  console.log(helpMessage)
+  // 可以在这里添加toast提示
+  alert('键盘快捷键帮助：\n\n基本操作：\nEsc - 关闭所有面板，清除状态\n1 - 切换记录面板\n2 - 切换紧急车辆处理\n3 - 切换优先车辆追踪面板\nN - 切换导航面板\n\n清除操作：\nR - 刷新地图状态\nC - 清除所有选择\n\n其他：\nH - 显示此帮助信息\nF - 聚焦搜索')
+}
+
+// 聚焦搜索功能
+const focusSearch = () => {
+  // 尝试聚焦到搜索输入框
+  const searchInput = document.querySelector('input[placeholder*="search" i], input[placeholder*="搜索"]') as HTMLInputElement
+  if (searchInput) {
+    searchInput.focus()
+    console.log('🔍 [ControlHome] 已聚焦到搜索框')
+  } else {
+    console.log('❌ [ControlHome] 未找到搜索框')
+  }
+}
+
 // 键盘快捷键处理
 const handleKeyDown = (event: KeyboardEvent) => {
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+  // 如果用户正在输入框中输入，不处理快捷键
+  if (event.target instanceof HTMLInputElement || 
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement) {
     return
   }
 
+  console.log('🎹 [ControlHome] 键盘事件:', event.key)
+
   switch (event.key) {
     case 'Escape':
+      console.log('🧹 [ControlHome] Escape键被按下，关闭所有面板')
+      // 记录关闭前的状态
+      const wasPriorityVisible = isPriorityVisible.value
+      const wasRecordVisible = isRecordVisible.value
+      
+      // 关闭所有面板
       isRecordVisible.value = false
-      isEmergencyDialogVisible.value = false
       isPriorityVisible.value = false
+      
+      // 如果紧急车辆追踪面板之前是打开的，清除交通灯状态
+      if (wasPriorityVisible) {
+        console.log('🧹 [ControlHome] Escape键关闭车辆追踪面板，清除交通灯状态')
+        mapRef.value?.clearTrafficStatus()
+      }
+      
+      // 如果记录面板之前是打开的，也清除交通灯状态
+      if (wasRecordVisible) {
+        console.log('🧹 [ControlHome] Escape键关闭记录面板，清除交通灯状态')
+        mapRef.value?.clearTrafficStatus()
+      }
+      
+      // 清除地图上的所有选择状态
+      controlBoardRef.value?.clearJunctionSelection?.()
+      
+      console.log('✅ [ControlHome] 所有面板已关闭，状态已清理')
       break
+      
     case '1':
       event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键1 - 切换记录面板')
       toggleRecord()
       break
+      
     case '2':
       event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键2 - 切换紧急车辆处理')
       toggleEmergency()
       break
+      
     case '3':
       event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键3 - 切换优先车辆追踪面板')
       togglePriority()
       break
+      
     case 'n':
     case 'N':
       event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键N - 切换导航面板')
       toggleNav()
+      break
+      
+    case 'r':
+    case 'R':
+      event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键R - 刷新地图状态')
+      mapRef.value?.clearTrafficStatus()
+      controlBoardRef.value?.clearJunctionSelection?.()
+      console.log('✅ [ControlHome] 地图状态已刷新')
+      break
+      
+    case 'c':
+    case 'C':
+      if (event.ctrlKey || event.metaKey) {
+        // 让Ctrl+C正常工作，不阻止
+        return
+      }
+      event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键C - 清除所有选择')
+      mapRef.value?.clearTrafficStatus()
+      controlBoardRef.value?.clearJunctionSelection?.()
+      console.log('✅ [ControlHome] 所有选择已清除')
+      break
+      
+    case 'h':
+    case 'H':
+      event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键H - 显示帮助信息')
+      showKeyboardHelp()
+      break
+      
+    case 'f':
+    case 'F':
+      if (event.ctrlKey || event.metaKey) {
+        // 让Ctrl+F正常工作
+        return
+      }
+      event.preventDefault()
+      console.log('🎹 [ControlHome] 快捷键F - 聚焦搜索')
+      focusSearch()
+      break
+      
+    default:
+      // 对于未处理的按键，不做任何操作
       break
   }
 }
@@ -321,6 +458,12 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', handleKeyDown)
+  // 禁用保护机制后不再需要清理计时器
+  /*
+  if (manualOperationTimer) {
+    clearTimeout(manualOperationTimer)
+  }
+  */
 })
 </script>
 
@@ -347,7 +490,7 @@ onBeforeUnmount(() => {
 }
 
 .map-contain {
-  width: 13.59rem;
+  width: 65%;
   height: 100%;
   position: relative;
   overflow: hidden;
@@ -355,7 +498,7 @@ onBeforeUnmount(() => {
 }
 
 .control-board {
-  width: 5.61rem;
+  width: 35%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -373,132 +516,5 @@ onBeforeUnmount(() => {
     background: linear-gradient(180deg, transparent 0%, #00B4D8 50%, transparent 100%);
     opacity: 0.3;
   }
-}
-
-/* 对话框过渡动画 */
-.dialog-enter-active, .dialog-leave-active {
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-}
-.dialog-enter-from, .dialog-leave-to {
-  opacity: 0;
-  transform: scale(0.95) translateY(10px);
-}
-
-/* 紧急车辆请求对话框样式 */
-.tracking-request-dialog {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 480px;
-  background-color: #2C2F48;
-  border-radius: 12px;
-  border: 1px solid rgba(74, 85, 104, 0.5);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-  z-index: 2000;
-  color: #E0E0E0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.dialog-title {
-  padding: 0.16rem 0.24rem;
-  font-size: 0.20rem;
-  font-weight: 600;
-  color: #FF4D4F;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-bottom: 1px solid rgba(74, 85, 104, 0.5);
-}
-
-.dialog-content {
-  padding: 0.20rem;
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 0.16rem;
-  align-items: center;
-  font-size: 0.16rem;
-}
-
-.info-label {
-  font-weight: 500;
-  color: #A0AEC0;
-  text-align: right;
-}
-
-.info-value {
-  font-weight: 600;
-  color: #FFFFFF;
-}
-
-.route-label {
-  align-self: start;
-}
-
-.info-value.route-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.08rem;
-}
-
-.route-item {
-  display: flex;
-  align-items: center;
-  gap: 0.08rem;
-}
-
-.route-item .tag {
-  font-weight: 700;
-  font-size: 0.12rem;
-}
-
-.tag.start, .tag.destination {
-  color: #00B4D8;
-  background: none;
-}
-
-.request-label, .request-value {
-  color: #00B4D8;
-}
-
-.dialog-actions {
-  padding: 0.16rem 0.24rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.46rem;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-top: 1px solid rgba(74, 85, 104, 0.5);
-}
-
-.dialog-actions button {
-  padding: 0.10rem 0.24rem;
-  border-radius: 6px;
-  border: 1px solid transparent;
-  font-size: 0.16rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-approve {
-  background-color: #007BFF;
-  color: #FFFFFF;
-  border-color: #007BFF;
-}
-
-.btn-approve:hover {
-  background-color: #0056b3;
-  transform: translateY(-1px);
-}
-
-.btn-reject {
-  background-color: #6C757D;
-  color: #FFFFFF;
-  border-color: #6C757D;
-}
-
-.btn-reject:hover {
-  background-color: #5a6268;
-  transform: translateY(-1px);
 }
 </style>
