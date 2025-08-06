@@ -85,7 +85,7 @@ public class AnalysisService {
 
             if (latestStepInDB != null && latestStepInDB > 0) {
                 this.lastProcessedStep.set(latestStepInDB);
-                log.info("State synchronized. Analysis will resume processing after step: {}", latestStepInDB);
+//                log.info("State synchronized. Analysis will resume processing after step: {}", latestStepInDB);
             } else {
                 log.info("No existing data found in InfluxDB. Starting from step 0.");
             }
@@ -99,13 +99,13 @@ public class AnalysisService {
     public void analysisTrigger() {
         tsdbRepository.findLatestStep().subscribe(latestStep -> {
             long currentLastProcessed = lastProcessedStep.get();
-            log.info("Checking for window. Latest step in DB: {}, Last processed step: {}, Window size: {}", latestStep, currentLastProcessed, WINDOW_SIZE);
+//            log.info("Checking for window. Latest step in DB: {}, Last processed step: {}, Window size: {}", latestStep, currentLastProcessed, WINDOW_SIZE);
 
             if (latestStep >= currentLastProcessed + WINDOW_SIZE) {
                 long endStep = currentLastProcessed + WINDOW_SIZE;
 
                 Date currentTimeBucket = this.baseTime;
-                log.info(">>>> [LAYER 3 TRIGGERED] Condition met. Processing window: steps {} -> {} with timeBucket {}", currentLastProcessed + 1, endStep, currentTimeBucket);
+//                log.info(">>>> [LAYER 3 TRIGGERED] Condition met. Processing window: steps {} -> {} with timeBucket {}", currentLastProcessed + 1, endStep, currentTimeBucket);
 
                 log.info("Analysis window triggered: steps {} -> {} with timeBucket {}", currentLastProcessed + 1, endStep, currentTimeBucket);
 
@@ -122,7 +122,7 @@ public class AnalysisService {
     }
 
     private void processWindowData(List<TrafficDataPoint> dataWindow, Date timeBucket) {
-        log.info(">>>> [LAYER 3 PROCESSING] Received {} data points from InfluxDB for timeBucket: {}", dataWindow.size(), timeBucket);
+//        log.info(">>>> [LAYER 3 PROCESSING] Received {} data points from InfluxDB for timeBucket: {}", dataWindow.size(), timeBucket);
 
         if (dataWindow == null || dataWindow.isEmpty()) {
             log.warn("Window data is empty, skipping analysis for timeBucket: {}", timeBucket);
@@ -150,7 +150,7 @@ public class AnalysisService {
             tf.setTimeBucket(timeBucket);
             tf.setJunctionId(junctionId);
             tf.setFlowRateHourly(totalFlow);
-            log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
+//            log.info(">>>> [LAYER 3 SAVING] Attempting to save to MySQL traffic_flow: {}", tf);
             try {
                 trafficFlowMapper.insert(tf);
             } catch (Exception e) {
