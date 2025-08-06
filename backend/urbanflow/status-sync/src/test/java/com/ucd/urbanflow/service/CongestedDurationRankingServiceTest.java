@@ -49,6 +49,7 @@ class CongestedDurationRankingServiceTest {
         record3.setJunctionName("Main St");
         record3.setTotalCongestionDurationSeconds(60.0f);
 
+
         when(congestedDurationRankingMapper.selectByTimeRange(any(Date.class), any(Date.class), any()))
                 .thenReturn(Arrays.asList(record1, record2, record3));
 

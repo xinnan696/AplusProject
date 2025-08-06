@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 /**
- * 事件定时调度服务*
+ * Event Scheduling Service
  */
 @Slf4j
 @Service
@@ -16,7 +16,7 @@ public class EventScheduler {
     private EventProcessingService eventProcessingService;
     
     /**
-     * 定时检查事件 - 每秒执行一次
+     * Periodically checks for events - executes once per second
      */
     @Scheduled(fixedRate = 1000)
     public void checkAndProcessEvents() {

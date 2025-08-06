@@ -30,57 +30,54 @@ public class TrackingDataPublisher {
 
     public void addSession(WebSocketSession session) {
         sessions.put(session.getId(), session);
-        log.info("[WebSocket Publisher] 新的前端连接已建立: session ID = {}, 当前总连接数: {}", session.getId(), sessions.size());
+        log.info("[WebSocket Publisher] New frontend connection established: session ID = {}, current total connections: {}", session.getId(), sessions.size());
     }
 
     public void removeSession(WebSocketSession session) {
         sessions.remove(session.getId());
-        log.info("🔌 [WebSocket Publisher] 前端连接已关闭: session ID = {}, 当前总连接数: {}", session.getId(), sessions.size());
+        log.info("🔌 [WebSocket Publisher] Frontend connection closed: session ID = {}, current total connections: {}", session.getId(), sessions.size());
     }
 
-    @Scheduled(fixedRate = 5000) // 为了方便观察，暂时改为1秒一次
+    @Scheduled(fixedRate = 5000)
     public void publishTrackingData() {
-        log.info("--- [Publisher] 定时任务开始执行 ---");
+        log.info("--- [Publisher] Scheduled task started ---");
 
         if (sessions.isEmpty()) {
-            log.info("[Publisher] 检测到 0 个前端连接，跳过本次推送。");
+            log.info("[Publisher] Detected 0 frontend connections, skipping this push");
             return;
         }
 
 
         Map<Object, Object> vehicleDataMap = redisTemplate.opsForHash().entries(EMERGENCY_VEHICLES_KEY);
 
-        log.info("[Publisher] 从 Redis (key: {}) 读取到 {} 条车辆数据。", EMERGENCY_VEHICLES_KEY, vehicleDataMap.size());
+        log.info("[Publisher] Read {} vehicle data entries from Redis (key: {})", EMERGENCY_VEHICLES_KEY, vehicleDataMap.size());
 
         if (vehicleDataMap.isEmpty()) {
-            // 即使没有数据也要推送，以便前端清空
+            // Push even if there's no data, so the frontend can clear its display.
         }
 
         Map<Object, Object> filteredVehicleDataMap = vehicleDataMap.entrySet().stream()
                 .filter(entry -> {
                     try {
-                        // 从JSON字符串中解析出 eventID
+                        // Parse the eventID from the JSON string
                         JsonNode node = objectMapper.readTree((String) entry.getValue());
                         String eventId = node.get("eventID").asText();
-
-                        // 从缓存中获取状态
-                        String status = eventStatusCache.getStatus(eventId).orElse("pending"); // 如果缓存没有，默认为pending
-
-                        // 只保留那些不处于 "ignored" 或 "completed" 状态的事件
+                        String status = eventStatusCache.getStatus(eventId).orElse("pending");
+                        // Only keep events that are not in "ignored" or "completed" status
                         return !"ignored".equals(status) && !"completed".equals(status);
                     } catch (Exception e) {
-                        log.warn("解析车辆 {} 的追踪数据失败，将暂时不过滤此条目。", entry.getKey(), e);
-                        return true; // 解析失败则暂时不过滤
+                        log.warn("Failed to parse tracking data for vehicle {}, this entry will not be filtered for now", entry.getKey(), e);
+                        return true;
                     }
                 })
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-        log.info("[Publisher] 从Redis读取到 {} 条数据, 过滤后剩余 {} 条有效数据准备推送。", vehicleDataMap.size(), filteredVehicleDataMap.size());
+        log.info("[Publisher] Read {} entries from Redis, after filtering, {} valid entries are ready to be pushed.", vehicleDataMap.size(), filteredVehicleDataMap.size());
 
         broadcastMessage(filteredVehicleDataMap);
     }
 
-    // 辅助方法，用于广播消息
+    // Helper method for broadcasting messages
     private void broadcastMessage(Object data) {
         try {
             String payload = objectMapper.writeValueAsString(data);
@@ -93,12 +90,12 @@ public class TrackingDataPublisher {
                         return false;
                     }
                 } catch (IOException e) {
-                    log.error("向 session {} 推送数据失败", session.getId(), e);
+                    log.error("Failed to push data to session {}", session.getId(), e);
                 }
                 return true;
             });
         } catch (IOException e) {
-            log.error("序列化或广播追踪数据失败", e);
+            log.error("Failed to serialize or broadcast tracking data", e);
         }
     }
 
