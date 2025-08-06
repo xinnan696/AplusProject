@@ -7,9 +7,9 @@ from collections import defaultdict
 class JunctionDataProcessor:
     def __init__(self, sql_file_path: str, junction_to_tls_map: dict):
         """
-        初始化处理器。
-        :param sql_file_path: junction_flow_relations.sql 文件的路径。
-        :param junction_to_tls_map: 从 withRedis.py 传入的 junction_id -> tls_id 映射。
+        Initialize the processor.
+        :param sql_file_path: Path to the junction_flow_relations.sql file.
+        :param junction_to_tls_map: Mapping from junction_id to tls_id passed from withRedis.py.
         """
         self.sql_file_path = sql_file_path
         self.junction_to_tls_map = junction_to_tls_map
@@ -18,8 +18,8 @@ class JunctionDataProcessor:
 
     def load_and_process_data(self):
         """
-        加载并处理SQL文件，构建交叉口关系数据。
-        这个方法应该在服务启动时被调用一次。
+        Load and process the SQL file to build junction relation data.
+        This method should be called once when the service starts.
         """
         print(f"JunctionProcessor: Parsing relations from {self.sql_file_path}...")
         relations_df = self._parse_sql_file()
@@ -30,7 +30,7 @@ class JunctionDataProcessor:
             print("[JunctionRedis] JunctionProcessor: Warning - Could not parse SQL file or it was empty.")
 
     def _parse_sql_file(self):
-        """[私有] 解析SQL文件内容，提取INSERT语句中的数据"""
+        """Parse the SQL file and extract data from INSERT statements."""
         try:
             with open(self.sql_file_path, 'r', encoding='utf-8') as file:
                 content = file.read()
@@ -53,60 +53,52 @@ class JunctionDataProcessor:
                     })
             return pd.DataFrame(data)
         except Exception as e:
-            print(f"JunctionProcessor: 解析SQL文件错误: {e}")
+            print(f"JunctionProcessor: Error parsing SQL file: {e}")
             return None
 
     def _process_junction_data(self, relations_df):
         """
-        【已更新为最终逻辑】
-        [私有] 处理交叉口数据，使用基于图着色的“关系传播”算法将车流划分到两个互斥的组。
+        Process junction data, using a graph coloring-based "relation propagation" algorithm
+        to divide traffic streams into two mutually exclusive groups.
         """
         junction_data = {}
-
-        # 按 junction_id 对所有关系进行分组，独立处理每个交叉口
+        # Group all relations by junction_id and process each junction independently
         for junction_id, group_df in relations_df.groupby('junction_id'):
-
-            # 1. 构建邻接表、识别所有车流并记录其link_index
+            # 1. Build adjacency list, identify all traffic streams, and record their link_index
             adj = defaultdict(list)
             all_streams = set()
-            stream_to_link_index = {}  # 记录每个车流的link_index
-
+            stream_to_link_index = {}
             for _, row in group_df.iterrows():
                 e1p = (row['from_edge_id_1'], row['to_edge_id_1'])
                 e2p = (row['from_edge_id_2'], row['to_edge_id_2'])
                 all_streams.add(e1p)
                 all_streams.add(e2p)
-
-                # 记录link_index
+                # Record link_index
                 stream_to_link_index[e1p] = int(row['linkindex_1'])
                 stream_to_link_index[e2p] = int(row['linkindex_2'])
-
-                # 添加双向关系
+                # Add bidirectional relationship
                 adj[e1p].append((e2p, row['relationship_type']))
                 adj[e2p].append((e1p, row['relationship_type']))
 
-            # 2. 图着色过程
-            colors = {}  # 存储每个节点的颜色（组号）
-
+            # 2. Graph coloring process
+            colors = {}
             for stream in all_streams:
                 if stream not in colors:
-                    # 如果当前车流未被着色，开始新一轮的BFS
-                    colors[stream] = 1  # 给予初始颜色 1
+                    # If the current stream is not yet colored, start a new BFS
+                    colors[stream] = 1  # Assign initial color 1
                     queue = [stream]
-
                     while queue:
                         current_stream = queue.pop(0)
                         current_color = colors[current_stream]
-
                         for neighbor, relationship in adj[current_stream]:
                             if neighbor not in colors:
                                 if relationship == 'Non-Conflicting':
                                     colors[neighbor] = current_color
                                 else:  # Conflicting
-                                    colors[neighbor] = 3 - current_color  # 切换颜色 (1 -> 2, 2 -> 1)
+                                    colors[neighbor] = 3 - current_color  # Switch color (1 -> 2, 2 -> 1)
                                 queue.append(neighbor)
 
-            # 3. 根据着色结果分配到最终的组
+            # 3. Assign streams to groups according to coloring result
             group1_streams = set()
             group2_streams = set()
             for stream, color in colors.items():
@@ -115,9 +107,8 @@ class JunctionDataProcessor:
                 else:
                     group2_streams.add(stream)
 
-            # 4. 构建与主函数兼容的输出格式
-            # 我们将组1定义为 'non_conflicting'，组2定义为 'conflicting'
-            # 这个命名只是为了与旧代码兼容，实质上它们是两个互斥的相位组
+            # 4. Build output format compatible with main function
+            # Define group 1 as 'non_conflicting' and group 2 as 'conflicting'
             junction_data[junction_id] = {
                 'non_conflicting_edges': list(group1_streams),
                 'conflicting_edges': list(group2_streams),
@@ -129,14 +120,14 @@ class JunctionDataProcessor:
 
     def calculate_all_junctions_metrics(self, current_time: float) -> dict:
         """
-        在每个仿真步长，计算所有已定义交叉口的指标。
-        :param current_time: 当前仿真时间。
-        :return: 一个字典，键是junction_id，值是包含指标的JSON字符串。
+        At each simulation step, calculate metrics for all defined junctions.
+        :param current_time: Current simulation time.
+        :return: A dictionary, where the key is junction_id and the value is a JSON string containing metrics.
         """
         if not self.junction_relations:
             return {}
 
-        # 第一次调用时，缓存所有信号灯ID
+        # cache all TLS IDs
         if not self.all_tls_ids_cache:
             try:
                 self.all_tls_ids_cache = traci.trafficlight.getIDList()
@@ -152,7 +143,6 @@ class JunctionDataProcessor:
 
             edge1_edges = list(set([edge for pair in data['non_conflicting_edges'] for edge in pair]))
             edge2_edges = list(set([edge for pair in data['conflicting_edges'] for edge in pair]))
-
             edge1_vehicle_count = self._get_edge_vehicle_count(edge1_edges)
             edge2_vehicle_count = self._get_edge_vehicle_count(edge2_edges)
             edge1_waiting_vehicle_count = self._get_edge_waiting_vehicle_count(edge1_edges)
@@ -190,7 +180,7 @@ class JunctionDataProcessor:
 
         return junctions_to_cache
 
-    # --- 私有辅助方法 ---
+    # --- Private helper methods ---
     def _get_edge_vehicle_count(self, edges):
         total_count = 0
         for edge in edges:
