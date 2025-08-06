@@ -47,12 +47,17 @@ public class LogService {
     @Async("logTaskExecutor")
     public void recordSpecialEventLog(SpecialEventLogDTO dto) {
         log.info("Async writing special event log for event ID: {}", dto.getEventId());
-        try {
-            String laneIdsJson = objectMapper.writeValueAsString(dto.getLaneIds());
-            logMapper.insertSpecialEventLog(dto, laneIdsJson);
-        } catch (JsonProcessingException e) {
-            log.error("Failed to serialize laneIds for special event log: {}. Error: {}", dto.getEventId(), e.getMessage());
+        String laneIdsJson = null;
+
+        if (dto.getLaneIds() != null && !dto.getLaneIds().isEmpty()) {
+            try {
+                laneIdsJson = objectMapper.writeValueAsString(dto.getLaneIds());
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize laneIds for special event log: {}. Error: {}", dto.getEventId(), e.getMessage());
+                return;
+            }
         }
+        logMapper.insertSpecialEventLog(dto, laneIdsJson);
     }
 
     public List<UserLogVO> getAggregatedUserLogs(String startDate, String endDate) {
