@@ -21,8 +21,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(eventResultHandler, "/ws/result").setAllowedOrigins("*");
         // Register the endpoint for pushing real-time tracking data to the frontend
-        registry.addHandler(trackingWebSocketHandler, "/ws/tracking")
-                .setAllowedOrigins("*");
+        registry.addHandler(trackingWebSocketHandler, "/ws/tracking").setAllowedOrigins("*");
     }
 
 //    @Bean

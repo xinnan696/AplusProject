@@ -83,17 +83,6 @@ public class EmergencyVehicleService {
      * @param status The new status string (e.g., "ignored", "completed").
      * @return true if the update was successful, false otherwise.
      */
-//    public boolean updateEventStatus(String eventId, String status) {
-//        int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
-//        if (updatedRows > 0) {
-//            log.info("Updated database status for event {} to: {}", eventId, status);
-//            return true;
-//        } else {
-//            log.warn("Failed to update status for event {}, it might not exist", eventId);
-//            return false;
-//        }
-//    }
-
     public boolean updateEventStatus(String eventId, String status) {
         int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
         if (updatedRows > 0) {
