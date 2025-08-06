@@ -13,25 +13,23 @@ from event_manager import EventManager
 import traceback
 from junction_data_processor import JunctionDataProcessor
 
-# SUMO
-sumoBinary = "E:/sumo/sumo-1.23.1/bin/sumo"
-#sumoBinary = "sumo"
-TRACI_PORT = 8813
-sumoCmd = [sumoBinary, "-c", "E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.sumocfg",  "--start"]
-#sumoCmd = ["sumo", "-c", "sumo_scenario/osm.sumocfg"]
-SQL_FILE_PATH = "junction_flow_relations.sql"
-
-# Redis Configuration
 # Read JSON configuration file
 with open('config.json', 'r') as f:
     config = json.load(f)
+# SUMO
+sumo_config = config.get('sumo_settings', {})
+sumoBinary = sumo_config.get('binary_path')
+sumo_cfg_file = sumo_config.get('config_file_path')
+TRACI_PORT = 8813
+sumoCmd = [sumoBinary, "-c", sumo_cfg_file, "--start"]
+
 # Get Redis configuration from the parsed dictionary
 redis_config = config.get('redis', {})
 REDIS_HOST = redis_config.get('host')
 REDIS_PORT = redis_config.get('port')
 REDIS_DB = redis_config.get('db')
-SUMO_HOST = "host.docker.internal"
 
+SQL_FILE_PATH = "junction_flow_relations.sql"
 TARGET_EDGE_ID_TO_MONITOR = "542295429#6"
 
 # Pydantic Models for Request Bodies

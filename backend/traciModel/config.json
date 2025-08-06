@@ -1,11 +1,15 @@
 {
-    "redis": {
-      "host": "localhost",
-      "port": 6379,
-      "db": 0,
-      "password": null
-    },
-    "app_settings": {
-      "log_level": "DEBUG"
-    }
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "db": 0,
+    "password": null
+  },
+  "app_settings": {
+    "log_level": "DEBUG"
+  },
+  "sumo_settings": {
+    "binary_path": "E:/sumo/sumo-1.23.1/bin/sumo",
+    "config_file_path": "E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.sumocfg"
   }
+}
