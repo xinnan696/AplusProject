@@ -67,7 +67,7 @@ const chartOption = ref({
   series: [{
     name: 'Congested',
     type: 'line',
-    smooth: true,
+    smooth: 0.4,
     showSymbol: true,
     symbolSize: 0.5,
     lineStyle: {
