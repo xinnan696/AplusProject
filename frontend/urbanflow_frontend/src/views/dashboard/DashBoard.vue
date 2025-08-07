@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-page">
-    <ControlHeader @toggle-nav="toggleNav" />
+    <ControlHeader @toggle-nav="toggleNav"/>
     <ControlNav :isVisible="isNavVisible" />
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
@@ -15,6 +15,7 @@
               :options="timeRangeOptions"
               v-model="topSegmentsFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -32,6 +33,7 @@
               :options="durationRankingTimeRangeOptions"
               v-model="durationRankingFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -55,6 +57,7 @@
                 :options="timeRangeOptions"
                 v-model="trafficFlowFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -74,6 +77,7 @@
                 :options="timeRangeOptions"
                 v-model="junctionCountFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -99,8 +103,8 @@ import CongestionDurationRankingChart from '@/views/dashboard/CongestionDuration
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
 import { useAuthStore } from '@/stores/auth'
-//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-import { getJunctions } from '@/services/dashboard_api'
+import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+//import { getJunctions } from '@/services/dashboard_api'
 
 // 修改点：初始化 Store 并获取 managedAreas
 const authStore = useAuthStore()
@@ -168,28 +172,28 @@ onMounted(async () => {
   //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
   // 3. 核心逻辑：获取数据后，设置默认值并填充选项
-  if (junctions && junctions.length > 0) {
-    // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
-    trafficFlowFilters.junctionId = junctions[0].junctionId
-
-    // 使用获取到的路口列表，完整地构建下拉框的选项
-    junctionOptions.value = junctions.map(j => ({
-      value: j.junctionId,
-      label: j.junctionName
-    }))
-  }
-
-  //模拟
   // if (junctions && junctions.length > 0) {
   //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
-  //   trafficFlowFilters.junctionId = junctions[0].junction_id
+  //   trafficFlowFilters.junctionId = junctions[0].junctionId
   //
   //   // 使用获取到的路口列表，完整地构建下拉框的选项
   //   junctionOptions.value = junctions.map(j => ({
-  //     value: j.junction_id,
-  //     label: j.junction_name
+  //     value: j.junctionId,
+  //     label: j.junctionName
   //   }))
   // }
+
+  //模拟
+  if (junctions && junctions.length > 0) {
+    // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+    trafficFlowFilters.junctionId = junctions[0].junction_id
+
+    // 使用获取到的路口列表，完整地构建下拉框的选项
+    junctionOptions.value = junctions.map(j => ({
+      value: j.junction_id,
+      label: j.junction_name
+    }))
+  }
 })
 </script>
 
@@ -226,17 +230,19 @@ onMounted(async () => {
   overflow-y: auto;
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  right: 0;
 
   // 定义两个变量，用于导航栏的宽度
   $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
-  $nav-expanded-width: 1.0rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
+  $nav-expanded-width: 2.2rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
 
   // 为位移和宽度变化添加平滑的过渡动画
-  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+  transition: width 0.3s ease-out;
 
   // 默认状态（导航栏收起时）
-  left: $nav-collapsed-width;
-  width: calc(100% - #{$nav-collapsed-width});
+  left: 0;
+  //width: calc(100% - #{$nav-collapsed-width});
 
   // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
   &.nav-expanded {
@@ -254,6 +260,8 @@ onMounted(async () => {
   gap: 0.15rem; // 中间上下间隙 15px
   padding: 0.22rem 0; // 对应上下间隙 22px
   height: 100%;
+  margin: 0;
+  flex-shrink: 0;
 }
 
 .card-row {

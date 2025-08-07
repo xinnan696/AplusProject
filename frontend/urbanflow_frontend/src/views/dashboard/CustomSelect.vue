@@ -6,6 +6,7 @@
     </div>
     <div v-if="isOpen" class="select-items">
       <input
+        v-if="props.showSearch"
         type="text"
         v-model="searchTerm"
         class="search-input"
@@ -39,10 +40,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   options: { value: any; label: string }[]
   modelValue: any
-}>()
+  showSearch?: boolean
+}>(), {
+  showSearch: true,
+})
 
 const emit = defineEmits(['update:modelValue'])
 

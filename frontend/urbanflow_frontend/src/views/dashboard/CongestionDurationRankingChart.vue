@@ -9,9 +9,9 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
-//import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
+import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
-import { getCongestionDurationRanking } from '@/services/dashboard_api'
+//import { getCongestionDurationRanking } from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
@@ -52,7 +52,7 @@ function interpolateColor(color1: number[], color2: number[], factor: number) {
 const chartOption = ref({
   tooltip: {
     trigger: 'axis',
-    axisPointer: { type: 'shadow' },
+    axisPointer: { type: 'none' },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,
@@ -65,7 +65,17 @@ const chartOption = ref({
       lineHeight: 16,
     },
     extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
-    formatter: (params: any) => `${params[0].name}<br/>${params[0].seriesName}: ${params[0].value.toFixed(1)} minutes`
+    //formatter: (params: any) => `${params[0].name}<br/>${params[0].seriesName}: ${params[0].value.toFixed(1)} minutes`
+    formatter: (params: any) => {
+      // 从参数中获取 ECharts 自动生成的颜色标记
+      const marker = params[0].marker;
+      const categoryName = params[0].name;
+      const seriesName = params[0].seriesName;
+      const value = params[0].value;
+
+      // 组合成新的提示框内容，在系列名前面加上 marker
+      return `${categoryName}<br/>${marker}${seriesName}: ${value.toFixed(1)} minutes`;
+    }
   },
   grid: { top: '20px', left: '3%', right: '7%', bottom: '3%', containLabel: true },
   xAxis: {
@@ -110,80 +120,28 @@ async function fetchData() {
     managedAreas: props.filters.managedAreas
   });
 
-  // if (response && response.data && response.labels) {
-  //   // For horizontal bar chart, reverse the data so the highest value is at the top
-  //   chartOption.value.yAxis.data = [...response.labels].reverse();
-  //   const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
-  //   const reversedData = [...dataInMinutes].reverse();
-  //
-  //   //--- CHANGE: 新的颜色计算逻辑 ---
-  //   if (reversedData.length === 0) {
-  //     chartOption.value.series[0].data = [];
-  //     return;
-  //   }
-  //
-  //   const maxValue = Math.max(...reversedData);
-  //   const coolColor = hexToRgb('#00ACC1');
-  //   const midColor = hexToRgb('#3949AB');
-  //   const warmColor = hexToRgb('#9C27B0');
-  //
-  //   const dataWithDynamicGradients = reversedData.map(value => {
-  //     const ratio = maxValue > 0 ? value / maxValue : 0;
-  //     const adjustedRatio = Math.sqrt(ratio);
-  //
-  //     // 1. 计算当前柱子渐变的【终点颜色】
-  //     let endColor;
-  //     if (adjustedRatio <= 0.5) {
-  //       endColor = interpolateColor(coolColor, midColor, adjustedRatio / 0.5);
-  //     } else {
-  //       endColor = interpolateColor(midColor, warmColor, (adjustedRatio - 0.5) / 0.5);
-  //     }
-  //
-  //     // 2. 为当前柱子生成一个专属的、从固定起点到动态终点的渐变对象
-  //     const barGradient = new graphic.LinearGradient(0, 0, 1, 0, [
-  //       { offset: 0, color: '#00ACC1' }, // 所有柱子的渐变起点色固定为冷色
-  //       { offset: 1, color: endColor }     // 渐变终点色是动态计算出来的
-  //     ]);
-  //
-  //     // 3. 返回包含值和专属样式的数据对象
-  //     return {
-  //       value: value,
-  //       itemStyle: {
-  //         color: barGradient
-  //       }
-  //     };
-  //   });
-  //
-  //   chartOption.value.series[0].data = dataWithDynamicGradients;
-  //   // --- END ---
-  //
-  // } else {
-  //   chartOption.value.yAxis.data = [];
-  //   chartOption.value.series[0].data = [];
-  // }
-
-  if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
-    // 对于横向条形图，反转数据使最大值显示在顶部
-    chartOption.value.yAxis.data = [...response.yAxisLabels].reverse();
-    // 假设 API 返回 'total_congestion_duration_seconds'，将其转换为分钟。
-    const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds);
+  if (response && response.data && response.labels) {
+    // For horizontal bar chart, reverse the data so the highest value is at the top
+    chartOption.value.yAxis.data = [...response.labels].reverse();
+    const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds / 60);
     const reversedData = [...dataInMinutes].reverse();
 
-    // 根据要求，保留了动态颜色计算逻辑。
+    //--- CHANGE: 新的颜色计算逻辑 ---
     if (reversedData.length === 0) {
       chartOption.value.series[0].data = [];
       return;
     }
 
     const maxValue = Math.max(...reversedData);
-    const coolColor = hexToRgb('#00ACC1'); // 青色
-    const midColor = hexToRgb('#3949AB');  // 靛蓝
-    const warmColor = hexToRgb('#9C27B0'); // 紫色
+    const coolColor = hexToRgb('#00ACC1');
+    const midColor = hexToRgb('#3949AB');
+    const warmColor = hexToRgb('#9C27B0');
 
     const dataWithDynamicGradients = reversedData.map(value => {
       const ratio = maxValue > 0 ? value / maxValue : 0;
-      const adjustedRatio = Math.sqrt(ratio); // 使用平方根使颜色变化更明显
+      const adjustedRatio = Math.sqrt(ratio);
 
+      // 1. 计算当前柱子渐变的【终点颜色】
       let endColor;
       if (adjustedRatio <= 0.5) {
         endColor = interpolateColor(coolColor, midColor, adjustedRatio / 0.5);
@@ -191,11 +149,13 @@ async function fetchData() {
         endColor = interpolateColor(midColor, warmColor, (adjustedRatio - 0.5) / 0.5);
       }
 
+      // 2. 为当前柱子生成一个专属的、从固定起点到动态终点的渐变对象
       const barGradient = new graphic.LinearGradient(0, 0, 1, 0, [
-        { offset: 0, color: '#00ACC1' }, // 渐变起始色是固定的
-        { offset: 1, color: endColor }   // 渐变终点色是动态计算的
+        { offset: 0, color: '#00ACC1' }, // 所有柱子的渐变起点色固定为冷色
+        { offset: 1, color: endColor }     // 渐变终点色是动态计算出来的
       ]);
 
+      // 3. 返回包含值和专属样式的数据对象
       return {
         value: value,
         itemStyle: {
@@ -205,13 +165,63 @@ async function fetchData() {
     });
 
     chartOption.value.series[0].data = dataWithDynamicGradients;
+    // --- END ---
 
   } else {
-    // 如果 API 返回错误或格式不正确的数据，则清空图表。
-    // 你的 API 服务中的 catch 块会返回一个 errorResponse，从而触发这里的逻辑。
     chartOption.value.yAxis.data = [];
     chartOption.value.series[0].data = [];
   }
+
+  // if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
+  //   // 对于横向条形图，反转数据使最大值显示在顶部
+  //   chartOption.value.yAxis.data = [...response.yAxisLabels].reverse();
+  //   // 假设 API 返回 'total_congestion_duration_seconds'，将其转换为分钟。
+  //   const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds);
+  //   const reversedData = [...dataInMinutes].reverse();
+  //
+  //   // 根据要求，保留了动态颜色计算逻辑。
+  //   if (reversedData.length === 0) {
+  //     chartOption.value.series[0].data = [];
+  //     return;
+  //   }
+  //
+  //   const maxValue = Math.max(...reversedData);
+  //   const coolColor = hexToRgb('#00ACC1'); // 青色
+  //   const midColor = hexToRgb('#3949AB');  // 靛蓝
+  //   const warmColor = hexToRgb('#9C27B0'); // 紫色
+  //
+  //   const dataWithDynamicGradients = reversedData.map(value => {
+  //     const ratio = maxValue > 0 ? value / maxValue : 0;
+  //     const adjustedRatio = Math.sqrt(ratio); // 使用平方根使颜色变化更明显
+  //
+  //     let endColor;
+  //     if (adjustedRatio <= 0.5) {
+  //       endColor = interpolateColor(coolColor, midColor, adjustedRatio / 0.5);
+  //     } else {
+  //       endColor = interpolateColor(midColor, warmColor, (adjustedRatio - 0.5) / 0.5);
+  //     }
+  //
+  //     const barGradient = new graphic.LinearGradient(0, 0, 1, 0, [
+  //       { offset: 0, color: '#00ACC1' }, // 渐变起始色是固定的
+  //       { offset: 1, color: endColor }   // 渐变终点色是动态计算的
+  //     ]);
+  //
+  //     return {
+  //       value: value,
+  //       itemStyle: {
+  //         color: barGradient
+  //       }
+  //     };
+  //   });
+  //
+  //   chartOption.value.series[0].data = dataWithDynamicGradients;
+  //
+  // } else {
+  //   // 如果 API 返回错误或格式不正确的数据，则清空图表。
+  //   // 你的 API 服务中的 catch 块会返回一个 errorResponse，从而触发这里的逻辑。
+  //   chartOption.value.yAxis.data = [];
+  //   chartOption.value.series[0].data = [];
+  // }
 
   // if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
   //

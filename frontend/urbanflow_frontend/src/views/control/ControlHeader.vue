@@ -16,6 +16,7 @@
     </div>
 
     <div class="header_right">
+      <template v-if="!isDashboardPage">
       <div
         v-if="showEmergencyIcon"
         class="emergency-alert-wrapper btn-hover-icon"
@@ -47,6 +48,7 @@
         &#xe683;
         <div class="simple-tooltip">Records</div>
       </div>
+      </template>
 
       <div class="personal btn-hover-circle" @click="togglePanel">
         {{ userDisplayInfo.initial }}
@@ -96,6 +98,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
+import { useRoute } from 'vue-router'
 
 interface Props {
   isRecordPanelVisible?: boolean
@@ -113,9 +116,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['toggle-nav', 'toggle-record', 'emergency-icon-clicked', 'mode-changed', 'sign-out'])
 
+const route = useRoute()
+// 3. 添加一个计算属性来判断当前是否为 dashboard 页面
+const isDashboardPage = computed(() => route.name === 'Dashboard')
+
 const authStore = useAuthStore()
 const showPanel = ref(false)
 const isAIMode = ref(false)
+
 
 // ### 新增 6: 动态的悬浮提示文本 ###
 const tooltipText = computed(() => {
@@ -437,7 +445,7 @@ onBeforeUnmount(() => {
     font-weight: 600;
     color: #FFFFFF;
     margin-bottom: 0.08rem;
-  
+
     letter-spacing: 0.02em;
   }
 
