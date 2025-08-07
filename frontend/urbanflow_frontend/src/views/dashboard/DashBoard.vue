@@ -103,8 +103,8 @@ import CongestionDurationRankingChart from '@/views/dashboard/CongestionDuration
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
 import { useAuthStore } from '@/stores/auth'
-import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
-//import { getJunctions } from '@/services/dashboard_api'
+//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
+import { getJunctions } from '@/services/dashboard_api'
 
 // 修改点：初始化 Store 并获取 managedAreas
 const authStore = useAuthStore()
@@ -172,28 +172,28 @@ onMounted(async () => {
   //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
   // 3. 核心逻辑：获取数据后，设置默认值并填充选项
-  // if (junctions && junctions.length > 0) {
-  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
-  //   trafficFlowFilters.junctionId = junctions[0].junctionId
-  //
-  //   // 使用获取到的路口列表，完整地构建下拉框的选项
-  //   junctionOptions.value = junctions.map(j => ({
-  //     value: j.junctionId,
-  //     label: j.junctionName
-  //   }))
-  // }
-
-  //模拟
   if (junctions && junctions.length > 0) {
     // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
-    trafficFlowFilters.junctionId = junctions[0].junction_id
+    trafficFlowFilters.junctionId = junctions[0].junctionId
 
     // 使用获取到的路口列表，完整地构建下拉框的选项
     junctionOptions.value = junctions.map(j => ({
-      value: j.junction_id,
-      label: j.junction_name
+      value: j.junctionId,
+      label: j.junctionName
     }))
   }
+
+  //模拟
+  // if (junctions && junctions.length > 0) {
+  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+  //   trafficFlowFilters.junctionId = junctions[0].junction_id
+  //
+  //   // 使用获取到的路口列表，完整地构建下拉框的选项
+  //   junctionOptions.value = junctions.map(j => ({
+  //     value: j.junction_id,
+  //     label: j.junction_name
+  //   }))
+  // }
 })
 </script>
 
