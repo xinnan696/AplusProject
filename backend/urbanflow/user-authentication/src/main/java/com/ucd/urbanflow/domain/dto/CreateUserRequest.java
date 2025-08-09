@@ -23,15 +23,15 @@ public class CreateUserRequest {
     @Email(message = "Please provide a valid email address")
     private String email;
 
-    @NotBlank(message = "Password cannot be blank")
-    @Size(min = 8, message = "Password must be at least 8 characters")
-    private String password;
+//    @NotBlank(message = "Password cannot be blank")
+//    @Size(min = 8, message = "Password must be at least 8 characters")
+//    private String password;
 
     private String department;
     private String phoneNumber;
 
     @NotBlank(message = "Role cannot be blank")
-    private String role; // e.g., "ROLE_USER"
+    private String role;
 
     private boolean enabled;
 

@@ -14,13 +14,13 @@ import com.ucd.urbanflow.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.MailException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
@@ -88,34 +88,39 @@ public class AuthService {
         return LoginResponse.builder().token(jwt).user(userVO).build();
     }
 
+    @Transactional
+    public String generateAndSavePasswordResetToken(User user) {
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken();
+        resetToken.setEmail(user.getEmail());
+        resetToken.setToken(token);
+        resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(15)); // Token is valid for 15 minutes
+        resetToken.setUsed(false);
+
+        tokenMapper.save(resetToken);
+        log.info("Generated and saved password reset token for user: {}", user.getEmail());
+        return token;
+    }
+
     /**
      * Processes a 'forgot password' request using programmatic transaction management.
      */
     public void processForgotPassword(String email, HttpServletRequest httpRequest) {
         User user = userMapper.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("This email is not associated with any account"));
+        try {
+            // Step 1: Generate and save the token in a transaction.
+            String token = generateAndSavePasswordResetToken(user);
 
-        transactionTemplate.execute(status -> {
-            try {
-                String token = UUID.randomUUID().toString();
-                PasswordResetToken resetToken = new PasswordResetToken();
-                resetToken.setEmail(user.getEmail());
-                resetToken.setToken(token);
-                resetToken.setExpiryDate(LocalDateTime.now().plusMinutes(15));
-                resetToken.setUsed(false);
+            // Step 2: Send the email asynchronously.
+            emailService.sendPasswordResetEmail(user.getEmail(), token);
+            recordAuthLog(user, "FORGOT_PASSWORD", "SUCCESS", "Password reset token requested", httpRequest);
 
-                tokenMapper.save(resetToken);
-                emailService.sendPasswordResetEmail(user.getEmail(), token);
-                recordAuthLog(user, "FORGOT_PASSWORD", "SUCCESS", "Password reset token requested", httpRequest);
-
-            } catch (Exception e) {
-                log.error("Exception during forgot password transaction for email {}: {}", email, e.getMessage());
-                recordAuthLog(user, "FORGOT_PASSWORD", "FAILURE", e.getMessage(), httpRequest);
-                status.setRollbackOnly();
-                throw new RuntimeException("Failed to process password reset request. Please try again.", e);
-            }
-            return null;
-        });
+        } catch (Exception e) {
+            log.error("Exception during forgot password process for email {}: {}", email, e.getMessage());
+            recordAuthLog(user, "FORGOT_PASSWORD", "FAILURE", e.getMessage(), httpRequest);
+            throw new RuntimeException("Failed to process password reset request. Please try again.", e);
+        }
     }
 
     /**

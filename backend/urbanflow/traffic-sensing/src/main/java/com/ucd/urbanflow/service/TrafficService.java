@@ -14,6 +14,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.beans.factory.annotation.Value;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,12 +30,15 @@ public class TrafficService {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
 
-    private static final String REDIS_EDGE_KEY_PREFIX = "sumo:edge:";
-    private static final int TOP_N_JUNCTIONS = 6;
+    private static final String REDIS_EDGE_KEY_PREFIX = "sumo:edge";
+//    private static final int TOP_N_JUNCTIONS = 6;
 
     private static final String CACHE_KEY_CONGESTED_JUNCTIONS = "traffic:cache:top6_congested_junctions";
 
-    private static final double OCCUPANCY_THRESHOLD = 0.6;
+//    private static final double OCCUPANCY_THRESHOLD = 0.65;
+
+    @Value("${traffic.congestion.threshold}")
+    private final double occupancyThreshold;
 
 
     public List<Map<String, String>> getJunctionname(String managedAreas) {
@@ -158,6 +163,7 @@ public class TrafficService {
                 EdgeData edgeData = objectMapper.readValue(jsonString, EdgeData.class);
                 float occupancy = edgeData.getOccupancy();
 
+
                 log.info("Evaluating edge for congestion - occupancy: {}, vehicleCount: {}, edgeData: {}",
                         occupancy, edgeData.getVehicleCount(), edgeData);
 
@@ -171,6 +177,6 @@ public class TrafficService {
             }
         }
 
-        return maxOccupancy > OCCUPANCY_THRESHOLD ? vehicleCountAtMaxOccupancy : 0;
+        return maxOccupancy >= this.occupancyThreshold ? vehicleCountAtMaxOccupancy : 0;
     }
 }

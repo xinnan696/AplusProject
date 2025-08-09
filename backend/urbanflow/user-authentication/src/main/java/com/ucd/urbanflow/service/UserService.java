@@ -35,7 +35,10 @@ public class UserService {
     private AreaManagementService areaManagementService;
     @Autowired
     private LogServiceClient logServiceClient;
-
+    @Autowired
+    private AuthService authService;
+    @Autowired
+    private EmailService emailService;
 
     @Transactional
     public UserVO createUser(CreateUserRequest request) {
@@ -50,6 +53,9 @@ public class UserService {
         if (userMapper.findByEmail(request.getEmail()).isPresent()) {
             throw new DuplicateResourceException("Email already exists.");
         }
+
+        final String initialPassword = "Password123";
+
 
         if ("Traffic Manager".equals(request.getRole())) {
             if (request.getManagedAreas() == null || request.getManagedAreas().isEmpty()) {
@@ -68,7 +74,7 @@ public class UserService {
         user.setAccountNumber(request.getAccountNumber());
         user.setUserName(request.getUserName());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPassword(passwordEncoder.encode(initialPassword));
         user.setDepartment(request.getDepartment());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setRole(request.getRole());
@@ -105,6 +111,15 @@ public class UserService {
         createdFields.add("role=" + user.getRole());
         createdFields.add("enabled=" + user.isEnabled());
         recordUserPermissionLog(operator, request.getAccountNumber(), "CREATE", createdFields.toString(), "User created successfully.");
+
+        // Post-creation logic for sending welcome email ---
+        String resetToken = authService.generateAndSavePasswordResetToken(user);
+        emailService.sendWelcomeEmail(
+                user.getEmail(),
+                user.getAccountNumber(),
+                initialPassword,
+                resetToken
+        );
         return mapToUserVO(user);
     }
 
