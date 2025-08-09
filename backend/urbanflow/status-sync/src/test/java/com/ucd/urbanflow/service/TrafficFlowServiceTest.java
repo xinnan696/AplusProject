@@ -53,7 +53,6 @@ class TrafficFlowServiceTest {
         record3.setTimeBucket(time3);
         record3.setFlowRateHourly(200);
 
-
         when(trafficFlowMapper.selectByJunctionAndTimeRange(any(Date.class), any(Date.class), any()))
                 .thenReturn(Arrays.asList(record1, record2, record3));
 

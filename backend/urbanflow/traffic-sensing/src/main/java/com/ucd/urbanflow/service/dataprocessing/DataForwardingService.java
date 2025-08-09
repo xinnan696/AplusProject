@@ -51,7 +51,6 @@ public class DataForwardingService {
             tsdbRepository.saveAll(Collections.singletonList(dataPoint)).block();
 
 //            log.info(" Successfully forwarded data to InfluxDB for edge {}", dataPoint.getEdgeId());
-
         } catch (Exception e) {
             // If the write fails, this log is guaranteed to be printed.
             log.error("!!! [LAYER 2 FAILED] CRITICAL ERROR during synchronous InfluxDB write.", e);

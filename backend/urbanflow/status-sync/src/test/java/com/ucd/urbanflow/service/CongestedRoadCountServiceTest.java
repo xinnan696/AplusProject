@@ -52,7 +52,6 @@ class CongestedRoadCountServiceTest {
         record1_day2.setTimeBucket(day2);
         record1_day2.setCongestedJunctionCount(8);
 
-
         // which only has two parameters: start and end dates.
         when(congestedRoadCountMapper.selectByTimeRange(any(Date.class), any(Date.class)))
                 .thenReturn(Arrays.asList(record1_day1, record2_day1, record1_day2));
@@ -73,7 +72,6 @@ class CongestedRoadCountServiceTest {
         // Find the index for day1 in the labels list
         int day1Index = xAxisLabels.indexOf("2025-07-20");
         assertTrue(day1Index != -1, "Label for 2025-07-20 should exist");
-
 
         assertEquals(15, dataList.get(day1Index).get("congested_junction_count")); // 5 + 10 = 15
 

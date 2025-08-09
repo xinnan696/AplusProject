@@ -70,13 +70,8 @@ public class TrafficFlowService {
 
         if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
             Map<Integer, Integer> flowByHour = new LinkedHashMap<>();
-            Calendar tempCal = Calendar.getInstance();
-            tempCal.setTime(start);
             for (int i = 0; i < 24; i += 2) {
-                int hourBucket = tempCal.get(Calendar.HOUR_OF_DAY);
-                flowByHour.put((hourBucket / 2) * 2, 0);
-                xAxisLabels.add(String.valueOf((hourBucket / 2) * 2));
-                tempCal.add(Calendar.HOUR_OF_DAY, 2);
+                flowByHour.put(i, 0);
             }
 
             for (TrafficFlow s : stats) {
@@ -88,9 +83,9 @@ public class TrafficFlowService {
                         + (s.getFlowRateHourly() == null ? 0 : s.getFlowRateHourly()));
             }
 
-            for(String label : xAxisLabels) {
-                int hourKey = Integer.parseInt(label);
-                int v = flowByHour.getOrDefault(hourKey, 0);
+            for (int i = 0; i < 24; i += 2) {
+                xAxisLabels.add(String.valueOf(i));
+                int v = flowByHour.getOrDefault(i, 0);
                 data.add(v);
                 min = Math.min(min, v);
                 max = Math.max(max, v);

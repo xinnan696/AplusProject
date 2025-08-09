@@ -43,4 +43,34 @@ public class EmailService {
         mailSender.send(message);
         log.info("Password reset email sent to {}", to);
     }
+
+    @Async
+    public void sendWelcomeEmail(String to, String accountNumber, String tempPassword, String token) {
+        try {
+            String resetUrl = frontendBaseUrl + "/reset?token=" + token;
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject("Welcome to UrbanFlow System - Your Account Details");
+
+            String emailBody = String.format(
+                    "Hello %s,\n\n" +
+                            "An account has been created for you in the UrbanFlow System.\n\n" +
+                            "Your Account Number (UserID): %s\n" +
+                            "Your Initial Password: %s\n\n" +
+                            "For security reasons, you are required to reset your password upon first login. Please click the link below to set your new password:\n\n" +
+                            "%s\n\n" +
+                            "This link is valid for 15 minutes.\n\n" +
+                            "Thank you,\nThe UrbanFlow System Team",
+                    to, accountNumber, tempPassword, resetUrl
+            );
+
+            message.setText(emailBody);
+            mailSender.send(message);
+            log.info("Welcome email sent successfully to {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send welcome email to {}. Reason: {}", to, e.getMessage());
+        }
+    }
 }
