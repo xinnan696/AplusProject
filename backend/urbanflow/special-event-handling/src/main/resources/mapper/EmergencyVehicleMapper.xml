@@ -34,7 +34,6 @@
         ORDER BY trigger_time ASC
     </select>
 
-    <!-- 根据事件ID查找单个事件的静态数据 -->
     <select id="findByEventId" resultMap="EmergencyVehicleStaticDataResultMap">
         SELECT
             organization,

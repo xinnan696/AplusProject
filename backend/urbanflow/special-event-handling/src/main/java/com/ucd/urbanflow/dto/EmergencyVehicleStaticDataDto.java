@@ -5,8 +5,8 @@ import lombok.Data;
 import java.util.List;
 
 /**
- * 用于API返回的紧急车辆静态数据 DTO。
- * 只包含前端在初始化时需要的一次性数据。
+ * DTO for the static data of an emergency vehicle, used for API responses.
+ * This includes only the one-time data that the frontend needs for initialization.
  */
 @Data
 public class EmergencyVehicleStaticDataDto {
