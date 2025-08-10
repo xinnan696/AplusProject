@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ userData.id }}</span>
                   </div>
                 </div>
@@ -141,9 +140,9 @@
                   <div class="area-selection">
                     <div class="area-options">
                       <label class="area-checkbox" v-for="area in availableAreas" :key="area">
-                        <input 
-                          type="checkbox" 
-                          :value="area" 
+                        <input
+                          type="checkbox"
+                          :value="area"
                           v-model="editData.managedAreas"
                           :disabled="!isAreaAvailable(area) && !editData.managedAreas.includes(area)"
                         >
@@ -227,25 +226,39 @@ const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 
 // Page-specific toast function
-const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+const showCenterToast = (message: string, type: 'success' | 'error' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
   const vnode = createVNode(BaseToast, { message, type, duration })
   render(vnode, container)
 
-  setTimeout(() => {
-    const toastElement = container.querySelector('.toast') as HTMLElement
-    if (toastElement) {
-      toastElement.style.cssText = `
-        position: fixed !important;
-        top: .82rem !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 9999 !important;
-      `
+  const toastElement = container.querySelector('.toast') as HTMLElement
+  if (toastElement) {
+    toastElement.style.visibility = 'hidden'
+    toastElement.style.opacity = '0'
+
+    const navWidth = 2.4
+    const topOffset = 0.82
+
+    let leftPosition: string
+    if (isNavVisible.value) {
+      const rightAreaWidth = `calc(100vw - ${navWidth}rem)`
+      leftPosition = `calc(${navWidth}rem + (${rightAreaWidth}) / 2)`
+    } else {
+      leftPosition = '50%'
     }
-  }, 10)
+
+    toastElement.style.cssText = `
+      position: fixed !important;
+      top: ${topOffset}rem !important;
+      left: ${leftPosition} !important;
+      transform: translateX(-50%) !important;
+      z-index: 9999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `
+  }
 
   setTimeout(() => {
     render(null, container)
@@ -267,13 +280,12 @@ const editData = ref({
   department: '',
   phoneNumber: '',
   role: '',
-  managedAreas: [] as string[], // 新增：管理区域
+  managedAreas: [] as string[],
   enabled: true
 })
 
-// 区域管理相关数据
-const availableAreas = ref(['Left', 'Right']) // 只支持两个区域
-const occupiedAreas = ref(new Map()) // 已被占用的区域及其管理者
+const availableAreas = ref(['Left', 'Right'])
+const occupiedAreas = ref(new Map())
 const loadingAreas = ref(false)
 
 // Form validation errors
@@ -314,8 +326,8 @@ const validateForm = () => {
 const getRoleDisplay = (role: string) => {
   if (role === 'ADMIN') return 'Admin'
   if (role === 'ROLE_USER') return 'User'
-  if (role === 'ROLE_TRAFFIC_MANAGER' || role === 'Traffic Manager') return 'Traffic Manager'
-  if (role === 'Traffic Planner') return 'Traffic Planner'
+  if (role === 'ROLE_TRAFFIC_MANAGER' || role === 'Traffic Manager') return 'Traffic Operator'
+  if (role === 'Traffic Planner') return 'Urban Planner'
   return role || 'User'
 }
 
@@ -329,21 +341,21 @@ const loadAreasInfo = async () => {
     console.log('API response:', response)
 
     if (response.statusCode === 200 && response.data) {
-    
+
       occupiedAreas.value.clear()
-  
+
       response.data.forEach(area => {
         // Only consider areas as occupied if they have a userId AND it's different from current user
         if (area && area.userId !== null && area.userId !== undefined && area.userId !== '') {
           const areaUserId = String(area.userId)
           const currentUserId = String(userData.value.id)
-          
+
           if (areaUserId !== currentUserId) {
             const userName = area.userName || 'Unknown User'
             const accountNumber = area.accountNumber || 'Unknown Account'
             const managerInfo = `${userName} (${accountNumber})`
             const areaName = area.areaName || 'Unknown Area'
-            
+
             occupiedAreas.value.set(areaName, managerInfo)
             console.log(`Area ${areaName} occupied by ${managerInfo}`)
           } else {
@@ -353,7 +365,7 @@ const loadAreasInfo = async () => {
           console.log(`Area ${area.areaName || 'Unknown'} is available (no userId)`)
         }
       })
-      
+
       console.log('Final occupiedAreas:', Array.from(occupiedAreas.value.entries()))
     } else {
       console.log('No occupied areas data or unsuccessful response')
@@ -389,7 +401,7 @@ const saveUser = async () => {
       department: editData.value.department?.trim() || '',
       phoneNumber: editData.value.phoneNumber?.trim() || '',
       role: editData.value.role,
-      managedAreas: editData.value.managedAreas || [], 
+      managedAreas: editData.value.managedAreas || [],
       enabled: editData.value.enabled
     })
 
@@ -442,21 +454,13 @@ onMounted(async () => {
     editData.value.department = user.department || ''
     editData.value.phoneNumber = user.phoneNumber || ''
     editData.value.role = user.role
-    editData.value.managedAreas = user.managedAreas || [] 
+    editData.value.managedAreas = user.managedAreas || []
     editData.value.enabled = user.enabled
 
     if (user.role === 'Traffic Manager' || user.role === 'ROLE_TRAFFIC_MANAGER') {
       await loadAreasInfo()
     }
 
-    console.log('EditUser - Loaded user data:', {
-      department: user.department,
-      phoneNumber: user.phoneNumber,
-      editDataDepartment: editData.value.department,
-      editDataPhoneNumber: editData.value.phoneNumber
-    })
-
-    console.log('Editing user:', user)
   } else {
     console.error('User not found')
     showCenterToast('User not found', 'error')
@@ -466,7 +470,6 @@ onMounted(async () => {
   }
 })
 
-// Header button handlers
 const toggleRecord = () => {
   isRecordVisible.value = !isRecordVisible.value
   if (isRecordVisible.value) {
@@ -527,7 +530,6 @@ const handleSignOut = () => {
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;
@@ -621,7 +623,7 @@ const handleSignOut = () => {
   height: 0.48rem;
   padding: 0 0.16rem;
   background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
-  border: 2px solid rgba(0, 180, 216, 0.3);
+  border: 2px solid rgba(105, 105, 105, 0.3);
   border-radius: 0.08rem;
   color: #FFFFFF;
   font-size: 0.16rem;
@@ -855,11 +857,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(0, 229, 255, 0.5);
 
-    &:not(:disabled):hover {
-      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(0, 229, 255, 0.8);
-    }
+
 
     &:disabled {
       background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
@@ -873,11 +871,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(113, 128, 150, 0.5);
 
-    &:hover {
-      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(113, 128, 150, 0.8);
-    }
+
   }
 }
 
@@ -921,7 +915,6 @@ const handleSignOut = () => {
   }
 }
 
-/* 区域选择样式 */
 .area-selection {
   width: 100%;
 }

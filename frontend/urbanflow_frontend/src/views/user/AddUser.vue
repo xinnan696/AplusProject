@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ nextUserId }}</span>
                   </div>
                 </div>
@@ -131,8 +130,8 @@
                 <div class="form-input-wrapper">
                   <select class="form-select" v-model="formData.role" :class="{ 'error': errors.role, 'placeholder': !formData.role }" @change="onRoleChange">
                     <option value="">Select Role</option>
-                    <option value="Traffic Manager">Traffic Manager</option>
-                    <option value="Traffic Planner">Traffic Planner</option>
+                    <option value="Traffic Manager">Traffic Operator</option>
+                    <option value="Traffic Planner">Urban Planner</option>
                   </select>
                   <div v-if="errors.role" class="error-message">
                     <span class="error-icon">⚠</span>{{ errors.role }}
@@ -149,9 +148,9 @@
                   <div class="area-selection">
                     <div class="area-options">
                       <label class="area-checkbox" v-for="area in availableAreas" :key="area">
-                        <input 
-                          type="checkbox" 
-                          :value="area" 
+                        <input
+                          type="checkbox"
+                          :value="area"
                           v-model="formData.managedAreas"
                           :disabled="!isAreaAvailable(area)"
                         >
@@ -237,25 +236,45 @@ const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 
-const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+const showCenterToast = (message: string, type: 'success' | 'error' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
   const vnode = createVNode(BaseToast, { message, type, duration })
   render(vnode, container)
 
-  setTimeout(() => {
-    const toastElement = container.querySelector('.toast') as HTMLElement
-    if (toastElement) {
-      toastElement.style.cssText = `
-        position: fixed !important;
-        top: .82rem !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 9999 !important;
-      `
+  // 立即设置正确的位置，避免闪烁
+  const toastElement = container.querySelector('.toast') as HTMLElement
+  if (toastElement) {
+    // 先隐藏元素，避免看到初始位置
+    toastElement.style.visibility = 'hidden'
+    toastElement.style.opacity = '0'
+
+    // 计算toast位置：根据导航栏状态调整
+    const navWidth = 2.4 // rem，导航栏宽度
+    const topOffset = 0.82 // rem，距离顶部的偏移
+
+    let leftPosition: string
+    if (isNavVisible.value) {
+      // 导航栏打开时：右侧内容区域的中心
+      const rightAreaWidth = `calc(100vw - ${navWidth}rem)`
+      leftPosition = `calc(${navWidth}rem + (${rightAreaWidth}) / 2)`
+    } else {
+      // 导航栏关闭时：全屏中心
+      leftPosition = '50%'
     }
-  }, 10)
+
+    // 设置最终位置
+    toastElement.style.cssText = `
+      position: fixed !important;
+      top: ${topOffset}rem !important;
+      left: ${leftPosition} !important;
+      transform: translateX(-50%) !important;
+      z-index: 9999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `
+  }
 
   setTimeout(() => {
     render(null, container)
@@ -270,7 +289,7 @@ const formData = ref({
   email: '',
   phoneNumber: '',
   role: '',
-  managedAreas: [], // 新增：管理区域列表
+  managedAreas: [],
   enabled: true
 })
 
@@ -279,12 +298,11 @@ const errors = ref({
   name: '',
   email: '',
   role: '',
-  managedAreas: '' // 新增：区域错误信息
+  managedAreas: ''
 })
 
-// 区域管理相关数据
-const availableAreas = ref(['Left', 'Right']) // 只支持两个区域
-const occupiedAreas = ref(new Map()) // 已被占用的区域及其管理者
+const availableAreas = ref(['Left', 'Right'])
+const occupiedAreas = ref(new Map())
 const loadingAreas = ref(false)
 
 const validateForm = () => {
@@ -310,8 +328,7 @@ const validateForm = () => {
     errors.value.role = 'Role is required'
     isValid = false
   }
-  
-  // 验证Traffic Manager的区域选择
+
   if (formData.value.role === 'Traffic Manager') {
     if (!formData.value.managedAreas || formData.value.managedAreas.length === 0) {
       errors.value.managedAreas = 'Please select at least one area to manage'
@@ -322,28 +339,24 @@ const validateForm = () => {
   return isValid
 }
 
-// 区域管理相关方法
 const loadAreasInfo = async () => {
   try {
     loadingAreas.value = true
     console.log('Loading areas info...')
-    
-    // 获取已占用的区域信息
+
     const response = await AreaApiService.getOccupiedAreas()
     console.log('API response:', response)
-    
-    // 修复：检查 statusCode 而不是 success
+
     if (response.statusCode === 200 && response.data) {
-      // 清空现有数据
+
       occupiedAreas.value.clear()
-      
-      // 填充已占用的区域信息
+
       response.data.forEach(area => {
         const managerInfo = `${area.userName} (${area.accountNumber})`
         occupiedAreas.value.set(area.areaName, managerInfo)
         console.log(`Area ${area.areaName} occupied by ${managerInfo}`)
       })
-      
+
       console.log('Final occupiedAreas:', Array.from(occupiedAreas.value.entries()))
     } else {
       console.log('No occupied areas data or unsuccessful response')
@@ -356,29 +369,24 @@ const loadAreasInfo = async () => {
   }
 }
 
-// 检查区域是否可用
 const isAreaAvailable = (area: string): boolean => {
   return !occupiedAreas.value.has(area)
 }
 
-// 获取区域管理者
 const getAreaManager = (area: string): string => {
   return occupiedAreas.value.get(area) || ''
 }
 
-// 组件挂载时加载区域信息
 onMounted(() => {
   loadAreasInfo()
 })
 
-// 角色变更时的处理
 const onRoleChange = () => {
   if (formData.value.role !== 'Traffic Manager') {
-    // 如果不是Traffic Manager，清空区域选择
     formData.value.managedAreas = []
     errors.value.managedAreas = ''
   } else {
-    // 如果是Traffic Manager，重新加载区域信息
+
     loadAreasInfo()
   }
 }
@@ -396,7 +404,6 @@ const createUser = async () => {
       accountNumber: formData.value.accountNumber.trim(),
       userName: formData.value.name.trim(),
       email: formData.value.email.trim(),
-      password: 'TempPass123!',
       department: formData.value.department?.trim() || '',
       phoneNumber: formData.value.phoneNumber?.trim() || '',
       role: formData.value.role,
@@ -484,7 +491,6 @@ const handleSignOut = () => {
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;
@@ -656,25 +662,20 @@ const handleSignOut = () => {
     padding: 0.08rem;
     border: none;
   }
-
-  /* 当没有选择任何值时，显示placeholder样式 */
   &:invalid {
     color: rgba(179, 179, 179, 0.6);
   }
 
-  /* 确保placeholder option的样式 */
   option[value=""] {
     color: rgba(179, 179, 179, 0.6);
     background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
     background-color: #32344A;
   }
 
-  /* 当选择为空值时的样式 */
   &[value=""] {
     color: rgba(179, 179, 179, 0.6);
   }
 
-  /* placeholder状态的样式 */
   &.placeholder {
     color: rgba(179, 179, 179, 0.6) !important;
   }
@@ -830,11 +831,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(0, 229, 255, 0.5);
 
-    &:not(:disabled):hover {
-      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(0, 229, 255, 0.8);
-    }
+
 
     &:disabled {
       background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
@@ -848,11 +845,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(113, 128, 150, 0.5);
 
-    &:hover {
-      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(113, 128, 150, 0.8);
-    }
+
   }
 }
 

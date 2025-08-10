@@ -25,10 +25,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router'; // Import useRouter for navigation
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
+
+
+const adjustToastPosition = () => {
+  const toastElements = document.querySelectorAll('.toast');
+  toastElements.forEach(toast => {
+    if (document.querySelector('.auth-page')) {
+      toast.style.visibility = 'hidden';
+      toast.style.opacity = '0';
+      toast.style.position = 'fixed';
+      toast.style.top = '1rem';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.zIndex = '9999';
+
+
+      requestAnimationFrame(() => {
+        toast.style.visibility = 'visible';
+        toast.style.opacity = '1';
+      });
+    }
+  });
+};
+
+
+let observer: MutationObserver | null = null;
 
 const router = useRouter(); // Initialize router
 const email = ref('');
@@ -67,6 +92,37 @@ const handleForgotPassword = async () => {
     loading.value = false;
   }
 };
+
+onMounted(() => {
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
+              adjustToastPosition();
+            }
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  setTimeout(adjustToastPosition, 100);
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -83,4 +139,59 @@ const handleForgotPassword = async () => {
 .submit-button.secondary { background-color: transparent; color: #00b4d8; border: 1px solid #00b4d8; }
 .submit-button:not(.secondary) { background-color: #00b4d8; color: #FFFFFF; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
+</style>
+
+<!-- Override toast position for forgot password page -->
+<style>
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+body .auth-page .toast,
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+body .auth-page .toast-fade-enter-active,
+body .auth-page .toast-fade-leave-active,
+.auth-page .toast-fade-enter-active,
+.auth-page .toast-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease !important;
+}
+
+body .auth-page .toast-fade-enter-from,
+.auth-page .toast-fade-enter-from {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-1rem) scale(0.8) !important;
+}
+
+body .auth-page .toast-fade-enter-to,
+.auth-page .toast-fade-enter-to {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-from,
+.auth-page .toast-fade-leave-from {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-to,
+.auth-page .toast-fade-leave-to {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-0.3rem) scale(0.95) !important;
+}
 </style>

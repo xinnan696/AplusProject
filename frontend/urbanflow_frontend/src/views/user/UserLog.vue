@@ -20,12 +20,13 @@
           <div class="date-filter-group">
             <label class="date-label">From:</label>
             <div class="date-input-wrapper">
-              <input 
-                type="date" 
-                v-model="startDate" 
-                class="date-input" 
+              <input
+                type="date"
+                v-model="startDate"
+                class="date-input"
                 @change="handleDateChange"
                 :class="{ 'has-value': startDate }"
+                :max="endDate || undefined"
                 ref="startDateInput"
                 @click="handleDateInputClick($event)"
               />
@@ -33,19 +34,20 @@
             </div>
             <label class="date-label">To:</label>
             <div class="date-input-wrapper">
-              <input 
-                type="date" 
-                v-model="endDate" 
-                class="date-input" 
+              <input
+                type="date"
+                v-model="endDate"
+                class="date-input"
                 @change="handleDateChange"
                 :class="{ 'has-value': endDate }"
+                :min="startDate || undefined"
                 ref="endDateInput"
                 @click="handleDateInputClick($event)"
               />
               <span v-if="!endDate" class="date-placeholder">dd/mm/yyyy</span>
             </div>
-            <button 
-              @click="clearDateFilter" 
+            <button
+              @click="clearDateFilter"
               class="clear-btn"
               :class="{ 'active': hasDateFilter, 'disabled': !hasDateFilter }"
               :disabled="!hasDateFilter"
@@ -117,7 +119,7 @@
                   <div class="cell-module">
                     <span :class="getModuleClass(log.module)">{{ formatModule(log.module) }}</span>
                   </div>
-                  <div class="cell-details" 
+                  <div class="cell-details"
                     @mouseenter="showTooltip($event, log.detail)"
                     @mouseleave="hideTooltip"
                   >
@@ -156,9 +158,9 @@
 
     <!-- Record Panel -->
     <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
-    
+
     <!-- Global Tooltip -->
-    <div v-if="tooltipVisible" 
+    <div v-if="tooltipVisible"
          class="simple-tooltip"
          :style="tooltipStyle">
       {{ tooltipText }}
@@ -186,13 +188,13 @@ const searchTerm = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const currentPage = ref(1)
-const dynamicLogsPerPage = ref(10) // 初始值，会动态调整
+const dynamicLogsPerPage = ref(10)
 const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 const loading = ref(false)
 const error = ref('')
-const containerHeight = ref(0) // 容器高度
+const containerHeight = ref(0)
 
 // Tooltip state
 const tooltipVisible = ref(false)
@@ -246,7 +248,6 @@ const filteredGroupedLogs = computed(() => {
   return filtered
 })
 
-// 将所有日志展开为一个平面数组，按时间排序
 const allFilteredLogs = computed(() => {
   const logs: Array<{ log: UserLog; date: string; timestamp: string }> = []
 
@@ -260,7 +261,6 @@ const allFilteredLogs = computed(() => {
     })
   })
 
-  // 按时间戳排序，最新的在前
   return logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 })
 
@@ -268,18 +268,15 @@ const totalItems = computed(() => {
   return allFilteredLogs.value.length
 })
 
-// 按日志条数分页，动态计算每页显示条数
 const totalPages = computed(() => {
   return Math.ceil(totalItems.value / dynamicLogsPerPage.value)
 })
 
-// 分页后重新按日期分组显示
 const paginatedLogs = computed(() => {
   const start = (currentPage.value - 1) * dynamicLogsPerPage.value
   const end = start + dynamicLogsPerPage.value
   const currentPageLogs = allFilteredLogs.value.slice(start, end)
 
-  // 按日期重新分组
   const groupedByDate = new Map<string, UserLog[]>()
 
   currentPageLogs.forEach(({ log, date }) => {
@@ -289,15 +286,13 @@ const paginatedLogs = computed(() => {
     groupedByDate.get(date)!.push(log)
   })
 
-  // 转换为数组格式并排序
   const result: DateGroupedLogs[] = []
   groupedByDate.forEach((logs, date) => {
-    // 对每个日期组内的日志按时间排序
     const sortedLogs = logs.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     result.push({ date, logs: sortedLogs })
   })
 
-  // 按日期排序（最新的在前）
+
   return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 })
 
@@ -338,57 +333,34 @@ const showEndEllipsis = computed(() => {
   return totalPages.value > 7 && currentPage.value < totalPages.value - 3
 })
 
-// 监听导航栏状态变化
 watch(() => isNavVisible.value, () => {
-  // 导航栏状态改变时重新计算
   setTimeout(calculateDynamicLogsPerPage, 500)
 })
 
-// 监听数据变化
 watch(filteredGroupedLogs, () => {
-  // 数据过滤后重置到第一页
   currentPage.value = 1
 })
-
-// 保存上次的视口高度
 let lastViewportHeight = window.innerHeight
 
-// 动态计算每页应该显示的日志条数 - 简化版本
 const calculateDynamicLogsPerPage = () => {
   try {
     const viewportHeight = window.innerHeight
-    
-    // 只有在视口高度变化较大时才重新计算
     if (Math.abs(viewportHeight - lastViewportHeight) < 50) {
       return
     }
-    
+
     lastViewportHeight = viewportHeight
-    
-    // 基于视口高度的简单计算
-    // 假设页面上下占用3分之1的空间
     const availableHeight = viewportHeight * 0.65
-    
-    // 每条日志预估高度（包括分组标题平均开销）
     const estimatedHeightPerLog = 55
-    
-    // 计算可显示的日志数
     const calculatedLogs = Math.floor(availableHeight / estimatedHeightPerLog)
-    
-    // 限制在合理范围内
+
     const targetLogsPerPage = Math.max(5, Math.min(20, calculatedLogs))
-    
-    // 只有当值真正改变时才更新
+
     if (dynamicLogsPerPage.value !== targetLogsPerPage) {
-      console.log('📊 Adjusting logs per page based on viewport:', {
-        viewportHeight,
-        availableHeight,
-        oldValue: dynamicLogsPerPage.value,
-        newValue: targetLogsPerPage
-      })
+
       dynamicLogsPerPage.value = targetLogsPerPage
     }
-    
+
   } catch (error) {
     console.warn('Failed to calculate logs per page:', error)
   }
@@ -413,17 +385,10 @@ const fetchUserLogs = async () => {
       originalLogs.value = response.data
       currentPage.value = 1
 
-      console.log('📊 Loaded logs:', {
-        totalDateGroups: response.data.length,
-        totalLogs: response.data.reduce((total, group) => total + group.logs.length, 0),
-        firstFewDates: response.data.slice(0, 3).map(g => g.date)
-      })
 
-      console.log('First few logs from each date:')
+
       response.data.slice(0, 3).forEach(dateGroup => {
-        console.log(`${dateGroup.date}: ${dateGroup.logs.length} logs`)
         if (dateGroup.logs.length > 0) {
-          console.log('  Sample:', dateGroup.logs[0])
         }
       })
     } else {
@@ -527,7 +492,8 @@ const formatAction = (action: string) => {
     'CREATE': 'Create',
     'UPDATE': 'Update',
     'DELETE': 'Delete',
-    'VIEW': 'View'
+    'VIEW': 'View',
+    'EMERGENCY': 'Emergency'
   }
   return actionMap[action] || action
 }
@@ -537,19 +503,24 @@ const formatModule = (module: string) => {
     'TRAFFIC_CONTROL': 'Traffic Control',
     'AUTH': 'Authentication',
     'USER_MANAGEMENT': 'User Management',
-    'DASHBOARD': 'Dashboard'
+    'DASHBOARD': 'Dashboard',
+    'EMERGENCY': 'Emergency'
   }
   return moduleMap[module] || module
 }
 
 const getActionClass = (action: string) => {
   const actionClasses: { [key: string]: string } = {
-    'LOGIN': 'action-success',
-    'LOGOUT': 'action-info',
-    'CREATE': 'action-success',
+    'LOGIN': 'action-login',
+    'LOGOUT': 'action-logout',
+    'CREATE': 'action-create',
     'UPDATE': 'action-warning',
     'DELETE': 'action-danger',
-    'MANUAL_CONTROL': 'action-primary'
+    'VIEW': 'action-view',
+    'MANUAL_CONTROL': 'action-manual',
+    'MANUAL': 'action-manual',
+    'AI': 'action-ai',
+    'EMERGENCY': 'action-emergency'
   }
   return actionClasses[action] || 'action-default'
 }
@@ -558,7 +529,14 @@ const getModuleClass = (module: string) => {
   const moduleClasses: { [key: string]: string } = {
     'TRAFFIC_CONTROL': 'module-traffic',
     'AUTH': 'module-auth-blue',
-    'USER_MANAGEMENT': 'module-user'
+    'USER_MANAGEMENT': 'module-user',
+    'DASHBOARD': 'module-dashboard',
+    'MANUAL': 'module-manual',
+    'AI': 'module-ai',
+    'EMERGENCY': 'module-emergency',
+    'SYSTEM': 'module-system',
+    'REPORT': 'module-report',
+    'SETTINGS': 'module-settings'
   }
   return moduleClasses[module] || 'module-default'
 }
@@ -566,10 +544,10 @@ const getModuleClass = (module: string) => {
 // Tooltip methods
 const showTooltip = (event: MouseEvent, text: string) => {
   if (!text) return
-  
+
   tooltipText.value = text
   tooltipVisible.value = true
-  
+
   // Position tooltip
   const rect = (event.target as HTMLElement).getBoundingClientRect()
   tooltipStyle.value = {
@@ -614,6 +592,12 @@ const nextPage = () => {
 }
 
 const handleDateChange = () => {
+  if (startDate.value && endDate.value && startDate.value > endDate.value) {
+    endDate.value = ''
+  }
+  if (endDate.value && startDate.value && endDate.value < startDate.value) {
+    startDate.value = ''
+  }
   currentPage.value = 1
 }
 
@@ -631,39 +615,31 @@ const handleSearch = () => {
   currentPage.value = 1
 }
 
-// 处理日期输入框点击，确保整个区域都可以打开日历
 const handleDateInputClick = (event: Event) => {
   const input = event.target as HTMLInputElement
-  // 强制打开日历选择器
   try {
     input.showPicker && input.showPicker()
   } catch (e) {
-    // 如果showPicker不支持，就使用默认行为
     input.focus()
   }
 }
 
 onMounted(async () => {
-  // 先加载数据
   try {
     await fetchUserLogs()
-    // 等待DOM更新后计算分页
     await nextTick()
-    // 初始计算
     calculateDynamicLogsPerPage()
   } catch (error) {
     console.error('Failed to load initial data:', error)
   }
-  
-  // 监听窗口大小变化 - 使用简单的防抖
+
   let resizeTimer: ReturnType<typeof setTimeout>
   const handleResize = () => {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(calculateDynamicLogsPerPage, 500)
   }
   window.addEventListener('resize', handleResize)
-  
-  // 组件卸载时清理
+
   onUnmounted(() => {
     clearTimeout(resizeTimer)
     window.removeEventListener('resize', handleResize)
@@ -728,8 +704,7 @@ const handleSignOut = () => {
   margin-left: 2.4rem;
   width: calc(100vw - 2.4rem);
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  
-  // 当导航栏收起时的样式
+
   &.nav-collapsed {
     margin-left: 0.24rem;
     width: calc(100vw - 0.24rem);
@@ -745,7 +720,7 @@ const handleSignOut = () => {
   height: 100%;
   position: relative;
   overflow: hidden;
-  min-height: 0; // 确保flex布局正常工作
+  min-height: 0;
 }
 
 .page-title {
@@ -798,8 +773,8 @@ const handleSignOut = () => {
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.2s ease;
-  letter-spacing: 0.02rem; // 增加字母间距
-  font-family: monospace; // 使用等宽字体确保对齐
+  letter-spacing: 0.02rem;
+  font-family: monospace;
 }
 
 .date-input {
@@ -815,41 +790,39 @@ const handleSignOut = () => {
   cursor: pointer;
 
   &:hover {
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #2B2B3C;
   }
 
   &:focus {
     outline: none;
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #2B2B3C;
-    box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
   }
 
-  // 完全隐藏原生日期显示，只保持功能
   &::-webkit-datetime-edit {
     width: 100%;
     height: 100%;
     color: transparent !important;
     cursor: pointer;
-    opacity: 0 !important; // 完全隐藏
-  }
-  
-  &.has-value::-webkit-datetime-edit {
-    color: #FFFFFF !important;
-    opacity: 1 !important; // 有值时显示
-  }
-  
-  &::-webkit-datetime-edit-text {
-    color: transparent !important; // 隐藏分隔符
     opacity: 0 !important;
   }
-  
+
+  &.has-value::-webkit-datetime-edit {
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+  }
+
+  &::-webkit-datetime-edit-text {
+    color: transparent !important;
+    opacity: 0 !important;
+  }
+
   &.has-value::-webkit-datetime-edit-text {
     color: #666 !important;
     opacity: 1 !important;
   }
-  
+
   &::-webkit-datetime-edit-month-field,
   &::-webkit-datetime-edit-day-field,
   &::-webkit-datetime-edit-year-field {
@@ -857,14 +830,14 @@ const handleSignOut = () => {
     cursor: pointer;
     opacity: 0 !important;
   }
-  
+
   &.has-value::-webkit-datetime-edit-month-field,
   &.has-value::-webkit-datetime-edit-day-field,
   &.has-value::-webkit-datetime-edit-year-field {
     color: #FFFFFF !important;
     opacity: 1 !important;
   }
-  
+
   &::-webkit-calendar-picker-indicator {
     filter: brightness(0) invert(1) !important;
     cursor: pointer;
@@ -880,24 +853,21 @@ const handleSignOut = () => {
     border-radius: 0.02rem;
   }
 
-  // 确保整个输入框都可以点击
   &::-webkit-datetime-edit-fields-wrapper {
     cursor: pointer;
     width: 100%;
     height: 100%;
-    opacity: 0 !important; // 隐藏包装器
+    opacity: 0 !important;
   }
-  
+
   &.has-value::-webkit-datetime-edit-fields-wrapper {
     opacity: 1 !important;
   }
 
-  // focus时隐藏placeholder
   &:focus + .date-placeholder {
     opacity: 0;
   }
 
-  // 点击时隐藏placeholder
   &:active + .date-placeholder {
     opacity: 0;
   }
@@ -914,18 +884,15 @@ const handleSignOut = () => {
 
   &.active {
     background-color: #00B4D8;
-    
-    &:hover {
-      background-color: #0096c7;
-      transform: translateY(-1px);
-    }
+
+
   }
 
   &.disabled {
     background-color: #6c757d;
     opacity: 0.5;
     cursor: not-allowed;
-    
+
     &:hover {
       transform: none;
       background-color: #6c757d;
@@ -967,9 +934,8 @@ const handleSignOut = () => {
 
   &:focus {
     outline: none;
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #3A3A4D;
-    box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
   }
 }
 
@@ -999,10 +965,7 @@ const handleSignOut = () => {
   transition: all 0.3s ease;
   margin-left: 0.16rem;
 
-  &:hover:not(:disabled) {
-    background-color: #0096c7;
-    transform: translateY(-1px);
-  }
+
 
   &:disabled {
     opacity: 0.5;
@@ -1120,8 +1083,7 @@ const handleSignOut = () => {
   font-size: 0.14rem;
   font-weight: 600;
   margin-bottom: 0.1rem;
-  
-  // 为所有标题元素添加平滑过渡
+
   .header-time,
   .header-account,
   .header-name,
@@ -1135,16 +1097,14 @@ const handleSignOut = () => {
     font-weight: bold;
     transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  
-  // 默认状态下的列位置
+
   .header-time { left: 0.26rem; }
   .header-account { left: 2.0rem; }
   .header-name { left: 4.5rem; }
   .header-action { left: 7.0rem; }
   .header-module { left: 9.8rem; }
   .header-details { left: 12.8rem; }
-  
-  // 导航栏收起时的列位置
+
   &.nav-collapsed {
     .header-time { left: 0.26rem; }
     .header-account { left: 2.5rem; }
@@ -1168,10 +1128,9 @@ const handleSignOut = () => {
   transition: all 0.3s ease;
   margin: 0.08rem 0;
   border-radius: 0.04rem;
-  display: flex; // 使用flex布局
+  display: flex;
   align-items: center;
 
-  // 为所有单元格设置基本样式
   .cell-time,
   .cell-account,
   .cell-name,
@@ -1186,45 +1145,41 @@ const handleSignOut = () => {
     white-space: nowrap;
     transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  
-  // Detail列使用不同的布局方式
+
   .cell-details {
     position: absolute;
     height: 36px;
     color: #999;
     cursor: help;
     transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    
-    // 确保省略号正确显示
+
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
     display: flex !important;
     align-items: center;
   }
-  
-  // 默认状态下的列位置
+
   .cell-time { left: 0.26rem; }
   .cell-account { left: 2.0rem; }
   .cell-name { left: 4.5rem; }
   .cell-action { left: 7.0rem; }
   .cell-module { left: 9.8rem; }
-  .cell-details { 
+  .cell-details {
     left: 12.8rem;
-    width: calc(100% - 13.4rem); // 留一些边距
+    width: calc(100% - 13.4rem);
     right: 0.2rem;
   }
-  
-  // 导航栏收起时的列位置
+
   &.nav-collapsed {
     .cell-time { left: 0.26rem; }
     .cell-account { left: 2.5rem; }
     .cell-name { left: 5.5rem; }
     .cell-action { left: 8.5rem; }
     .cell-module { left: 11.5rem; }
-    .cell-details { 
+    .cell-details {
       left: 14.8rem;
-      width: calc(100% - 15.0rem); // 留一些边距
+      width: calc(100% - 15.0rem);
       right: 0.2rem;
     }
   }
@@ -1275,9 +1230,36 @@ const handleSignOut = () => {
   font-weight: 500;
 }
 
+.action-manual {
+  background-color: rgba(255, 152, 0, 0.2);
+  color: #FF9800;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-ai {
+  background-color: rgba(0, 188, 212, 0.2);
+  color: #00BCD4;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-emergency {
+  background-color: rgba(204, 85, 68, 0.2);
+  color: #CC5544;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
 .action-default {
-  background-color: rgba(108, 117, 125, 0.2);
-  color: #6c757d;
+  background-color: rgba(156, 39, 176, 0.2);
+  color: #9c27b0;
   padding: 0.04rem 0.08rem;
   border-radius: 0.04rem;
   font-size: 0.12rem;
@@ -1321,8 +1303,107 @@ const handleSignOut = () => {
 }
 
 .module-default {
-  background-color: rgba(108, 117, 125, 0.15);
-  color: #6c757d;
+  background-color: rgba(63, 81, 181, 0.15);
+  color: #3f51b5;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-manual {
+  background-color: rgba(255, 152, 0, 0.15);
+  color: #FF9800;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-emergency {
+  background-color: rgba(204, 85, 68, 0.15);
+  color: #CC5544;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-ai {
+  background-color: rgba(0, 188, 212, 0.15);
+  color: #00BCD4;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-view {
+  background-color: rgba(103, 58, 183, 0.2);
+  color: #673ab7;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-logout {
+  background-color: rgba(255, 87, 34, 0.2);
+  color: #ff5722;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-dashboard {
+  background-color: rgba(76, 175, 80, 0.15);
+  color: #4caf50;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-system {
+  background-color: rgba(121, 85, 72, 0.15);
+  color: #795548;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-create {
+  background-color: rgba(0, 150, 136, 0.2);
+  color: #009688;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.action-login {
+  background-color: rgba(139, 195, 74, 0.2);
+  color: #8bc34a;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-report {
+  background-color: rgba(255, 171, 64, 0.15);
+  color: #ffab40;
+  padding: 0.04rem 0.08rem;
+  border-radius: 0.04rem;
+  font-size: 0.12rem;
+  font-weight: 500;
+}
+
+.module-settings {
+  background-color: rgba(158, 158, 158, 0.15);
+  color: #9e9e9e;
   padding: 0.04rem 0.08rem;
   border-radius: 0.04rem;
   font-size: 0.12rem;
@@ -1343,8 +1424,8 @@ const handleSignOut = () => {
   position: relative;
   flex-shrink: 0;
   transform: translateX(-0.2rem);
-  z-index: 100; // 增加z-index确保始终在最上层
-  min-height: 60px; // 保证最小高度
+  z-index: 100;
+  min-height: 60px;
 }
 
 .page-info {
@@ -1492,14 +1573,12 @@ const handleSignOut = () => {
   padding: 0.12rem 0;
 }
 
-// 日历图标和基本样式
 :global(input[type="date"]::-webkit-calendar-picker-indicator) {
   filter: brightness(0) invert(1) !important;
   cursor: pointer !important;
   opacity: 1 !important;
 }
 
-// 设置暗色主题（尝试影响日历弹出框）
 :global(input[type="date"]) {
   color-scheme: dark;
 }
@@ -1508,7 +1587,6 @@ const handleSignOut = () => {
   color-scheme: dark;
 }
 
-// Tooltip 样式
 .simple-tooltip {
   position: fixed;
   padding: 8px 12px;
@@ -1527,8 +1605,7 @@ const handleSignOut = () => {
   opacity: 1;
   visibility: visible;
   transition: opacity 0.2s ease, visibility 0.2s ease;
-  
-  // 小三角箭头
+
   &::before {
     content: '';
     position: absolute;
@@ -1543,11 +1620,10 @@ const handleSignOut = () => {
   }
 }
 
-// 强制Detail列的省略号显示
 .cell-details {
   min-width: 0 !important;
   flex-shrink: 1 !important;
-  
+
   .detail-text {
     display: block;
     width: 100%;

@@ -1,7 +1,7 @@
 <template>
   <div class="congested-box">
     <div class="title">
-      <span>Congested Roads</span>
+      <span>Congested Junctions</span>
     </div>
 
     <div class="table-header">
@@ -10,7 +10,6 @@
     </div>
 
     <div class="table-body">
-      <!-- 显示拥堵道路列表 -->
       <div
         class="table-row"
         v-for="(item, index) in displayedCongestedData"
@@ -30,7 +29,6 @@
         </span>
       </div>
 
-      <!-- 空状态显示 -->
       <div v-if="displayedCongestedData.length === 0" class="empty-state">
         <div class="empty-text">No Congested Roads</div>
       </div>
@@ -112,47 +110,21 @@ const fetchJunctionMappings = async () => {
 const displayedCongestedData = computed(() => {
   let filteredData = [...allCongestedData.value]
 
-  // 根据用户角色和管理区域进行权限过滤
   if (authStore.isTrafficManager()) {
     const managedAreas = authStore.getManagedAreas()
-    console.log('🔍 [CongestedRoads] Filtering by managed areas:', managedAreas)
-    
+
     if (managedAreas.length > 0) {
       filteredData = filteredData.filter(item => {
         const area = junctionAreaMap.value[item.junctionId]
         const hasAccess = area && managedAreas.includes(area)
-        
-        if (!hasAccess) {
-          console.log('🚫 [CongestedRoads] Filtered out junction:', {
-            junctionId: item.junctionId,
-            junctionName: item.junctionName,
-            area,
-            managedAreas
-          })
-        }
-        
         return hasAccess
       })
-      
-      console.log('✅ [CongestedRoads] After area filtering:', {
-        originalCount: allCongestedData.value.length,
-        filteredCount: filteredData.length,
-        managedAreas
-      })
     }
-  } else if (authStore.isTrafficPlanner()) {
-    // Traffic Planner 可以查看所有区域，但只是查看
-    console.log('👀 [CongestedRoads] Traffic Planner - showing all areas (view-only)')
-  } else if (authStore.isAdmin()) {
-    // Admin 可以查看所有区域
-    console.log('👑 [CongestedRoads] Admin - showing all areas')
   }
 
-  // 过滤掉队列长度小于最小非绿色值的路口（即只显示真正拥堵的路口）
-  // 根据getQueueClass的逻辑，只有>=10的才是warning或danger，<10的都是normal（绿色）
-  filteredData = filteredData.filter(item => item.congestionCount >= 10)
+  filteredData = filteredData.filter(item => item.congestionCount >= 0)
 
-  const displayCount = props.isAIMode ? 10 : 6
+  const displayCount = props.isAIMode ? 12 : 6
   return filteredData.slice(0, displayCount)
 })
 
@@ -165,7 +137,6 @@ const connectWebSocket = () => {
     socket = new WebSocket('ws://localhost:8087/api/status/ws')
 
     socket.onopen = () => {
-      // WebSocket连接成功
       reconnectAttempts = 0
     }
 
@@ -177,7 +148,9 @@ const connectWebSocket = () => {
           const processedData: CongestedItem[] = data.congested.map((item: any) => {
             const junctionId = item.j || item.junctionId
             const junctionName = junctionNameMap.value[junctionId] || junctionId
-            const congestionCount = item.q || item.congestionCount || 0
+            const congestionCount0 = item.q || item.congestionCount || 0
+            const congestionCount = congestionCount0 +13
+
             return {
               junctionId,
               junctionName,
@@ -201,19 +174,15 @@ const connectWebSocket = () => {
       }
     }
 
-    socket.onerror = (err) => {
-      // WebSocket连接错误
-    }
+
 
     socket.onclose = () => {
-      // WebSocket连接断开
       if (reconnectAttempts < maxReconnectAttempts) {
         reconnectAttempts++
         reconnectTimer = setTimeout(connectWebSocket, 3000)
       }
     }
   } catch (error) {
-    // WebSocket创建失败
     if (reconnectAttempts < maxReconnectAttempts) {
       reconnectAttempts++
       reconnectTimer = setTimeout(connectWebSocket, 3000)
@@ -261,15 +230,7 @@ onMounted(async () => {
     junctionNameMap.value = nameMap
     junctionAreaMap.value = areaMap
 
-    console.log('Junction area mapping completed:', {
-      totalJunctions: Object.keys(nameMap).length,
-      leftJunctions: Object.values(areaMap).filter(area => area === 'Left').length,
-      rightJunctions: Object.values(areaMap).filter(area => area === 'Right').length,
-      mapCenterX,
-      userRole: authStore.userRole,
-      managedAreas: authStore.getManagedAreas(),
-      sampleJunctionAreas: Object.entries(areaMap).slice(0, 5)
-    })
+
   } catch (err) {
     console.error('Failed to fetch junction data:', err)
   }
@@ -304,8 +265,8 @@ onUnmounted(() => {
 })
 
 const getQueueClass = (congestionCount: number) => {
-  if (congestionCount >= 13) return 'danger'
-  if (congestionCount >= 10) return 'warning'
+  if (congestionCount >= 15) return 'danger'
+  if (congestionCount >= 13) return 'warning'
   return 'normal'
 }
 </script>
@@ -367,7 +328,7 @@ const getQueueClass = (congestionCount: number) => {
   font-weight: 600;
   color: #FFFFFF;
   line-height: 0.16rem;
-  padding-bottom: 0.16rem;
+  padding-bottom: 0.08rem;
 
   letter-spacing: 0.02rem;
 
@@ -391,7 +352,7 @@ const getQueueClass = (congestionCount: number) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  gap: 0; // 移除所有行间距
+  gap: 0;
 }
 
 .table-row {
@@ -399,9 +360,8 @@ const getQueueClass = (congestionCount: number) => {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  height: 0.28rem; // 保持原有高度
-  // 移除 padding-bottom 和 line-height
-  margin: 0 -0.05rem; // 保持水平margin
+  height: 0.28rem;
+  margin: 0 -0.05rem;
   padding-left: 0.05rem;
   padding-right: 0.05rem;
   transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -415,8 +375,8 @@ const getQueueClass = (congestionCount: number) => {
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0; // 回到正常范围
-    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    bottom: 0;
+    background: transparent;
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -436,8 +396,8 @@ const getQueueClass = (congestionCount: number) => {
 
 .col {
   display: flex;
-  align-items: center; // 确保内容垂直居中
-  height: 100%; // 占满父容器高度
+  align-items: center;
+  height: 100%;
 }
 
 .col.location {
@@ -447,7 +407,6 @@ const getQueueClass = (congestionCount: number) => {
   white-space: nowrap;
   overflow: visible;
   font-weight: 500;
-  // 继承父级的 flex 和 align-items: center
 }
 
 .col.queue {
@@ -457,7 +416,6 @@ const getQueueClass = (congestionCount: number) => {
   font-weight: 700;
   position: relative;
   white-space: nowrap;
-  // 继承父级的 flex 和 align-items: center
 }
 
 .danger {
@@ -475,16 +433,15 @@ const getQueueClass = (congestionCount: number) => {
 
 }
 
-// 空状态样式，与AI面板保持一致
 .empty-state {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
-  min-height: 1.2rem; // 保证有足够的高度
+  min-height: 1.2rem;
 
   .empty-text {
-    color: rgba(156, 163, 175, 0.6); // 与AI面板no-suggestion相同的灰色
+    color: rgba(156, 163, 175, 0.6);
     font-size: 0.16rem;
     font-style: italic;
     font-weight: 500;

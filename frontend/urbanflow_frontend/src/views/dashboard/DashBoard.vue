@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-page">
-    <ControlHeader @toggle-nav="toggleNav" />
+    <ControlHeader @toggle-nav="toggleNav" @sign-out="handleSignOut"/>
     <ControlNav :isVisible="isNavVisible" />
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
@@ -15,6 +15,7 @@
               :options="timeRangeOptions"
               v-model="topSegmentsFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -32,6 +33,7 @@
               :options="durationRankingTimeRangeOptions"
               v-model="durationRankingFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -55,6 +57,7 @@
                 :options="timeRangeOptions"
                 v-model="trafficFlowFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -74,6 +77,7 @@
                 :options="timeRangeOptions"
                 v-model="junctionCountFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -191,20 +195,25 @@ onMounted(async () => {
   //   }))
   // }
 })
+
+// 处理登出功能
+function handleSignOut() {
+  console.log('Dashboard: Handling sign out')
+  authStore.logout()
+}
 </script>
 
 <style scoped lang="scss">
 // 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
 // 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
-  //position: fixed;
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -213,68 +222,68 @@ onMounted(async () => {
 }
 
 .main-area {
-  //height: calc(100% - 64px); // 假设Header高度为64px
-  //display: flex;
-  //overflow-y: auto;
-  //overflow-x: hidden;
-  //padding: 0 1.01rem; // 对应左右间隙 101px
-  //justify-content: center;
-
   position: absolute;
-  top: 40px;
+  top: 0.64rem; // Header 高度
   bottom: 0;
-  overflow-y: auto;
+  overflow: hidden; // 取消滚动条
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  right: 0;
+
 
   // 定义两个变量，用于导航栏的宽度
   $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
-  $nav-expanded-width: 1.0rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
+  $nav-expanded-width: 2.2rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
 
   // 为位移和宽度变化添加平滑的过渡动画
-  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+  transition: width 0.3s ease-out;
 
   // 默认状态（导航栏收起时）
-  left: $nav-collapsed-width;
-  width: calc(100% - #{$nav-collapsed-width});
+  left: 0;
+  //width: calc(100% - #{$nav-collapsed-width});
 
   // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
   &.nav-expanded {
     left: $nav-expanded-width;
     width: calc(100% - #{$nav-expanded-width});
+
   }
 }
 
 
 .dashboard-container {
-  width: 14.80rem; // 对应 1680px
-  min-height: 10.16rem; // 对应 1016px
+  width: 90%; // 使用百分比宽度
+  max-width: 14.80rem; // 最大宽度限制
+  height: 100%; // 使用 100% 高度
   display: flex;
   flex-direction: column;
-  gap: 0.15rem; // 中间上下间隙 15px
-  padding: 0.22rem 0; // 对应上下间隙 22px
-  height: 100%;
+  gap: 0.8%; // 稍微减少间隙
+  padding: 0.3% 0 0.8% 0; // 顶部0.3% 底部0.8%间距
+  margin: 0;
+  overflow: hidden; // 防止子元素溢出
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
-  gap: 0.18rem; // 中间左右间隙 18px
-  flex: 1;
+  gap: 1.2%; // 使用百分比间隙
+  flex-shrink: 0;
   min-height: 0;
+  height: 33%; // 下半部分占用 33% 高度
 }
 
 .card-full-width {
-  //height: 3.25rem; // Traffic Flow & Duration Ranking 高度
+  height: 33%; // 每个全宽卡片占用 33% 高度
   flex-shrink: 0;
-  flex: 1;
   min-height: 0;
 }
 
 .card-half-width {
-  width: 50%; // Will be calculated by flex
-  flex-grow: 1;
-  //height: 3.25rem; // Top Congested & Count Trend 高度
+  width: 49.4%; // 稍微减少宽度以适应间隙
+  height: 100%; // 使用 100% 高度
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .filter-select {

@@ -1,5 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// 添加全局类型声明
+declare global {
+  interface Window {
+    __routerRedirectCount: number
+  }
+}
+
 const routes = [
   {
     path: '/',
@@ -43,7 +50,7 @@ const routes = [
     component: () => import('@/views/control/ControlHome.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN', 'Traffic Manager'],
+      roles: ['Admin', 'Traffic Manager'],
       title: 'Control - UrbanFlow'
     }
   },
@@ -55,7 +62,7 @@ const routes = [
     component: () => import('@/views/dashboard/DashBoard.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN', 'Traffic Manager', 'Traffic Planner'],
+      roles: ['Admin', 'Traffic Manager', 'Traffic Planner'],
       title: 'Dashboard - UrbanFlow'
     }
   },
@@ -66,7 +73,7 @@ const routes = [
     component: () => import('@/views/user/UserList.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN'],
+      roles: ['Admin'],
       title: 'User Management - UrbanFlow'
     }
   },
@@ -77,7 +84,7 @@ const routes = [
     component: () => import('@/views/user/AddUser.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN'],
+      roles: ['Admin'],
       title: 'Add User - UrbanFlow'
     }
   },
@@ -88,7 +95,7 @@ const routes = [
     component: () => import('@/views/user/EditUser.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN'],
+      roles: ['Admin'],
       title: 'Edit User - UrbanFlow'
     }
   },
@@ -99,7 +106,7 @@ const routes = [
     component: () => import('@/views/user/UserDetails.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN'],
+      roles: ['Admin'],
       title: 'User Details - UrbanFlow'
     }
   },
@@ -110,7 +117,7 @@ const routes = [
     component: () => import('@/views/user/UserLog.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN'],
+      roles: ['Admin'],
       title: 'User Logs - UrbanFlow'
     }
   },
@@ -121,7 +128,7 @@ const routes = [
     component: () => import('@/views/help/HelpPage.vue'),
     meta: {
       requiresAuth: true,
-      roles: ['ADMIN', 'Traffic Manager', 'Traffic Planner'],
+      roles: ['Admin', 'Traffic Manager', 'Traffic Planner'],
       title: 'Help - UrbanFlow'
     }
   },
@@ -145,19 +152,27 @@ const router = createRouter({
 function getDefaultPageForRole(role: string): string {
   const defaultPages = {
     'ADMIN': 'Control',
+    'Admin': 'Control',
+    'admin': 'Control',
     'Traffic Manager': 'Control',
     'Traffic Planner': 'Dashboard'
   }
 
-  return defaultPages[role as keyof typeof defaultPages] || 'Dashboard'
+  console.log('🔍 [Router] Getting default page for role:', role)
+  const defaultPage = defaultPages[role as keyof typeof defaultPages] || 'Dashboard'
+  console.log('✅ [Router] Default page determined:', defaultPage)
+
+  return defaultPage
 }
 
 router.beforeEach((to, from) => {
-  console.log('Route guard check:', {
+  console.log('🔍 Route guard check:', {
     to: to.path,
+    from: from.path,
+    toName: to.name,
+    fromName: from.name,
     requiresAuth: to.meta?.requiresAuth,
-    roles: to.meta?.roles,
-    authStatus: checkAuthStatus()
+    roles: to.meta?.roles
   })
 
   if (to.meta?.title) {
@@ -165,14 +180,59 @@ router.beforeEach((to, from) => {
   }
 
   if (isInTransition()) {
+    console.log('🚫 Navigation blocked: in transition')
     return false
   }
 
-  if (to.meta?.requiresAuth) {
-    const isAuthenticated = checkAuthStatus()
+  if (!window.__routerRedirectCount) window.__routerRedirectCount = 0
 
+  if (window.__routerRedirectCount > 5) {
+    localStorage.clear()
+    window.__routerRedirectCount = 0
+    if (to.name !== 'Login') {
+      return { name: 'Login' }
+    }
+    return true
+  }
+
+  const token = localStorage.getItem('authToken')
+  const userStr = localStorage.getItem('user')
+
+  if (token === 'mock-auth-token-for-testing' ||
+      (userStr && userStr.includes('Test Admin'))) {
+    console.log('🗑️ Clearing mock data immediately')
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('user')
+  }
+
+  const isAuthenticated = checkAuthStatus()
+  console.log('🔐 Auth status:', isAuthenticated)
+
+  if (to.name === 'Login') {
+    if (isAuthenticated) {
+      if (from.name === 'Login') {
+        console.log('🛑 Login->Login cycle detected, clearing auth and allowing')
+        localStorage.clear()
+        window.__routerRedirectCount = 0
+        return true
+      }
+
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      if (user && user.role) {
+        const defaultPage = getDefaultPageForRole(user.role)
+        window.__routerRedirectCount++
+        return { name: defaultPage }
+      }
+    }
+    console.log('✅ Allowing access to login page')
+    window.__routerRedirectCount = 0
+    return true
+  }
+
+  if (to.meta?.requiresAuth) {
     if (!isAuthenticated) {
-      console.log('Redirecting to login: not authenticated')
+      console.log('🚫 Not authenticated, redirecting to login')
+      window.__routerRedirectCount++
       return { name: 'Login' }
     }
 
@@ -180,34 +240,63 @@ router.beforeEach((to, from) => {
       const user = JSON.parse(localStorage.getItem('user') || 'null')
 
       if (!user || !user.role) {
-        console.log('Redirecting to login: no user role found')
+        console.log('🚫 No user role, redirecting to login')
+        localStorage.removeItem('authToken')
+        localStorage.removeItem('user')
+        window.__routerRedirectCount++
         return { name: 'Login' }
       }
 
-      const hasPermission = (to.meta.roles as string[]).includes(user.role)
+      const roleMapping = {
+        'ADMIN': 'Admin',
+        'Admin': 'Admin',
+        'admin': 'Admin',
+        'TRAFFIC_MANAGER': 'Traffic Manager',
+        'Traffic Manager': 'Traffic Manager',
+        'traffic_manager': 'Traffic Manager',
+        'TRAFFIC_PLANNER': 'Traffic Planner',
+        'Traffic Planner': 'Traffic Planner',
+        'traffic_planner': 'Traffic Planner'
+      }
+
+      const mappedRole = roleMapping[user.role as keyof typeof roleMapping] || user.role
+
+      const hasPermission = (to.meta.roles as string[]).includes(mappedRole)
 
       if (!hasPermission) {
-        console.log(`Access denied: ${user.role} cannot access ${to.name}`)
-
         const defaultPage = getDefaultPageForRole(user.role)
-        console.log(`Redirecting to default page: ${defaultPage}`)
 
+        if (to.name === defaultPage) {
+          window.__routerRedirectCount = 0
+          return true
+        }
+
+        window.__routerRedirectCount++
         return { name: defaultPage }
       }
     }
   }
 
-  if (to.name === 'Login' && checkAuthStatus()) {
-    const user = JSON.parse(localStorage.getItem('user') || 'null')
-    const defaultPage = getDefaultPageForRole(user?.role)
-    console.log(`Redirecting to ${defaultPage}: already authenticated`)
-    return { name: defaultPage }
-  }
+  window.__routerRedirectCount = 0
+  return true
 })
 
 function checkAuthStatus(): boolean {
   const token = localStorage.getItem('authToken')
-  return !!token && token !== 'expired'
+  const user = localStorage.getItem('user')
+  const isValidToken = token &&
+                      token !== 'expired' &&
+                      token !== 'mock-auth-token-for-testing' &&
+                      token.length > 10
+
+  const isValidUser = user &&
+                     user !== 'null' &&
+                     !user.includes('Test Admin')
+
+  const isAuthenticated = !!(isValidToken && isValidUser)
+
+
+  return isAuthenticated
 }
 
 function isInTransition(): boolean {

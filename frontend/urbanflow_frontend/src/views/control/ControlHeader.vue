@@ -17,7 +17,7 @@
 
     <div class="header_right">
       <div
-        v-if="showEmergencyIcon"
+        v-if="showEmergencyIcon && !shouldHideIcons"
         class="emergency-alert-wrapper btn-hover-icon"
         :class="{ 'blinking-icon': hasNewRequests }"
         @click="emit('emergency-icon-clicked')"
@@ -27,7 +27,7 @@
         <div class="simple-tooltip">{{ tooltipText }}</div>
       </div>
 
-      <div class="switch-wrapper">
+      <div v-if="!shouldHideIcons" class="switch-wrapper">
         <label class="switch toggle-absolute btn-hover-switch">
           <input
             type="checkbox"
@@ -40,6 +40,7 @@
       </div>
 
       <div
+        v-if="!shouldHideIcons"
         class="iconfont record btn-hover-icon"
         :class="{ 'btn-active': isRecordPanelVisible }"
         @click="emit('toggle-record')"
@@ -48,7 +49,7 @@
         <div class="simple-tooltip">Records</div>
       </div>
 
-      <div class="personal btn-hover-circle" @click="togglePanel">
+      <div class="personal btn-hover-circle" :class="{ 'personal-adjusted': shouldHideIcons }" @click="togglePanel">
         {{ userDisplayInfo.initial }}
         <div class="simple-tooltip">Profile</div>
       </div>
@@ -95,6 +96,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
 interface Props {
@@ -113,9 +115,16 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['toggle-nav', 'toggle-record', 'emergency-icon-clicked', 'mode-changed', 'sign-out'])
 
+const route = useRoute()
 const authStore = useAuthStore()
 const showPanel = ref(false)
 const isAIMode = ref(false)
+
+// 根据路由判断是否显示特定图标
+const shouldHideIcons = computed(() => {
+  const hiddenRoutes = ['/dashboard', '/user', '/help']
+  return hiddenRoutes.some(routePath => route.path.startsWith(routePath))
+})
 
 // ### 新增 6: 动态的悬浮提示文本 ###
 const tooltipText = computed(() => {
@@ -144,12 +153,22 @@ const userDisplayInfo = computed(() => {
     initial = user.email.trim().charAt(0).toUpperCase()
   }
 
-  const roleTitle = {
-    'ADMIN': 'System Administrator',
-    'Traffic Manager': 'Traffic Manager',
-    'Traffic Planner': 'Traffic Planner',
-    'USER': 'User'
-  }[user.role] || 'User'
+  // 修复：统一角色名称大小写处理
+  const normalizeRole = (role: string) => {
+    const lowerRole = role.toLowerCase();
+    switch (lowerRole) {
+      case 'admin':
+        return 'System Administrator';
+      case 'traffic manager':
+        return 'Traffic Operator';
+      case 'traffic planner':
+        return 'Urban Planner';
+      default:
+        return 'User';
+    }
+  }
+
+  const roleTitle = normalizeRole(user.role || '')
 
 
   const displayName = user.userName || user.accountNumber || 'Unknown User'
@@ -202,13 +221,13 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .control-header {
-  position: relative;
-  width: 100%;
-  height: 0.64rem;
-  background-color: #1E1E2F;
-  border-bottom: 0.01rem solid #3A3A4C;
-  z-index: 1000;
-  display: flex;
+position: relative;
+width: 100%;
+height: 0.64rem;
+background-color: #1E1E2F;
+border-bottom: 0.01rem solid #3A3A4C;
+z-index: 10000; /* 提高 header 的 z-index */
+display: flex;
 
   &::before {
     content: '';
@@ -368,6 +387,11 @@ onBeforeUnmount(() => {
     align-items: center;
     cursor: pointer;
     user-select: none;
+    transition: right 0.3s ease;
+  }
+
+  .personal-adjusted {
+    right: 0.25rem;
   }
 
   .user-panel {
@@ -437,7 +461,7 @@ onBeforeUnmount(() => {
     font-weight: 600;
     color: #FFFFFF;
     margin-bottom: 0.08rem;
-  
+
     letter-spacing: 0.02em;
   }
 
@@ -598,10 +622,9 @@ onBeforeUnmount(() => {
     }
   }
 
-  /* ### 新增样式 ### */
   .emergency-alert-wrapper {
     position: absolute;
-    top: 0.18rem; /* 微调垂直位置 */
+    top: 0.18rem;
     right: 3.8rem;
     width: 0.33rem;
     height: 0.33rem;
@@ -623,7 +646,6 @@ onBeforeUnmount(() => {
     animation: blink 1.2s linear infinite;
   }
 
-  /* 强制移除所有按钮的发光效果和背景色变化 */
   .btn-hover-icon,
   .nav,
   .record,
@@ -689,6 +711,51 @@ onBeforeUnmount(() => {
     filter: none !important;
     -webkit-filter: none !important;
     transform: translateY(-1px) scale(1.02) !important;
+  }
+
+  .simple-tooltip {
+    position: absolute;
+    bottom: -1.2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(0);
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffffff;
+    padding: 0.005rem 0.03rem;
+    border-radius: 0.01rem;
+    font-size: 0.06rem;
+    font-weight: 400;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 999999;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    height: 0.07rem;
+  }
+
+  .simple-tooltip::before {
+    content: '';
+    position: absolute;
+    top: -0.01rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 0.015rem solid transparent;
+    border-right: 0.015rem solid transparent;
+    border-bottom: 0.015rem solid rgba(0, 0, 0, 0.8);
+  }
+
+  .nav:hover .simple-tooltip,
+  .emergency-alert-wrapper:hover .simple-tooltip,
+  .switch-wrapper:hover .simple-tooltip,
+  .record:hover .simple-tooltip,
+  .personal:hover .simple-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-0.03rem);
   }
 }
 </style>

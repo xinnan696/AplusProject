@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { defineStore } from 'pinia'
 
 export interface OperationRecord {
@@ -15,8 +15,30 @@ export interface OperationRecord {
   errorMessage?: string
 }
 
+const STORAGE_KEY = 'urbanflow_operation_records'
+
+const getStoredRecords = (): OperationRecord[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    return stored ? JSON.parse(stored) : []
+  } catch (error) {
+    return []
+  }
+}
+
 export const useOperationStore = defineStore('operation', () => {
-  const records = ref<OperationRecord[]>([])
+  const records = ref<OperationRecord[]>(getStoredRecords())
+
+  watch(
+    records,
+    (newRecords) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newRecords))
+      } catch (error) {
+      }
+    },
+    { deep: true }
+  )
 
   const addRecord = (record: Omit<OperationRecord, 'id' | 'timestamp' | 'status'>) => {
     const newRecord: OperationRecord = {
@@ -52,6 +74,7 @@ export const useOperationStore = defineStore('operation', () => {
 
   const clearRecords = () => {
     records.value = []
+    localStorage.removeItem(STORAGE_KEY)
   }
 
   const getRecordsBySource = (source: 'manual' | 'ai') => {

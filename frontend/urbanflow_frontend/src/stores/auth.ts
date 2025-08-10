@@ -69,32 +69,25 @@ function setupApiInterceptors() {
       // 🔧 只有非公开端点且未明确跳过认证才添加 token
       if (!isPublicEndpoint && !skipAuth && currentToken) {
         config.headers.Authorization = `Bearer ${currentToken}`;
-        console.log('✅ [Auth] Added Authorization header');
       } else {
-        console.log('⚠️ [Auth] Skipping Authorization header:', {
-          reason: isPublicEndpoint ? 'public endpoint' : skipAuth ? 'skip flag' : 'no token'
-        });
+
       }
 
       return config;
     },
     (error) => {
-      console.error('❌ [Auth] Request interceptor error:', error);
+      console.error(error);
       return Promise.reject(error);
     }
   );
 
-  // 响应拦截器 - 处理 401 错误（token 过期）
   apiClient.interceptors.response.use(
     (response) => {
-      console.log('✅ [Auth] Response received:', {
-        status: response.status,
-        url: response.config.url
-      });
+
       return response;
     },
     (error) => {
-      console.error('❌ [Auth] Response error:', {
+      console.error('[Auth] Response error:', {
         status: error.response?.status,
         url: error.config?.url,
         message: error.response?.data?.message
@@ -102,7 +95,6 @@ function setupApiInterceptors() {
 
       // 处理 401 未授权错误
       if (error.response?.status === 401) {
-        console.log('🔐 [Auth] 401 error detected, logging out...');
         logout();
       }
 
@@ -116,31 +108,22 @@ function updateToken(newToken: string | null) {
   token.value = newToken;
   if (newToken) {
     localStorage.setItem('authToken', newToken);
-    // 手动设置下一个请求的默认 header
     apiClient.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
-    console.log('✅ [Auth] Token updated and set in API defaults');
   } else {
     localStorage.removeItem('authToken');
     delete apiClient.defaults.headers.common['Authorization'];
-    console.log('🗑️ [Auth] Token removed from localStorage and API defaults');
   }
 }
 
-// --- GETTERS ---
 const isAuthenticated = computed(() => !!token.value);
 const userRole = computed(() => user.value?.role || 'GUEST');
 
-// --- ACTIONS ---
 
-/**
-* Handles user login by calling the backend API.
-*/
-async function login(credentials: LoginRequest) {
+    async function login(credentials: LoginRequest) {
       try {
         loading.value = true;
         error.value = '';
 
-        console.log('🔐 [Auth] Attempting login for:', credentials.accountNumber);
 
         const response = await apiClient.post('/auth/login', credentials);
         const apiResponse: ApiResponse<{ token: string, user: User }> = response.data;
@@ -152,47 +135,59 @@ async function login(credentials: LoginRequest) {
             tokenPreview: responseData.token.substring(0, 20) + '...',
             user: responseData.user.userName,
             role: responseData.user.role,
-            managedAreas: responseData.user.managedAreas // 📍 检查这个字段
+            managedAreas: responseData.user.managedAreas
           });
 
-          // 🔧 使用新的 updateToken 方法
           updateToken(responseData.token);
           user.value = responseData.user;
 
-          console.log('✅ [Auth] User data to be saved:', responseData.user);
           localStorage.setItem('user', JSON.stringify(user.value));
 
-          console.log('✅ [Auth] User data saved to localStorage');
-
-          // Navigate to default page based on user role
           const defaultPage = getDefaultHomePage();
-          await router.push({ name: defaultPage });
+
+          if (window.__routerRedirectCount) {
+            window.__routerRedirectCount = 0;
+          }
+
+          try {
+            await router.push({ name: defaultPage });
+          } catch (navError) {
+            console.error( navError);
+            window.location.href = `/${defaultPage.toLowerCase()}`;
+          }
+
         } else {
           throw new Error(apiResponse.message);
         }
       } catch (err: any) {
         error.value = err.response?.data?.message || err.message || 'Login failed';
-        console.error('❌ [Auth] Login error:', err);
+        console.error('[Auth] Login error:', err);
         throw err;
       } finally {
         loading.value = false;
       }
     }
 
-    /**
-     * Clears authentication state and redirects to the login page.
-     */
     function logout() {
-      console.log('🚪 [Auth] Logging out...');
 
-      // 🔧 使用新的 updateToken 方法清理 token
       updateToken(null);
       user.value = null;
       error.value = '';
       localStorage.removeItem('user');
 
+      // 🔧 确保完全清理
+      localStorage.removeItem('authToken');
+      sessionStorage.clear();
+
       console.log('✅ [Auth] Logout completed');
-      router.push({ name: 'Login' });
+
+      // 🔧 延迟导航，避免路由守卫冲突
+      setTimeout(() => {
+        router.replace({ name: 'Login' }).catch(err => {
+          console.error('❌ [Auth] Logout navigation error:', err);
+          window.location.href = '/login';
+        });
+      }, 100);
     }
 
     /**
@@ -213,7 +208,9 @@ async function login(credentials: LoginRequest) {
      * 检查用户是否是管理员
      */
     function isAdmin(): boolean {
-      return hasRole('ADMIN');
+      if (!user.value?.role) return false;
+      const role = user.value.role.toLowerCase();
+      return role === 'admin' || role === 'ADMIN';
     }
 
     /**
@@ -241,9 +238,16 @@ async function login(credentials: LoginRequest) {
       const role = user.value.role;
       console.log(`Checking page access: ${pageName} for role: ${role}`);
 
-      // 角色权限映射
       const rolePermissions = {
         'ADMIN': [
+          'Control', 'Dashboard', 'Help',
+          'UserList', 'AddUser', 'EditUser', 'UserDetails', 'UserLog'
+        ],
+        'Admin': [
+          'Control', 'Dashboard', 'Help',
+          'UserList', 'AddUser', 'EditUser', 'UserDetails', 'UserLog'
+        ],
+        'admin': [
           'Control', 'Dashboard', 'Help',
           'UserList', 'AddUser', 'EditUser', 'UserDetails', 'UserLog'
         ],
@@ -262,24 +266,26 @@ async function login(credentials: LoginRequest) {
       return hasAccess;
     }
 
-    /**
-     * 获取用户默认首页（根据角色）
-     */
+
     function getDefaultHomePage(): string {
       if (!user.value || !user.value.role) {
         return 'Login';
       }
 
       const role = user.value.role;
+      console.log('🔍 [Auth] Getting default page for role:', role);
 
-      // 根据角色返回默认首页
       const defaultPages = {
         'ADMIN': 'Control',
+        'Admin': 'Control',
+        'admin': 'Control',
         'Traffic Manager': 'Control',
         'Traffic Planner': 'Dashboard'
       };
 
-      return defaultPages[role as keyof typeof defaultPages] || 'Dashboard';
+      const defaultPage = defaultPages[role as keyof typeof defaultPages] || 'Dashboard';
+
+      return defaultPage;
     }
 
     function hasAreaAccess(areaName: string): boolean {
@@ -301,44 +307,32 @@ async function login(credentials: LoginRequest) {
     }
 
     async function initAuth() {
-      console.log('🔧 [Auth] Initializing auth...');
-
-      // 🔧 设置 API 拦截器
       setupApiInterceptors();
 
       if (token.value && user.value) {
-        console.log('✅ [Auth] Found existing session:', {
+        console.log('[Auth] Found existing session:', {
           user: user.value.userName,
           role: user.value.role,
           tokenPreview: token.value.substring(0, 20) + '...'
         });
-
-        // 确保 API 客户端有正确的 Authorization header
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
       } else {
-        console.log('⚠️ [Auth] No existing session found');
+
       }
     }
 
-    // 🔧 新增：手动发送测试请求验证 token
     async function testTokenValidity() {
       if (!token.value) {
-        console.log('❌ [Auth] No token to test');
         return false;
       }
 
       try {
-        console.log('🧪 [Auth] Testing token validity...');
 
-        // 发送一个简单的 API 请求来测试 token
-        const response = await apiClient.get('/auth/profile'); // 假设有这个端点
+        const response = await apiClient.get('/auth/profile');
 
-        console.log('✅ [Auth] Token is valid');
         return true;
       } catch (error) {
-        console.error('❌ [Auth] Token validation failed:', error);
-
-        // 如果 token 无效，清理认证状态
+        console.error(error);
         if (error.response?.status === 401) {
           logout();
         }
@@ -400,6 +394,6 @@ async function login(credentials: LoginRequest) {
       completeTransition,
       forgotPassword,
       resetPassword,
-      testTokenValidity, // 🔧 新增
+      testTokenValidity,
     };
 });
