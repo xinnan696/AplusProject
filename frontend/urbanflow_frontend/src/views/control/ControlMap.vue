@@ -6,15 +6,20 @@
         <div class="iconfont zoom-btn-minus" @click="zoomOut">&#xeaf5;</div>
       </div>
 
-      <div class="view-switch" v-if="authStore.isTrafficManager()">
-        <label class="switch">
-          <input
-            type="checkbox"
-            :checked="viewMode === 'full'"
-            @change="handleSwitchChange"
-          />
-          <span class="slider"></span>
-        </label>
+      <div class="view-switch-container" v-if="authStore.isTrafficManager()">
+        <div class="view-switch">
+          <label class="switch">
+            <input
+              type="checkbox"
+              :checked="viewMode === 'full'"
+              @change="handleSwitchChange"
+            />
+            <span class="slider"></span>
+            <div class="simple-tooltip">
+              {{ viewMode === 'restricted' ? 'Local View' : 'Global View' }}
+            </div>
+          </label>
+        </div>
       </div>
 
       <div class="search-section">
@@ -69,10 +74,6 @@
           Current Location:
           <span class="footer-link" :class="{ 'no-selection': currentLocation === 'No element selected' }">{{ currentLocation }}</span>
         </span>
-      </div>
-      <div class="area-info" v-if="authStore.isTrafficManager()">
-        <span class="area-label">Area:</span>
-        <span class="area-value">{{ viewModeDescription }}</span>
       </div>
     </div>
 
@@ -438,6 +439,15 @@ const showTrafficStatus = computed(() => {
 
   const shouldShow = hasJunction && hasDirection
 
+
+  if (authStore.isTrafficManager() && viewMode.value === 'restricted' && hasJunction) {
+    const junction = selectedJunctionForStatus.value!
+    const isInManagedArea = isJunctionInManagedArea(junction.junctionX, junction.junctionY)
+    if (!isInManagedArea) {
+      return false
+    }
+  }
+
   return shouldShow
 })
 
@@ -661,10 +671,40 @@ const zoomIn = () => {
   }
 }
 
+let zoomOutDebounceTimer: NodeJS.Timeout | null = null
+
 const zoomOut = () => {
   const currentView = map?.getView()
   if (currentView) {
-    currentView.animate({ zoom: Math.max(currentView.getZoom()! - 0.5, 13), duration: 250 })
+    const currentZoom = currentView.getZoom()!
+    const minZoom = 13
+
+    if (currentZoom <= minZoom + 0.001) {
+      return
+    }
+
+    if (zoomOutDebounceTimer) {
+      return
+    }
+
+    const targetZoom = Math.max(currentZoom - 0.5, minZoom)
+
+    if (Math.abs(targetZoom - currentZoom) < 0.01) {
+      return
+    }
+
+    zoomOutDebounceTimer = setTimeout(() => {
+      zoomOutDebounceTimer = null
+    }, 200)
+
+    if (targetZoom > minZoom) {
+      currentView.animate({
+        zoom: targetZoom,
+        duration: 250
+      })
+    } else {
+      currentView.setZoom(minZoom)
+    }
   }
 }
 
@@ -758,7 +798,7 @@ const searchJunction = () => {
       emit('signalLightClicked', junction.junction_id)
     }
   } else {
-    currentLocation.value = 'Junction not found'
+    currentLocation.value = 'No element selected'
   }
 }
 
@@ -977,6 +1017,20 @@ const loadLaneData = async () => {
       if (vectorLayer) {
         vectorLayer.changed()
       }
+      if (authStore.isTrafficManager() && newMode === 'restricted' && selectedJunctionForStatus.value) {
+        const junction = selectedJunctionForStatus.value
+        const isInArea = isJunctionInManagedArea(junction.junctionX, junction.junctionY)
+        if (!isInArea) {
+          selectedJunctionForStatus.value = null
+          selectedDirectionIndex.value = null
+          currentTrafficLightData.value = null
+          lastManualControl.value = null
+          highlightLanes.value = null
+          currentLocation.value = 'No element selected'
+          emit('trafficLightCleared')
+        }
+      }
+
       await setMapViewForMode(newMode)
       rerenderTlsOverlays()
     })
@@ -1497,7 +1551,6 @@ const zoomToJunction = (junctionName: string) => {
   }
 }
 
-// 设置选中的交通灯和方向
 const setSelectedTrafficLight = (junctionId: string, directionIndex: number, options: { disableZoom?: boolean } = {}) => {
 
   const junction = Array.from(junctionMap.values()).find(j => j.junction_id === junctionId)
@@ -1564,7 +1617,6 @@ const setSelectedJunctionOnly = (junctionId: string) => {
   }
 }
 
-// 获取交通灯数据
 const fetchTrafficLightData = async (junctionId: string) => {
   try {
 
@@ -1645,10 +1697,8 @@ const showPlannedRoute = async (vehicleId: string) => {
         map?.addLayer(emergencyRouteLayer)
       }
 
-      // 清除之前的路线
       emergencyRouteLayer.getSource()?.clear()
 
-      // 绘制新路线
       const routeFeatures: Feature[] = []
 
       vehicleRoute.route_edges.forEach((edgeId: string) => {
@@ -2285,6 +2335,10 @@ onUnmounted(() => {
   }
 
 
+  if (zoomOutDebounceTimer) {
+    clearTimeout(zoomOutDebounceTimer)
+  }
+
   stopRoadAnimation()
 
   mapEventListeners.forEach(cleanup => cleanup())
@@ -2341,11 +2395,95 @@ defineExpose({
   showPlannedRoute,
   showEmergencyRequestDialog,
   hideEmergencyRequestDialog,
-  hasPendingEmergencyVehicles: readonly(hasPendingEmergencyVehicles)
+  hasPendingEmergencyVehicles: readonly(hasPendingEmergencyVehicles),
+  handleJunctionSelected: (junctionName: string, junctionId: string, options?: { enableZoom?: boolean }) => {
+    console.log('[Map] Handling junction selected:', junctionName, junctionId, options)
+
+    if (options?.enableZoom) {
+      const junctionEntry = Array.from(junctionMap.entries()).find(([name, junction]) =>
+        junction.junction_id === junctionId
+      )
+
+      if (junctionEntry && map) {
+        const [jName, junction] = junctionEntry
+        const currentView = map.getView()
+        if (currentView) {
+          currentView.animate({
+            center: [junction.junctionX, junction.junctionY],
+            zoom: Math.max(currentView.getZoom() || 15, 16), // Manual Control使用zoom 16
+            duration: 1000
+          })
+
+          const controllableText = isJunctionControllable(jName) ? '' : ' (Read-only)'
+          currentLocation.value = `${jName}${controllableText}`
+        }
+      }
+    }
+  },
+
+  zoomToJunctionByIdSmall: (junctionId: string) => {
+    const junctionEntry = Array.from(junctionMap.entries()).find(([name, junction]) =>
+      junction.junction_id === junctionId
+    )
+
+    if (junctionEntry && map) {
+      const [junctionName, junction] = junctionEntry
+      const currentView = map.getView()
+      if (currentView) {
+        selectedJunctionName.value = null
+        rerenderTlsOverlays()
+
+        currentView.animate({
+          center: [junction.junctionX, junction.junctionY],
+          zoom: Math.max(currentView.getZoom() || 15, 16),
+          duration: 1000
+        })
+
+        selectedJunctionName.value = junctionName
+        rerenderTlsOverlays()
+
+        const controllableText = isJunctionControllable(junctionName) ? '' : ' (Read-only)'
+        currentLocation.value = `${junctionName}${controllableText}`
+      }
+    }
+  }
 })
 </script>
 
 <style scoped lang="scss">
+.simple-tooltip {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  background: rgba(45, 45, 45, 0.95) !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  font-family: 'Inter', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Roboto', sans-serif !important;
+  line-height: 1.2 !important;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 99999;
+  pointer-events: none;
+  min-height: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.01em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.switch:hover .simple-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
 .map-show {
   display: flex;
   flex-direction: column;
@@ -2372,6 +2510,7 @@ defineExpose({
   border-bottom: 0.01rem solid #3a3a4c;
   z-index: 999;
   flex-shrink: 0;
+  overflow: visible;
 }
 
 .map-container {
@@ -2470,6 +2609,14 @@ defineExpose({
   margin-right: 0.4rem;
 }
 
+.view-switch-container {
+  position: absolute;
+  left: 3.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
 .search-section {
   margin-left: auto;
   margin-right: 1rem;
@@ -2477,6 +2624,11 @@ defineExpose({
   align-items: center;
   gap: 0.12rem;
   flex-shrink: 0;
+  transition: margin-right 0.3s ease;
+}
+
+.map-show.sidebar-open .search-section {
+  margin-right: 0.5rem;
 }
 
 .search-wrapper {
@@ -2484,13 +2636,24 @@ defineExpose({
   height: 0.4rem;
   display: flex;
   align-items: center;
-  border: 0.01rem solid #00b4d8;
-  background-color: #1e1e2f;
+  border: 1px solid #2B2B3C;
+  background-color: #2B2B3C;
   border-radius: 0.2rem;
   padding: 0 0.12rem;
   box-sizing: border-box;
   position: relative;
   flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.search-wrapper:hover {
+  background-color: #3A3A4D;
+  border-color: #3A3A4D;
+}
+
+.search-wrapper:focus-within {
+  background-color: #3A3A4D;
+  border-color: #3A3A4D;
 }
 
 .search-input {
@@ -2499,40 +2662,47 @@ defineExpose({
   background-color: transparent;
   border: none;
   outline: none;
-  color: #E3F2FD;
-  font-size: 0.13rem;
+  color: #FFFFFF;
+  font-size: 0.14rem;
   padding: 0 0.08rem;
 }
 
 .search-input::placeholder {
-  color: rgba(179, 229, 252, 0.6);
+  color: #666;
 }
 
 .search-suggestions {
   position: absolute;
   top: calc(100% + 0.02rem);
-  left: -0.01rem;
-  right: -0.01rem;
-  background: #1e1e2f;
-  border: 0.01rem solid #00b4d8;
+  left: -1px;
+  right: -1px;
+  background: #2B2B3C;
+  border: 1px solid #3A3A4D;
   border-radius: 0.08rem;
   max-height: 2.4rem;
   overflow: hidden;
   z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .suggestion-item {
   padding: 0.12rem 0.16rem;
-  color: #E8E8E8;
-  font-size: 0.13rem;
+  color: #FFFFFF;
+  font-size: 0.14rem;
   cursor: pointer;
-  border-bottom: 0.01rem solid rgba(0, 180, 216, 0.1);
+  border-bottom: 1px solid rgba(58, 58, 77, 0.5);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: all 0.2s ease;
 
   &:hover {
-    color: #00b4d8;
+    background-color: #3A3A4D;
+    color: #FFFFFF;
+  }
+
+  &:last-child {
+    border-bottom: none;
   }
 
   &.suggestion-uncontrollable {
@@ -2560,9 +2730,26 @@ defineExpose({
   color: #00b4d8;
 }
 
-// View switch 样式
+
+.view-switch-container {
+  position: absolute;
+  left: 2.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  transition: left 0.3s ease;
+  overflow: visible;
+}
+
+
+.map-show.sidebar-open .view-switch-container {
+  left: 1.725rem;
+}
+
 .view-switch {
-  margin-left: 1rem;
+  display: flex;
+  align-items: center;
+  overflow: visible;
 }
 
 .switch {
@@ -2570,6 +2757,7 @@ defineExpose({
   display: inline-block;
   width: 0.8rem;
   height: 0.34rem;
+  overflow: visible;
 }
 
 .switch input {
@@ -2579,14 +2767,17 @@ defineExpose({
 .slider {
   position: absolute;
   cursor: pointer;
-  top: 0;
+  top: 50%;
   left: 0;
   right: 0;
-  bottom: 0;
+  height: 0.34rem;
+  transform: translateY(-50%);
   background-color: #1e1e2f;
   transition: .4s;
   border-radius: 0.34rem;
   border: 1px solid #3a3a4c;
+  display: flex;
+  align-items: center;
 }
 
 .slider:before {
@@ -2595,7 +2786,6 @@ defineExpose({
   height: 0.26rem;
   width: 0.26rem;
   left: 0.04rem;
-  bottom: 0.04rem;
   background-color: white;
   transition: .4s;
   border-radius: 50%;
@@ -2614,24 +2804,24 @@ input:checked + .slider:before {
 }
 
 .slider:after {
-  content: 'FOCUS';
+  content: 'LOCAL';
   color: white;
   display: block;
   position: absolute;
-  transform: translate(-50%, -50%);
   top: 50%;
   left: 50%;
+  transform: translate(-50%, -50%);
   font-size: 0.08rem;
   font-family: Arial, sans-serif;
   font-weight: 600;
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
 }
 
 input:checked + .slider:after {
   content: 'GLOBAL';
 }
 
-// 添加标记样式
 :global(.search-marker),
 :global(.click-marker) {
   color: #ff6b6b !important;
@@ -2639,17 +2829,14 @@ input:checked + .slider:after {
   z-index: 1000 !important;
   font-weight: bold;
   text-shadow: none;
-  /* 移除动画 */
 }
 
-// 地图交通状态栏样式
 .map-traffic-status {
   position: absolute;
   z-index: 1000;
   pointer-events: auto;
 }
 
-// 自定义 tooltip 样式
 :global([title]) {
   position: relative;
 }
@@ -2691,7 +2878,6 @@ input:checked + .slider:after {
   }
 }
 
-// 实时车辆标记样式
 :global(.realtime-vehicle-marker) {
   .vehicle-dot {
     position: relative;
@@ -2754,19 +2940,6 @@ input:checked + .slider:after {
     filter: brightness(1.3);
   }
 }
-
-/* 移除 markerPulse 动画
-@keyframes markerPulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
-  }
-}
-*/
 
 @keyframes emergencyBlink {
   0%, 100% {

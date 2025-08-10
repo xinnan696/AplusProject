@@ -71,31 +71,23 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 const router = useRouter()
 const emergencyStore = useEmergencyStore()
 
-// 组件引用
 const mapRef = ref()
 const controlBoardRef = ref()
 
-// 状态管理
 const isRecordVisible = ref(false)
 const isPriorityVisible = ref(false)
 const isAIMode = ref(false)
 
 const junctionIdToNameMap = ref<Record<string, string>>({})
 
-// 计算属性 - 紧急车辆状态
 const hasPendingEmergencies = computed(() => emergencyStore.pendingVehicles.length > 0)
 const hasNewRequests = computed(() => emergencyStore.pendingVehicles.length > 0)
-// 显示图标的条件：有新请求 或 有正在进行的会话 或 有正在追踪的车辆
 const showEmergencyIcon = computed(() => {
   const hasNew = hasNewRequests.value
   const hasActive = emergencyStore.hasActiveSession
-  const hasTracking = Object.keys(emergencyStore.vehicleDataMap || {}).length > 0
-
-
-  return hasNew || hasActive || hasTracking
+  return hasNew || hasActive
 })
 
-// Junction数据获取和转换
 const fetchJunctions = async () => {
   try {
     const response = await axios.get('/api-status/junctions');
@@ -117,16 +109,11 @@ const getJunctionName = (junctionId: string) => {
 
 
 const handleEmergencyIconClick = () => {
-
-
   if (hasNewRequests.value) {
-
     mapRef.value?.showEmergencyRequestDialog();
-
     isRecordVisible.value = false;
     isPriorityVisible.value = false;
-  } else if (emergencyStore.hasActiveSession || Object.keys(emergencyStore.vehicleDataMap || {}).length > 0) {
-
+  } else if (emergencyStore.hasActiveSession) {
     isPriorityVisible.value = !isPriorityVisible.value;
     if (isPriorityVisible.value) {
       isRecordVisible.value = false;
@@ -175,11 +162,12 @@ const handleTrafficLightCleared = () => {
 }
 
 const handleJunctionSelected = (junctionName: string, junctionId: string) => {
+  mapRef.value?.zoomToJunctionById(junctionId)
   mapRef.value?.setSelectedJunctionOnly(junctionId)
 }
 
 const handleManualControlApplied = (data: { junctionName: string, directionInfo: string, lightColor: string, duration: number }) => {
-  console.log('🎯 [Home] Manual control applied:', data)
+
 }
 
 const toggleRecord = () => {
@@ -226,7 +214,7 @@ const showKeyboardHelp = () => {
   const helpMessage =
 
 
-  alert('键盘快捷键帮助：\n\n基本操作：\nEsc - 关闭所有面板，清除状态\n1 - 切换记录面板\n2 - 切换紧急车辆处理\n3 - 切换优先车辆追踪面板\nN - 切换导航面板\n\n清除操作：\nR - 刷新地图状态\nC - 清除所有选择\n\n其他：\nH - 显示此帮助信息\nF - 聚焦搜索')
+  alert('Keyboard shortcut help:\n\nBasic operations:\nEsc - Close all panels, clear status\n1 - Toggle log panel\n2 - Toggle emergency vehicle handling\n3 - Toggle priority vehicle tracking panel\nN - Toggle navigation panel\n\nClear operations:\nR - Refresh map status\nC - Clear all selections\n\nOther:\nH - Show this help information\nF - Focus search')
 }
 
 
@@ -235,7 +223,6 @@ const focusSearch = () => {
   if (searchInput) {
     searchInput.focus()
   } else {
-    console.log('❌ [ControlHome] 未找到搜索框')
   }
 }
 
@@ -253,86 +240,68 @@ const handleKeyDown = (event: KeyboardEvent) => {
       const wasPriorityVisible = isPriorityVisible.value
       const wasRecordVisible = isRecordVisible.value
 
-      // 关闭所有面板
       isRecordVisible.value = false
       isPriorityVisible.value = false
 
-      // 如果紧急车辆追踪面板之前是打开的，清除交通灯状态
       if (wasPriorityVisible) {
-        console.log('🧹 [ControlHome] Escape键关闭车辆追踪面板，清除交通灯状态')
         mapRef.value?.clearTrafficStatus()
       }
 
-      // 如果记录面板之前是打开的，也清除交通灯状态
       if (wasRecordVisible) {
-        console.log('🧹 [ControlHome] Escape键关闭记录面板，清除交通灯状态')
         mapRef.value?.clearTrafficStatus()
       }
 
-      // 清除地图上的所有选择状态
       controlBoardRef.value?.clearJunctionSelection?.()
 
-      console.log('✅ [ControlHome] 所有面板已关闭，状态已清理')
       break
 
     case '1':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键1 - 切换记录面板')
       toggleRecord()
       break
 
     case '2':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键2 - 切换紧急车辆处理')
       toggleEmergency()
       break
 
     case '3':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键3 - 切换优先车辆追踪面板')
       togglePriority()
       break
 
     case 'n':
     case 'N':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键N - 切换导航面板')
       toggleNav()
       break
 
     case 'r':
     case 'R':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键R - 刷新地图状态')
       mapRef.value?.clearTrafficStatus()
       controlBoardRef.value?.clearJunctionSelection?.()
-      console.log('✅ [ControlHome] 地图状态已刷新')
       break
 
     case 'c':
     case 'C':
       if (event.ctrlKey || event.metaKey) {
-        // 让Ctrl+C正常工作，不阻止
         return
       }
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键C - 清除所有选择')
       mapRef.value?.clearTrafficStatus()
       controlBoardRef.value?.clearJunctionSelection?.()
-      console.log('✅ [ControlHome] 所有选择已清除')
       break
 
     case 'h':
     case 'H':
       event.preventDefault()
-      console.log('🎹 [ControlHome] 快捷键H - 显示帮助信息')
       showKeyboardHelp()
       break
 
     case 'f':
     case 'F':
       if (event.ctrlKey || event.metaKey) {
-        // 让Ctrl+F正常工作
         return
       }
       event.preventDefault()
@@ -348,6 +317,24 @@ onMounted(() => {
   fetchJunctions()
   emergencyStore.connectWebSocket()
   document.addEventListener('keydown', handleKeyDown)
+
+  if (typeof window !== 'undefined') {
+    window.debugEmergency = {
+      store: emergencyStore,
+      forceClean: () => {
+        emergencyStore.forceCleanAllData()
+      },
+      checkState: () => {
+        console.log('=== Emergency Store 状态 ===')
+        console.log('vehicleDataMap:', emergencyStore.vehicleDataMap)
+        console.log('activelyTrackedVehicleId:', emergencyStore.activelyTrackedVehicleId)
+        console.log('hasActiveSession:', emergencyStore.hasActiveSession)
+        console.log('pendingVehicles:', emergencyStore.pendingVehicles)
+        console.log('showEmergencyIcon should be:', hasNewRequests.value || emergencyStore.hasActiveSession)
+      },
+      reload: () => window.location.reload()
+    }
+  }
 })
 
 onBeforeUnmount(() => {

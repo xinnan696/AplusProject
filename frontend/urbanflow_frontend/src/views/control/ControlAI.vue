@@ -139,20 +139,13 @@ const isLoading = ref(false)
 const countdownProgress = ref(100)
 const remainingTime = ref(5000)
 
-// 轮询相关状态
 const pollingTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const batchRefreshTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const BATCH_REFRESH_INTERVAL = 10000 // 10秒主动刷新批次数据
-
-// 已处理的建议记录
+const BATCH_REFRESH_INTERVAL = 10000
 const processedSuggestions = ref<Set<string>>(new Set())
-// 当前批量建议索引
 const currentBatchIndex = ref(0)
-// 当前批量建议数据
 const currentBatchSuggestions = ref<AISuggestion[]>([])
-// 上次获取的批次数据哈希，用于去重
 const lastBatchHash = ref<string>('')
-// 当前循环显示的索引（独立于处理索引）
 const currentDisplayIndex = ref(0)
 
 const junctionsCache = ref<Map<string, Junction>>(new Map())
@@ -204,16 +197,12 @@ const findLightIndex = (junction: Junction | undefined, fromlaneid: string, tola
 
 const initializeCache = async (): Promise<boolean> => {
   try {
-
-    // 按照您其他模块的成功方式，使用直接的axios
     const [junctionsRes, edgesRes, laneMappingsRes] = await Promise.all([
       axios.get('/api-status/junctions'),
       axios.get('/api-status/edges'),
       axios.get('/api-status/lane-mappings')
     ])
 
-
-    // 处理 junctions 数据
     if (junctionsRes.data) {
       if (Array.isArray(junctionsRes.data)) {
         junctionsRes.data.forEach((junction: any) => {
@@ -226,7 +215,6 @@ const initializeCache = async (): Promise<boolean> => {
       }
     }
 
-    // 处理 edges 数据
     if (edgesRes.data) {
       if (Array.isArray(edgesRes.data)) {
         edgesRes.data.forEach((edge: any) => {
@@ -239,7 +227,6 @@ const initializeCache = async (): Promise<boolean> => {
       }
     }
 
-    // 处理 lane mappings 数据
     if (laneMappingsRes.data && Array.isArray(laneMappingsRes.data)) {
       laneMappingsRes.data.forEach((mapping: LaneMapping) => {
         laneMappingsCache.value.set(mapping.laneId, mapping.edgeId)
@@ -267,8 +254,6 @@ const initializeCache = async (): Promise<boolean> => {
 const convertSuggestionToDisplay = async (suggestion: AISuggestion): Promise<DisplayData & { lightIndex: number }> => {
   try {
 
-
-    // Junction名称转换
     const junction = junctionsCache.value.get(suggestion.junction)
     const junctionName = junction?.junction_name || `Junction_${suggestion.junction}`
 
@@ -350,8 +335,6 @@ const fetchBatchSuggestions = async (): Promise<AISuggestion[]> => {
               target_state: suggestion.target_state || 'G',
               duration: suggestion.duration
             }
-
-            // 过滤掉已处理的建议
             const suggestionId = getSuggestionId(validSuggestion)
             if (!processedSuggestions.value.has(suggestionId)) {
               validSuggestions.push(validSuggestion)
@@ -508,7 +491,6 @@ const startBatchRefreshTimer = () => {
     } catch (error) {
       console.error( error)
     } finally {
-      // 🔥 关键：无论成功还是失败，都要重新启动定时器
       startBatchRefreshTimer()
     }
   }, BATCH_REFRESH_INTERVAL)
@@ -545,7 +527,7 @@ const refreshBatchSuggestions = async () => {
       }
 
   } catch (error) {
-    console.error('批次刷新失败:', error)
+    console.error(error)
   }
 }
 
@@ -653,12 +635,10 @@ watch(() => props.isAIMode, (newValue, oldValue) => {
   console.log('AI mode changed:', oldValue, '->', newValue)
 
   if (newValue) {
-    console.log('Switching to AI mode - Auto-apply enabled')
     if (suggestionData.value) {
       startAutoApplyCountdown()
     }
   } else {
-    console.log('Switching to Manual mode - Auto-apply disabled')
     if (pollingTimer.value) {
       clearTimeout(pollingTimer.value)
       pollingTimer.value = null
@@ -712,6 +692,7 @@ const handleApply = async (isAutoApply = false) => {
 
     if (isAutoApply) {
       console.log('AI suggestion auto-applied successfully')
+      toast.success('AI suggestion applied successfully!')
     } else {
       toast.success('Traffic light settings updated successfully!')
     }
@@ -720,6 +701,7 @@ const handleApply = async (isAutoApply = false) => {
 
     if (isAutoApply) {
       console.error('AI suggestion auto-apply failed')
+      toast.error('AI suggestion failed to apply!')
     } else {
       toast.error('Failed to send data to backend.')
     }
@@ -727,25 +709,22 @@ const handleApply = async (isAutoApply = false) => {
     isApplying.value = false
   }
 
-  // 标记当前建议为已处理
   if (suggestion) {
     const suggestionId = getSuggestionId(suggestion)
     processedSuggestions.value.add(suggestionId)
   }
 
-  // 🔄 用户处理后立即显示下一个建议
-  showSuggestion(false) // 不强制刷新，继续循环
+  showSuggestion(false)
 }
 
 const handleIgnore = () => {
-  // 标记当前建议为已处理（忽略）
   if (suggestionData.value) {
     const suggestionId = getSuggestionId(suggestionData.value)
     processedSuggestions.value.add(suggestionId)
   }
 
-  // 🔄 用户处理后立即显示下一个建议
-  showSuggestion(false) // 不强制刷新，继续循环
+
+  showSuggestion(false)
 }
 
 onMounted(async () => {
@@ -779,12 +758,15 @@ onBeforeUnmount(() => {
   position: relative;
   overflow: hidden;
 
-  // AI模式下让建议栏在面板高度内垂直居中
   &.ai-mode-container {
+    display: flex;
+    flex-direction: column;
+
     .action-box {
-      // 在AI模式下，建议栏垂直居中显示，稍微向上偏移
-      margin-top: 0.6rem; // 给顶部固定的margin
-      margin-bottom: 0.9rem; // 给底部稍大的margin，让建议栏稍微向上
+      margin-top: 0.9rem;
+      margin-bottom: 0.2rem;
+      margin-left: 0.24rem;
+      margin-right: 0.24rem;
     }
   }
 
@@ -846,7 +828,7 @@ onBeforeUnmount(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: transparent; /* 移除斜线条条效果 */
+    background: transparent;
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -881,26 +863,25 @@ onBeforeUnmount(() => {
     border-color: rgba(113, 128, 150, 0.3);
 
     &::before {
-      background: transparent; /* 移除斜线条条效果 */
+      background: transparent;
     }
   }
 
 
   &.ai-mode {
-    height: 2.2rem; // AI模式下增加高度
-    border-color: rgba(74, 85, 104, 0.4); // 使用普通的边框颜色，去掉紫色
-    background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%); // 使用普通的背景，去掉紫色
-    box-shadow: none; // 移除紫色荧光效果
+    height: 2.2rem;
+    border-color: rgba(74, 85, 104, 0.4);
+    background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+    box-shadow: none;
 
-    // 在AI模式下保持建议栏在高度上完美居中
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.2rem 0.24rem; // 调整内边距以适应更大的高度
+    padding: 0.2rem 0.24rem;
 
     &::before {
-      background: transparent; /* 移除斜线条条效果 */
-      opacity: 0.3; // 降低透明度
+      background: transparent;
+      opacity: 0.3;
     }
 
     .placeholder-text {
@@ -908,7 +889,6 @@ onBeforeUnmount(() => {
       width: 100%;
       height: 100%;
 
-      // 确保在AI模式下内容完美居中
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -971,11 +951,9 @@ onBeforeUnmount(() => {
     display: inline;
   }
 
-  // AI模式下的特殊样式
   .action-box.ai-mode & {
-    font-size: 0.18rem; // AI模式下字体稍大一些
+    font-size: 0.18rem;
 
-    // 确保在AI模式下完美居中
     width: 100%;
     height: 100%;
     display: flex;
@@ -983,12 +961,13 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     text-align: center;
-    margin: 0; // 移除默认的margin
-    padding: 0; // 移除默认的padding
+    margin: 0;
+    padding: 0;
 
     .suggestion-line {
-      margin: 0.08rem 0; // 稍微增加行间距以适应更大的高度
+      margin: 0.08rem 0;
       line-height: 1.4;
+      text-align: center;
     }
 
     strong {
@@ -1096,14 +1075,10 @@ onBeforeUnmount(() => {
   span {
     position: relative;
     z-index: 2;
-    font-weight: 700; // 加粗APPLY文字
+    font-weight: 700;
   }
 
   &:not(:disabled):hover {
-    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
-    border-color: rgba(0, 180, 216, 0.8);
   }
 }
 
@@ -1128,10 +1103,6 @@ onBeforeUnmount(() => {
   border-color: rgba(113, 128, 150, 0.5);
 
   &:hover {
-    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(113, 128, 150, 0.8);
   }
 
   &:disabled {

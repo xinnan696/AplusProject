@@ -130,8 +130,8 @@
                 <div class="form-input-wrapper">
                   <select class="form-select" v-model="formData.role" :class="{ 'error': errors.role, 'placeholder': !formData.role }" @change="onRoleChange">
                     <option value="">Select Role</option>
-                    <option value="Traffic Manager">Traffic Manager</option>
-                    <option value="Traffic Planner">Traffic Planner</option>
+                    <option value="Traffic Manager">Traffic Operator</option>
+                    <option value="Traffic Planner">Urban Planner</option>
                   </select>
                   <div v-if="errors.role" class="error-message">
                     <span class="error-icon">⚠</span>{{ errors.role }}
@@ -236,25 +236,45 @@ const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 
-const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+const showCenterToast = (message: string, type: 'success' | 'error' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
   const vnode = createVNode(BaseToast, { message, type, duration })
   render(vnode, container)
 
-  setTimeout(() => {
-    const toastElement = container.querySelector('.toast') as HTMLElement
-    if (toastElement) {
-      toastElement.style.cssText = `
-        position: fixed !important;
-        top: .82rem !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 9999 !important;
-      `
+  // 立即设置正确的位置，避免闪烁
+  const toastElement = container.querySelector('.toast') as HTMLElement
+  if (toastElement) {
+    // 先隐藏元素，避免看到初始位置
+    toastElement.style.visibility = 'hidden'
+    toastElement.style.opacity = '0'
+
+    // 计算toast位置：根据导航栏状态调整
+    const navWidth = 2.4 // rem，导航栏宽度
+    const topOffset = 0.82 // rem，距离顶部的偏移
+
+    let leftPosition: string
+    if (isNavVisible.value) {
+      // 导航栏打开时：右侧内容区域的中心
+      const rightAreaWidth = `calc(100vw - ${navWidth}rem)`
+      leftPosition = `calc(${navWidth}rem + (${rightAreaWidth}) / 2)`
+    } else {
+      // 导航栏关闭时：全屏中心
+      leftPosition = '50%'
     }
-  }, 10)
+
+    // 设置最终位置
+    toastElement.style.cssText = `
+      position: fixed !important;
+      top: ${topOffset}rem !important;
+      left: ${leftPosition} !important;
+      transform: translateX(-50%) !important;
+      z-index: 9999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `
+  }
 
   setTimeout(() => {
     render(null, container)
@@ -384,7 +404,6 @@ const createUser = async () => {
       accountNumber: formData.value.accountNumber.trim(),
       userName: formData.value.name.trim(),
       email: formData.value.email.trim(),
-      password: 'TempPass123!',
       department: formData.value.department?.trim() || '',
       phoneNumber: formData.value.phoneNumber?.trim() || '',
       role: formData.value.role,
@@ -812,11 +831,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(0, 229, 255, 0.5);
 
-    &:not(:disabled):hover {
-      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(0, 229, 255, 0.8);
-    }
+
 
     &:disabled {
       background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
@@ -830,11 +845,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(113, 128, 150, 0.5);
 
-    &:hover {
-      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(113, 128, 150, 0.8);
-    }
+
   }
 }
 

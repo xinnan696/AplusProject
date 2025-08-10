@@ -196,7 +196,7 @@ const updateStatus = () => {
 
     if (lightChanged || previousLightState.value === '') {
       const steps = props.trafficLightData.nextSwitchTime || 0
-      const seconds = (steps + 1) * 9
+      const seconds = (steps + 1) * 20
 
 
 

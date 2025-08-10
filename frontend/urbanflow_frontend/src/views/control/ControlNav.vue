@@ -76,8 +76,7 @@ const getAdminItems = (): string[] => {
 
 const navigateTo = (routeName: string) => {
   console.log(`Navigating to: ${routeName} for role: ${userRole.value}`)
-  
-  // 直接导航，不再做额外的权限检查（因为导航栏已经做过权限检查了）
+
   router.push({ name: routeName }).catch(err => {
     console.error(`Navigation error to ${routeName}:`, err)
   })

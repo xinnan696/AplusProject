@@ -269,16 +269,19 @@ watch(() => emergencyStore.activelyTrackedVehicle, (currentVehicle, oldVehicle) 
     if (hasSignificantChange) {
       trackedVehicleSnapshot.value = JSON.parse(JSON.stringify(currentVehicle))
     }
-  } else if (oldVehicle) {
-    handleTrackingComplete(oldVehicle.vehicleID)
+  } else if (oldVehicle && trackedVehicleSnapshot.value) {
+    trackedVehicleSnapshot.value = null
+    if (props.isVisible) {
+      handleTrackingComplete(oldVehicle.vehicleID)
+    }
   }
 }, { deep: true, immediate: true })
 
 watch(() => props.isVisible, (isVisible) => {
   if (!isVisible) {
     emit('traffic-light-cleared')
+    resetForm()
   }
-
 })
 
 
@@ -338,9 +341,7 @@ function handleTrackingComplete(vehicleId?: string) {
   toast.success(message)
   emergencyStore.completeTracking()
 
-  setTimeout(() => {
-    closePanel()
-  }, 3000)
+  closePanel()
 }
 
 function startCloseAnimation() {
@@ -568,7 +569,7 @@ onMounted(async () => {
   flex-direction: column;
   padding: 0.24rem;
   gap: 0.35rem;
-  overflow: hidden; /* 隐藏滚动条 */
+  overflow: hidden;
 }
 
 .info-display-section {
@@ -629,7 +630,7 @@ onMounted(async () => {
 }
 
 .status-approaching {
-  color: #00BCD4 !important; /* 统一使用青色 */
+  color: #00BCD4 !important;
   border-color: rgba(0, 188, 212, 0.5) !important;
   background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
 
@@ -639,7 +640,7 @@ onMounted(async () => {
 }
 
 .status-enroute {
-  color: #00BCD4 !important; /* 统一使用青色 */
+  color: #00BCD4 !important;
   border-color: rgba(0, 188, 212, 0.5) !important;
   background: linear-gradient(135deg, rgba(0, 188, 212, 0.1) 0%, rgba(30, 33, 57, 0.9) 100%) !important;
 
@@ -660,7 +661,6 @@ onMounted(async () => {
 
 
 
-/* Light Buttons - 与 ControlManual 完全一致 */
 .light-buttons {
   display: flex;
   gap: 0.3rem;
@@ -725,7 +725,6 @@ onMounted(async () => {
   transform: translateY(-1px);
 }
 
-/* Duration 输入框 - 与 ControlManual 完全一致 */
 .form-row-duration {
   display: flex;
   flex-direction: column;
@@ -838,7 +837,7 @@ onMounted(async () => {
   color: #EF4444;
   font-size: 0.1rem;
   padding: 0.02rem 0.06rem;
-  margin-left: 1.18rem; /* 与duration输入框左侧对齐 */
+  margin-left: 1.18rem;
   white-space: nowrap;
   font-weight: 600;
   display: inline-block;
@@ -847,11 +846,10 @@ onMounted(async () => {
   max-width: 3rem;
 }
 
-/* Action Buttons - 与 ControlManual 完全一致的位置和间距 */
 .action-buttons {
   display: flex;
   justify-content: space-between;
-  width: 4.2rem; /* 与manual组件保持一致 */
+  width: 4.2rem;
   margin: 0 auto;
   margin-top: -0.2rem;
 }
@@ -913,7 +911,9 @@ onMounted(async () => {
     font-weight: 700;
   }
 
+  &:not(:disabled):hover {
 
+  }
 }
 
 @keyframes spin {
@@ -937,14 +937,9 @@ onMounted(async () => {
   border-color: rgba(113, 128, 150, 0.5);
 
   &:hover {
-    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(113, 128, 150, 0.8);
+
   }
 }
-
-/* Waiting message 样式 - 简洁的文字提示 */
 .waiting-message {
   display: flex;
   flex-direction: column;

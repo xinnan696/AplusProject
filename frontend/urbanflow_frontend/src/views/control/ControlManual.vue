@@ -8,7 +8,7 @@
       <label class="label">Junction</label>
       <div class="select-wrapper" :class="{ 'dropdown-open': isJunctionDropdownOpen }" @click="toggleJunctionDropdown">
         <div class="custom-select" :class="{ 'open': isJunctionDropdownOpen }">
-          <div class="select-display">
+          <div class="select-display" :class="{ 'placeholder': selectedJunctionIndex === null }">
             {{ selectedJunctionIndex !== null && junctionDataList[selectedJunctionIndex]
                ? (junctionDataList[selectedJunctionIndex].junction_name || junctionDataList[selectedJunctionIndex].junction_id)
                : 'Please Select a Junction' }}
@@ -52,7 +52,7 @@
       <label class="label">Traffic Light</label>
       <div class="select-wrapper" :class="{ 'dropdown-open': isDirectionDropdownOpen }" @click="toggleDirectionDropdown">
         <div class="custom-select" :class="{ 'open': isDirectionDropdownOpen }">
-          <div class="select-display">
+          <div class="select-display" :class="{ 'placeholder': selectedDirectionIndex === null }">
             {{ selectedDirectionIndex !== null && currentDirections[selectedDirectionIndex]
                ? `${currentDirections[selectedDirectionIndex].fromEdgeName} → ${currentDirections[selectedDirectionIndex].toEdgeName}`
                : 'Select Traffic Light Direction' }}
@@ -71,7 +71,6 @@
               :key="idx"
               :class="{ 'selected': selectedDirectionIndex === idx }"
               @click.stop="selectDirection(idx)"
-              :title="dir.fromEdgeName + ' → ' + dir.toEdgeName"
             >
               <span class="direction-text">{{ dir.fromEdgeName }} → {{ dir.toEdgeName }}</span>
             </div>
@@ -88,12 +87,14 @@
       <div class="light-buttons">
         <button
           class="light-btn red"
-          :class="{ 'active-red': selectedLight === 'RED' }"
+          :class="{ 'active-red': selectedLight === 'RED', 'disabled': !canModifyLights }"
+          :disabled="!canModifyLights"
           @click="selectLight('RED')"
         >RED</button>
         <button
           class="light-btn green"
-          :class="{ 'active-green': selectedLight === 'GREEN' }"
+          :class="{ 'active-green': selectedLight === 'GREEN', 'disabled': !canModifyLights }"
+          :disabled="!canModifyLights"
           @click="selectLight('GREEN')"
         >GREEN</button>
       </div>
@@ -102,10 +103,12 @@
     <div class="form-row-duration">
       <div class="form-row">
         <label class="label">Duration</label>
-        <div class="duration-custom">
+        <div class="duration-custom" :class="{ 'disabled': !canModifyLights }">
           <input
             type="text"
             class="custom-input"
+            :class="{ 'disabled': !canModifyLights }"
+            :disabled="!canModifyLights"
             v-model="durationDisplay"
             @input="validateDuration"
             @keypress="onlyAllowNumbers"
@@ -113,8 +116,8 @@
             placeholder="Duration (s)"
           />
           <div class="triangle-buttons">
-            <button class="triangle-btn" @click="increaseDuration">▲</button>
-            <button class="triangle-btn" @click="decreaseDuration">▼</button>
+            <button class="triangle-btn" :disabled="!canModifyLights" @click="increaseDuration">▲</button>
+            <button class="triangle-btn" :disabled="!canModifyLights" @click="decreaseDuration">▼</button>
           </div>
         </div>
       </div>
@@ -381,9 +384,6 @@ watch(selectedDirectionIndex, () => {
   const idx = selectedDirectionIndex.value
 
   if (idx !== null && directionLanes.value[idx]) {
-    // 发送高亮信号给地图组件
-    // 注意：这里会触发地图组件的 setHighlightLanes 方法
-    // 地图组件会自动保持所有相连车道的紫色显示，并将选中方向的车道标记为绿色/灰色
     emit('highlight', directionLanes.value[idx].from, directionLanes.value[idx].to)
 
     if (currentJunction.value) {
@@ -396,7 +396,6 @@ watch(selectedDirectionIndex, () => {
 const isFormComplete = computed(() =>
   selectedJunctionIndex.value !== null &&
   selectedDirectionIndex.value !== null &&
-  selectedLight.value !== '' &&
   duration.value !== null &&
   duration.value >= 5 &&
   duration.value <= 300 &&
@@ -460,8 +459,6 @@ const selectJunction = (index: number) => {
 
   if (selectedJunctionIndex.value !== null && selectedJunctionIndex.value !== index) {
     console.log('Manual: Clearing previous selection')
-    emit('trafficLightCleared')
-  }
 
   selectedJunctionIndex.value = index
   isJunctionDropdownOpen.value = false
@@ -470,24 +467,19 @@ const selectJunction = (index: number) => {
 
   if (junction) {
     const junctionName = junction.junction_name || junction.junction_id
-    
-    // 获取并高亮与junction相连的所有车道
     highlightJunctionConnectedLanes(junction.junction_id)
-    
+
+
     emit('junctionSelected', junctionName, junction.junction_id)
   }
 }
 
-// 获取并高亮与junction相连的所有车道
 const highlightJunctionConnectedLanes = async (junctionId: string) => {
   try {
     console.log('Manual: Getting junction connected lanes:', junctionId)
-    
-    // 获取junction数据
+
     const response = await axios.get('/api-status/junctions')
     const junctionsData = response.data
-    
-    // 找到对应的junction数据
     let junctionData = null
     for (const tlsId in junctionsData) {
       const junction = junctionsData[tlsId]
@@ -496,21 +488,19 @@ const highlightJunctionConnectedLanes = async (junctionId: string) => {
         break
       }
     }
-    
+
     if (!junctionData || !junctionData.connection) {
       console.warn('Manual: Junction connection data not found:', junctionId)
       return
     }
-    
-    // 提取所有相连的车道
+
     const allConnectedLanes = new Set<string>()
-    
+
     if (Array.isArray(junctionData.connection)) {
       junctionData.connection.forEach((connectionGroup: string[][]) => {
         if (Array.isArray(connectionGroup)) {
           connectionGroup.forEach((connection: string[]) => {
             if (Array.isArray(connection) && connection.length >= 2) {
-              // 添加from车道和to车道
               allConnectedLanes.add(connection[0])
               allConnectedLanes.add(connection[1])
             }
@@ -518,17 +508,16 @@ const highlightJunctionConnectedLanes = async (junctionId: string) => {
         }
       })
     }
-    
+
     const connectedLanesArray = Array.from(allConnectedLanes)
     console.log('Manual: Found connected lanes count:', connectedLanesArray.length)
-    
+
     if (connectedLanesArray.length > 0) {
-      // 发出高亮事件（使用紫色高亮所有相连车道，空的toLanes表示没有选中特定方向）
       emit('highlight', connectedLanesArray, [])
-      
+
       console.log('Manual: Junction lanes highlighted')
     }
-    
+
   } catch (error) {
     console.error('Manual: Failed to get junction lanes:', error)
   }
@@ -555,8 +544,48 @@ const onApply = async () => {
   if (!junction || lightIndex === null || duration.value === null) return
 
   isApplying.value = true
-  const state = selectedLight.value === 'GREEN' ? 'G' : 'r'
-  const steps = Math.floor(duration.value / 9)
+  let currentLightState = null
+  try {
+    const junctionResponse = await axios.get('/api-status/junctions')
+    const junctionData = Object.values(junctionResponse.data)
+    let currentJunctionData = null
+    for (const jData of junctionData as any[]) {
+      if (jData.junction_id === junction.junction_id) {
+        currentJunctionData = jData
+        break
+      }
+    }
+
+    if (currentJunctionData && currentJunctionData.state && typeof currentJunctionData.state === 'string') {
+      if (lightIndex < currentJunctionData.state.length) {
+        currentLightState = currentJunctionData.state[lightIndex]
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to get current traffic light status:', error)
+  }
+
+  let state = null
+  let stateReason = ''
+
+  if (selectedLight.value) {
+    const selectedState = selectedLight.value === 'GREEN' ? 'G' : 'r'
+    console.log(`Manual: User selected light: ${selectedLight.value} (${selectedState}), Current state: ${currentLightState}`)
+    if (currentLightState && currentLightState.toLowerCase() !== selectedState.toLowerCase()) {
+      state = selectedState
+      stateReason = 'Different from current state'
+    } else if (currentLightState && currentLightState.toLowerCase() === selectedState.toLowerCase()) {
+      stateReason = 'Same as current state'
+    } else {
+      stateReason = 'Current state unknown'
+    }
+  } else {
+    stateReason = 'No light color selected'
+  }
+
+  console.log(`Manual: State to send: ${state} (Reason: ${stateReason})`)
+
+  const steps = Math.floor(duration.value / 20)
 
   const requestBody = {
     junctionId: junction.junction_id,
@@ -566,15 +595,35 @@ const onApply = async () => {
     source: 'manual'
   }
 
+  console.log('Manual: Request body:', requestBody)
+
   const currentDirection = currentDirections.value[lightIndex]
   const fromEdge = currentDirection?.fromEdgeName || 'Unknown'
   const toEdge = currentDirection?.toEdgeName || 'Unknown'
-  const lightColor = selectedLight.value === 'GREEN' ? 'Green' : 'Red'
   const junctionName = junction.junction_name || junction.junction_id
 
+  let recordLightColor = 'Unknown'
+  let actionDescription = ''
+
+  if (state !== null) {
+    recordLightColor = state === 'G' ? 'Green' : 'Red'
+    actionDescription = `Change to ${recordLightColor}`
+  } else {
+    if (selectedLight.value) {
+      recordLightColor = selectedLight.value === 'GREEN' ? 'Green' : 'Red'
+      actionDescription = `Keep ${recordLightColor}`
+    } else {
+      if (currentLightState) {
+        const lowerChar = currentLightState.toLowerCase()
+        if (lowerChar === 'g') recordLightColor = 'Green'
+        else if (lowerChar === 'r') recordLightColor = 'Red'
+      }
+      actionDescription = recordLightColor !== 'Unknown' ? `Keep ${recordLightColor}` : 'Update duration'
+    }
+  }
 
   const recordId = operationStore.addRecord({
-    description: `Set ${junctionName} light from ${fromEdge} to ${toEdge} to ${lightColor} for ${duration.value}s`,
+    description: `${actionDescription} for ${junctionName} light from ${fromEdge} to ${toEdge} for ${duration.value}s`,
     source: 'manual',
     junctionId: junction.junction_id,
     junctionName,
@@ -592,7 +641,7 @@ const onApply = async () => {
     emit('manualControlApplied', {
       junctionName,
       directionInfo,
-      lightColor,
+      lightColor: recordLightColor,
       duration: duration.value
     })
 
@@ -716,7 +765,6 @@ onBeforeUnmount(() => {
 })
 
 watch(selectedJunctionIndex, (newIndex, oldIndex) => {
-  // 只有当真正改变时才处理
   if (newIndex !== oldIndex) {
     selectedDirectionIndex.value = null
     if (newIndex === null) {
@@ -782,7 +830,6 @@ defineExpose({
 
     const index = junctionDataList.value.findIndex(j => j.junction_id === id)
     if (index !== -1) {
-
       selectJunction(index)
     } else {
       console.warn('Manual: Junction ID not found:', id)
@@ -902,47 +949,23 @@ defineExpose({
   position: relative;
   overflow: hidden;
 
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.6s;
-  }
-
-  &:hover::before {
-    left: 100%;
+  &.disabled {
+    background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+    color: #A0AEC0;
+    cursor: not-allowed;
+    opacity: 0.6;
+    border-color: rgba(74, 85, 104, 0.3);
   }
 }
 
 .red {
   color: #FF4569;
   border-color: rgba(255, 69, 105, 0.3);
-
-  &:hover:not(.active-red) {
-    background: linear-gradient(135deg, #FF4569 20%, #2A2D4A 80%);
-    color: #FFFFFF;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 69, 105, 0.6);
-  }
 }
 
 .green {
   color: #00E676;
   border-color: rgba(0, 230, 118, 0.3);
-
-  &:hover:not(.active-green) {
-    background: linear-gradient(135deg, #00E676 20%, #2A2D4A 80%);
-    color: #FFFFFF;
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-    border-color: rgba(0, 230, 118, 0.6);
-  }
 }
 
 .active-red {
@@ -950,7 +973,6 @@ defineExpose({
   color: #FFFFFF;
   border-color: rgba(255, 69, 105, 0.8);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  transform: translateY(-1px);
 }
 
 .active-green {
@@ -958,7 +980,6 @@ defineExpose({
   color: #FFFFFF;
   border-color: rgba(0, 230, 118, 0.8);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
-  transform: translateY(-1px);
 }
 
 .action-buttons {
@@ -1027,10 +1048,6 @@ defineExpose({
   }
 
   &:not(:disabled):hover {
-    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
-    border-color: rgba(0, 180, 216, 0.8);
   }
 }
 
@@ -1055,10 +1072,6 @@ defineExpose({
   border-color: rgba(113, 128, 150, 0.5);
 
   &:hover {
-    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(113, 128, 150, 0.8);
   }
 }
 
@@ -1088,28 +1101,11 @@ defineExpose({
   position: relative;
   overflow: hidden;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent; /* 移除斜线条条效果 */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-  }
-
   &.open,
   &:hover {
     border-color: rgba(113, 128, 150, 0.6);
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
-
-    &::before {
-      opacity: 1;
-    }
   }
 
   &.open {
@@ -1127,6 +1123,9 @@ defineExpose({
   padding-right: 0.1rem;
   font-weight: 500;
 
+  &.placeholder {
+    color: rgba(156, 163, 175, 0.6);
+  }
 }
 
 .select-arrow {
@@ -1233,7 +1232,6 @@ defineExpose({
   font-size: 0.14rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-  border-left: 2px solid transparent;
   position: relative;
   font-weight: 500;
 
@@ -1250,7 +1248,6 @@ defineExpose({
 
   &:hover {
     background: rgba(74, 85, 104, 0.15);
-    border-left-color: #9CA3AF;
     transform: translateX(4px);
     color: #FFFFFF;
 
@@ -1261,7 +1258,6 @@ defineExpose({
 
   &.selected {
     background: rgba(113, 128, 150, 0.2);
-    border-left-color: #D1D5DB;
     color: #FFFFFF;
     font-weight: 700;
     box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.2);
@@ -1299,27 +1295,16 @@ defineExpose({
   transition: all 0.4s ease;
   position: relative;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: transparent; /* 移除斜线条条效果 */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
+  &.disabled {
+    background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+    border-color: rgba(74, 85, 104, 0.3);
+    opacity: 0.6;
   }
 
-  &:focus-within {
+  &:focus-within:not(.disabled) {
     border-color: rgba(113, 128, 150, 0.6);
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
     background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
-
-    &::before {
-      opacity: 1;
-    }
   }
 }
 
@@ -1339,9 +1324,19 @@ defineExpose({
   position: relative;
   z-index: 1;
 
+  &.disabled {
+    color: #A0AEC0;
+    cursor: not-allowed;
+    text-shadow: none;
+  }
+
   &::placeholder {
     color: rgba(156, 163, 175, 0.6);
     transition: color 0.3s ease;
+  }
+
+  &.disabled::placeholder {
+    color: rgba(156, 163, 175, 0.3);
   }
 }
 
@@ -1367,13 +1362,19 @@ defineExpose({
   position: relative;
   font-weight: 700;
 
-  &:hover {
+  &:disabled {
+    color: #6B7280;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  &:hover:not(:disabled) {
     background: rgba(113, 128, 150, 0.15);
     color: #D1D5DB;
     transform: scale(1.2);
   }
 
-  &:active {
+  &:active:not(:disabled) {
     transform: scale(1.05);
     background: rgba(209, 213, 219, 0.2);
   }

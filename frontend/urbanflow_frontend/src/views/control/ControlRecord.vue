@@ -8,7 +8,7 @@
 
 
     <div class="record-content">
- 
+
       <div class="records-list">
         <div
           v-for="record in records"
@@ -68,7 +68,7 @@ const selectRecord = (record: OperationRecord) => {
   position: fixed;
   top: 0.64rem;
   right: 0;
-  width: 35%; // 与controlboard一样的宽度（35%）
+  width: 35%;
   height: calc(100vh - 0.64rem);
   background: #1E1E2F;
   border-left: 0.01rem solid #4A5568;
@@ -237,14 +237,14 @@ const selectRecord = (record: OperationRecord) => {
   text-transform: uppercase;
   letter-spacing: 0.01rem;
   box-shadow: 0 0.02rem 0.04rem rgba(0, 0, 0, 0.2);
-  
+
   &.manual {
     color: #00B4D8;
     background: linear-gradient(135deg, rgba(0, 180, 216, 0.2) 0%, rgba(0, 180, 216, 0.1) 100%);
     border: 0.01rem solid rgba(0, 180, 216, 0.4);
     box-shadow: 0 0.02rem 0.04rem rgba(0, 180, 216, 0.2);
   }
-  
+
   &.ai {
     color: #9C27B0;
     background: linear-gradient(135deg, rgba(156, 39, 176, 0.2) 0%, rgba(156, 39, 176, 0.1) 100%);
@@ -261,21 +261,21 @@ const selectRecord = (record: OperationRecord) => {
   text-transform: uppercase;
   letter-spacing: 0.01rem;
   box-shadow: 0 0.02rem 0.04rem rgba(0, 0, 0, 0.2);
-  
+
   &.success {
     color: #10B981;
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
     border: 0.01rem solid rgba(16, 185, 129, 0.4);
     box-shadow: 0 0.02rem 0.04rem rgba(16, 185, 129, 0.2);
   }
-  
+
   &.failed {
     color: #EF4444;
     background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
     border: 0.01rem solid rgba(239, 68, 68, 0.4);
     box-shadow: 0 0.02rem 0.04rem rgba(239, 68, 68, 0.2);
   }
-  
+
   &.pending {
     color: #F59E0B;
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
@@ -365,13 +365,13 @@ const selectRecord = (record: OperationRecord) => {
 
 @media (max-width: 1200px) {
   .record-panel {
-    width: 40%; // 小屏幕下稍微放大一点
+    width: 40%;
   }
 }
 
 @media (max-width: 768px) {
   .record-panel {
-    width: 100vw; // 手机端占满屏幕
+    width: 100vw;
     right: 0;
   }
 }</style>

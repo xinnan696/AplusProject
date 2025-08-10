@@ -26,6 +26,7 @@
                 class="date-input"
                 @change="handleDateChange"
                 :class="{ 'has-value': startDate }"
+                :max="endDate || undefined"
                 ref="startDateInput"
                 @click="handleDateInputClick($event)"
               />
@@ -39,6 +40,7 @@
                 class="date-input"
                 @change="handleDateChange"
                 :class="{ 'has-value': endDate }"
+                :min="startDate || undefined"
                 ref="endDateInput"
                 @click="handleDateInputClick($event)"
               />
@@ -186,13 +188,13 @@ const searchTerm = ref('')
 const startDate = ref('')
 const endDate = ref('')
 const currentPage = ref(1)
-const dynamicLogsPerPage = ref(10) // 初始值，会动态调整
+const dynamicLogsPerPage = ref(10)
 const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 const loading = ref(false)
 const error = ref('')
-const containerHeight = ref(0) // 容器高度
+const containerHeight = ref(0)
 
 // Tooltip state
 const tooltipVisible = ref(false)
@@ -355,12 +357,7 @@ const calculateDynamicLogsPerPage = () => {
     const targetLogsPerPage = Math.max(5, Math.min(20, calculatedLogs))
 
     if (dynamicLogsPerPage.value !== targetLogsPerPage) {
-      console.log('📊 Adjusting logs per page based on viewport:', {
-        viewportHeight,
-        availableHeight,
-        oldValue: dynamicLogsPerPage.value,
-        newValue: targetLogsPerPage
-      })
+
       dynamicLogsPerPage.value = targetLogsPerPage
     }
 
@@ -388,17 +385,10 @@ const fetchUserLogs = async () => {
       originalLogs.value = response.data
       currentPage.value = 1
 
-      console.log('📊 Loaded logs:', {
-        totalDateGroups: response.data.length,
-        totalLogs: response.data.reduce((total, group) => total + group.logs.length, 0),
-        firstFewDates: response.data.slice(0, 3).map(g => g.date)
-      })
 
-      console.log('First few logs from each date:')
+
       response.data.slice(0, 3).forEach(dateGroup => {
-        console.log(`${dateGroup.date}: ${dateGroup.logs.length} logs`)
         if (dateGroup.logs.length > 0) {
-          console.log('  Sample:', dateGroup.logs[0])
         }
       })
     } else {
@@ -602,6 +592,12 @@ const nextPage = () => {
 }
 
 const handleDateChange = () => {
+  if (startDate.value && endDate.value && startDate.value > endDate.value) {
+    endDate.value = ''
+  }
+  if (endDate.value && startDate.value && endDate.value < startDate.value) {
+    startDate.value = ''
+  }
   currentPage.value = 1
 }
 
@@ -619,31 +615,24 @@ const handleSearch = () => {
   currentPage.value = 1
 }
 
-// 处理日期输入框点击，确保整个区域都可以打开日历
 const handleDateInputClick = (event: Event) => {
   const input = event.target as HTMLInputElement
-  // 强制打开日历选择器
   try {
     input.showPicker && input.showPicker()
   } catch (e) {
-    // 如果showPicker不支持，就使用默认行为
     input.focus()
   }
 }
 
 onMounted(async () => {
-  // 先加载数据
   try {
     await fetchUserLogs()
-    // 等待DOM更新后计算分页
     await nextTick()
-    // 初始计算
     calculateDynamicLogsPerPage()
   } catch (error) {
     console.error('Failed to load initial data:', error)
   }
 
-  // 监听窗口大小变化 - 使用简单的防抖
   let resizeTimer: ReturnType<typeof setTimeout>
   const handleResize = () => {
     clearTimeout(resizeTimer)
@@ -651,7 +640,6 @@ onMounted(async () => {
   }
   window.addEventListener('resize', handleResize)
 
-  // 组件卸载时清理
   onUnmounted(() => {
     clearTimeout(resizeTimer)
     window.removeEventListener('resize', handleResize)
@@ -717,7 +705,6 @@ const handleSignOut = () => {
   width: calc(100vw - 2.4rem);
   transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-  // 当导航栏收起时的样式
   &.nav-collapsed {
     margin-left: 0.24rem;
     width: calc(100vw - 0.24rem);
@@ -733,7 +720,7 @@ const handleSignOut = () => {
   height: 100%;
   position: relative;
   overflow: hidden;
-  min-height: 0; // 确保flex布局正常工作
+  min-height: 0;
 }
 
 .page-title {
@@ -786,8 +773,8 @@ const handleSignOut = () => {
   pointer-events: none;
   z-index: 1;
   transition: opacity 0.2s ease;
-  letter-spacing: 0.02rem; // 增加字母间距
-  font-family: monospace; // 使用等宽字体确保对齐
+  letter-spacing: 0.02rem;
+  font-family: monospace;
 }
 
 .date-input {
@@ -803,33 +790,31 @@ const handleSignOut = () => {
   cursor: pointer;
 
   &:hover {
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #2B2B3C;
   }
 
   &:focus {
     outline: none;
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #2B2B3C;
-    box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
   }
 
-  // 完全隐藏原生日期显示，只保持功能
   &::-webkit-datetime-edit {
     width: 100%;
     height: 100%;
     color: transparent !important;
     cursor: pointer;
-    opacity: 0 !important; // 完全隐藏
+    opacity: 0 !important;
   }
 
   &.has-value::-webkit-datetime-edit {
     color: #FFFFFF !important;
-    opacity: 1 !important; // 有值时显示
+    opacity: 1 !important;
   }
 
   &::-webkit-datetime-edit-text {
-    color: transparent !important; // 隐藏分隔符
+    color: transparent !important;
     opacity: 0 !important;
   }
 
@@ -868,24 +853,21 @@ const handleSignOut = () => {
     border-radius: 0.02rem;
   }
 
-  // 确保整个输入框都可以点击
   &::-webkit-datetime-edit-fields-wrapper {
     cursor: pointer;
     width: 100%;
     height: 100%;
-    opacity: 0 !important; // 隐藏包装器
+    opacity: 0 !important;
   }
 
   &.has-value::-webkit-datetime-edit-fields-wrapper {
     opacity: 1 !important;
   }
 
-  // focus时隐藏placeholder
   &:focus + .date-placeholder {
     opacity: 0;
   }
 
-  // 点击时隐藏placeholder
   &:active + .date-placeholder {
     opacity: 0;
   }
@@ -952,9 +934,8 @@ const handleSignOut = () => {
 
   &:focus {
     outline: none;
-    border-color: #00B4D8;
+    border-color: #3A3A4D;
     background-color: #3A3A4D;
-    box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.1);
   }
 }
 

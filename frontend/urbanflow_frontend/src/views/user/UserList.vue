@@ -105,7 +105,7 @@
               </div>
 
               <!-- Role -->
-              <div class="cell-role" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ user.role || 'N/A' }}</div>
+              <div class="cell-role" style="position: absolute; display: flex; align-items: center; height: 44.5px;">{{ getRoleDisplay(user.role) || 'N/A' }}</div>
 
               <!-- Actions -->
               <div class="cell-actions" style="position: absolute; display: flex; align-items: center; height: 44.5px; gap: 0.08rem;">
@@ -186,25 +186,37 @@ const router = useRouter()
 const userStore = useUserStore()
 
 // Toast function
-const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+const showCenterToast = (message: string, type: 'success' | 'error' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
   const vnode = createVNode(BaseToast, { message, type, duration })
   render(vnode, container)
 
-  setTimeout(() => {
-    const toastElement = container.querySelector('.toast') as HTMLElement
-    if (toastElement) {
-      toastElement.style.cssText = `
-        position: fixed !important;
-        top: .82rem !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 9999 !important;
-      `
+  const toastElement = container.querySelector('.toast') as HTMLElement
+  if (toastElement) {
+    toastElement.style.visibility = 'hidden'
+    toastElement.style.opacity = '0'
+    const navWidth = 2.4
+    const topOffset = 0.82
+
+    let leftPosition: string
+    if (isNavVisible.value) {
+      const rightAreaWidth = `calc(100vw - ${navWidth}rem)`
+      leftPosition = `calc(${navWidth}rem + (${rightAreaWidth}) / 2)`
+    } else {
+      leftPosition = '50%'
     }
-  }, 10)
+    toastElement.style.cssText = `
+      position: fixed !important;
+      top: ${topOffset}rem !important;
+      left: ${leftPosition} !important;
+      transform: translateX(-50%) !important;
+      z-index: 9999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `
+  }
 
   setTimeout(() => {
     render(null, container)
@@ -230,15 +242,12 @@ const users = computed(() => userStore.users)
 // Computed properties
 const filteredUsers = computed(() => {
   let filtered = users.value
-
-  // 🔥 隐藏admin用户：过滤掉所有admin相关的用户
   filtered = filtered.filter(user => {
     const accountNumber = user.accountNumber?.toLowerCase() || ''
     const username = user.username?.toLowerCase() || ''
     const userName = user.userName?.toLowerCase() || ''
     const role = user.role?.toLowerCase() || ''
 
-    // 排除包含admin的账号、用户名或角色为admin的用户
     return !(
       accountNumber.includes('admin') ||
       username.includes('admin') ||
@@ -332,6 +341,15 @@ const showEndEllipsis = computed(() => {
 })
 
 // Methods
+const getRoleDisplay = (role: string) => {
+  if (!role) return 'N/A'
+  if (role === 'ADMIN' || role === 'Admin' || role === 'admin') return 'Admin'
+  if (role === 'ROLE_USER') return 'User'
+  if (role === 'ROLE_TRAFFIC_MANAGER' || role === 'Traffic Manager') return 'Traffic Operator'
+  if (role === 'Traffic Planner') return 'Urban Planner'
+  return role
+}
+
 const toggleSelectAll = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.checked) {
@@ -603,11 +621,12 @@ onMounted(async () => {
   transition: all 0.3s ease;
 
   &:hover {
-    background-color: #2B2C3D;
+    background-color: #3A3A4D;
+    border-color: #3A3A4D;
   }
 
   &:active {
-    background-color: #2B2C3D;
+    background-color: #3A3A4D;
   }
 
   .add-icon {
@@ -687,25 +706,31 @@ onMounted(async () => {
     border: none;
     font-weight: normal;
     text-align: left !important;
+    border-radius: 3px;
+    margin: 2px;
 
+    /* 只有hover效果，参考dashboard图表颜色 */
     &:hover {
-      background-color: #1E1E2F !important;
+      background-color: rgba(77, 123, 255, 0.15) !important;
       color: #FFFFFF !important;
     }
 
     &:focus {
-      background-color: #1E1E2F !important;
+      background-color: rgba(77, 123, 255, 0.15) !important;
       color: #FFFFFF !important;
     }
 
+    /* 选中状态不变色，保持原样 */
     &:checked {
-      background-color: #00B4D8 !important;
+      background-color: #2B2B3C !important;
       color: #FFFFFF !important;
+      font-weight: normal;
     }
 
     &:selected {
-      background-color: #00B4D8 !important;
+      background-color: #2B2B3C !important;
       color: #FFFFFF !important;
+      font-weight: normal;
     }
   }
 }
@@ -762,7 +787,7 @@ onMounted(async () => {
   border: none;
   color: #FFFFFF;
   cursor: pointer;
-  font-size: 0.4rem;
+  font-size: 0.3rem;
   width: 0.4rem;
   height: 0.4rem;
   display: flex;
@@ -773,13 +798,6 @@ onMounted(async () => {
   border-radius: 0.04rem;
   padding: 0.04rem;
 
-  &:hover {
-    color: #00B4D8;
-  }
-
-  &:active {
-    color: #00B4D8;
-  }
 }
 
 .users-table-container {

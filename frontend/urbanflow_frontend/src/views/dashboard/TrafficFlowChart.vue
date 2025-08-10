@@ -24,7 +24,7 @@ const props = defineProps<{
 
 const chartOption = ref({
   tooltip: {
-    trigger: 'axis',
+    trigger: 'item',
     axisPointer: {
       type: 'none'
     },
@@ -39,16 +39,21 @@ const chartOption = ref({
       lineHeight: 16,
     },
     extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
+    // formatter: function (params) {
+    //   // params 是一个数组，我们通常取第一个点来获取X轴信息
+    //   let tooltipHtml = `${params[0].axisValueLabel}<br/>`;
+    //   // 遍历所有系列的数据点
+    //   params.forEach(item => {
+    //     // item.marker 是颜色小圆点, item.seriesName 是系列名, item.value 是值
+    //     tooltipHtml += `${item.seriesName}: <strong>${item.value}</strong> cars<br/>`;
+    //   });
+    //   return tooltipHtml;
+    // }
     formatter: function (params) {
-      // params 是一个数组，我们通常取第一个点来获取X轴信息
-      let tooltipHtml = `${params[0].axisValueLabel}<br/>`;
-      // 遍历所有系列的数据点
-      params.forEach(item => {
-        // item.marker 是颜色小圆点, item.seriesName 是系列名, item.value 是值
-        tooltipHtml += `${item.seriesName}: <strong>${item.value}</strong> cars<br/>`;
-      });
-      return tooltipHtml;
-    }},
+      // item.marker 是颜色小圆点, item.seriesName 是系列名, item.value 是值
+      return `${params.name}<br/>${params.seriesName}: <strong>${params.value}</strong> cars`;
+    }
+    },
   grid: { top: '20px', left: '3%', right: '7%', bottom: '3%', containLabel: true },
   xAxis: {
     type: 'category',
@@ -64,10 +69,16 @@ const chartOption = ref({
   series: [{
     name: 'Traffic Flow',
     type: 'line',
-    smooth: true,
-    showSymbol: false, // 默认不显示数据点
+    smooth: 0.4,
+    showSymbol: true,
+    symbolSize: 1.5,
+    itemStyle: {
+      color: 'transparent',
+      borderColor: 'transparent'
+    },
     emphasis: {
       focus: 'series',
+      symbolSize: 30,
       // 在高亮（悬浮）时显示数据点
       itemStyle: {
         color: '#FFFFFF',
@@ -89,7 +100,7 @@ async function fetchData() {
   };
 
   const response = await getTrafficFlow(params);
-  console.log('📦 Received mock response for Traffic Flow:', response);
+  console.log('Received mock response for Traffic Flow:', response);
 
   // if (response && response.data && response.labels) {
   //   chartOption.value.xAxis.data = response.labels;

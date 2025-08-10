@@ -23,26 +23,14 @@ export interface EdgeCoordinate {
 }
 
 export const specialEventApi = {
-  // 获取待处理的紧急车辆事件
   checkEmergencyEvents: () => axios.get<EmergencyVehicleEvent[]>('/api/emergency-vehicles/check'),
-
-  // 手动触发处理所有紧急车辆事件
   processAllEmergencyEvents: () => axios.post<string>('/api/emergency-vehicles/process'),
-
-  // 忽略紧急车辆事件
   ignoreEvent: (eventId: string) => axios.post<string>(`/api/emergency-vehicles/${eventId}/ignore`),
-
-  // 完成紧急车辆事件
   completeEvent: (eventId: string) => axios.post<string>(`/api/emergency-vehicles/${eventId}/complete`),
-
-  // 获取特殊事件
   checkEvents: () => axios.get('/api/events/check'),
-
-  // 处理特殊事件
   processAllEvents: () => axios.post('/api/events/process')
 }
 
-// 紧急车辆追踪WebSocket连接
 export class EmergencyVehicleTracker {
   private ws: WebSocket | null = null
   private reconnectAttempts = 0
@@ -56,7 +44,6 @@ export class EmergencyVehicleTracker {
 
   private connect() {
     try {
-      // 连接到special-event模块的WebSocket
       const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
       const wsUrl = `${wsProtocol}//localhost:8085/ws/tracking`
 
@@ -75,16 +62,16 @@ export class EmergencyVehicleTracker {
             try {
               handler(data)
             } catch (error) {
-              console.error('处理紧急车辆数据时出错:', error)
+              console.error(error)
             }
           })
         } catch (error) {
-          console.error('解析紧急车辆追踪数据失败:', error)
+          console.error(error)
         }
       }
 
       this.ws.onerror = (error) => {
-        console.error(' 紧急车辆追踪WebSocket错误:', error)
+        console.error(error)
       }
 
       this.ws.onclose = () => {

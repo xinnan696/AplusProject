@@ -307,8 +307,6 @@ const userRole = computed(() => user.value?.role || 'GUEST');
     }
 
     async function initAuth() {
-
-      // 🔧 设置 API 拦截器
       setupApiInterceptors();
 
       if (token.value && user.value) {
@@ -317,8 +315,6 @@ const userRole = computed(() => user.value?.role || 'GUEST');
           role: user.value.role,
           tokenPreview: token.value.substring(0, 20) + '...'
         });
-
-        // 确保 API 客户端有正确的 Authorization header
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
       } else {
 
@@ -332,13 +328,11 @@ const userRole = computed(() => user.value?.role || 'GUEST');
 
       try {
 
-        const response = await apiClient.get('/auth/profile'); // 假设有这个端点
+        const response = await apiClient.get('/auth/profile');
 
         return true;
       } catch (error) {
         console.error(error);
-
-        // 如果 token 无效，清理认证状态
         if (error.response?.status === 401) {
           logout();
         }
@@ -400,6 +394,6 @@ const userRole = computed(() => user.value?.role || 'GUEST');
       completeTransition,
       forgotPassword,
       resetPassword,
-      testTokenValidity, // 🔧 新增
+      testTokenValidity,
     };
 });

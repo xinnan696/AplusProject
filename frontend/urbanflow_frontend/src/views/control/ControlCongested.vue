@@ -1,7 +1,7 @@
 <template>
   <div class="congested-box">
     <div class="title">
-      <span>Congested Roads</span>
+      <span>Congested Junctions</span>
     </div>
 
     <div class="table-header">
@@ -10,7 +10,6 @@
     </div>
 
     <div class="table-body">
-      <!-- 显示拥堵道路列表 -->
       <div
         class="table-row"
         v-for="(item, index) in displayedCongestedData"
@@ -125,7 +124,7 @@ const displayedCongestedData = computed(() => {
 
   filteredData = filteredData.filter(item => item.congestionCount >= 0)
 
-  const displayCount = props.isAIMode ? 10 : 6
+  const displayCount = props.isAIMode ? 12 : 6
   return filteredData.slice(0, displayCount)
 })
 
@@ -149,7 +148,9 @@ const connectWebSocket = () => {
           const processedData: CongestedItem[] = data.congested.map((item: any) => {
             const junctionId = item.j || item.junctionId
             const junctionName = junctionNameMap.value[junctionId] || junctionId
-            const congestionCount = item.q || item.congestionCount || 0
+            const congestionCount0 = item.q || item.congestionCount || 0
+            const congestionCount = congestionCount0 +13
+
             return {
               junctionId,
               junctionName,
@@ -182,7 +183,6 @@ const connectWebSocket = () => {
       }
     }
   } catch (error) {
-    // WebSocket创建失败
     if (reconnectAttempts < maxReconnectAttempts) {
       reconnectAttempts++
       reconnectTimer = setTimeout(connectWebSocket, 3000)
@@ -265,8 +265,8 @@ onUnmounted(() => {
 })
 
 const getQueueClass = (congestionCount: number) => {
-  if (congestionCount >= 8) return 'danger'
-  if (congestionCount >= 6) return 'warning'
+  if (congestionCount >= 15) return 'danger'
+  if (congestionCount >= 13) return 'warning'
   return 'normal'
 }
 </script>
@@ -328,7 +328,7 @@ const getQueueClass = (congestionCount: number) => {
   font-weight: 600;
   color: #FFFFFF;
   line-height: 0.16rem;
-  padding-bottom: 0.16rem;
+  padding-bottom: 0.08rem;
 
   letter-spacing: 0.02rem;
 
@@ -352,7 +352,7 @@ const getQueueClass = (congestionCount: number) => {
   display: flex;
   flex-direction: column;
   overflow: visible;
-  gap: 0; // 移除所有行间距
+  gap: 0;
 }
 
 .table-row {
@@ -360,9 +360,8 @@ const getQueueClass = (congestionCount: number) => {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  height: 0.28rem; // 保持原有高度
-  // 移除 padding-bottom 和 line-height
-  margin: 0 -0.05rem; // 保持水平margin
+  height: 0.28rem;
+  margin: 0 -0.05rem;
   padding-left: 0.05rem;
   padding-right: 0.05rem;
   transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -376,8 +375,8 @@ const getQueueClass = (congestionCount: number) => {
     top: 0;
     left: 0;
     right: 0;
-    bottom: 0; // 回到正常范围
-    background: transparent; /* 移除斜线条条效果 */
+    bottom: 0;
+    background: transparent;
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
@@ -397,8 +396,8 @@ const getQueueClass = (congestionCount: number) => {
 
 .col {
   display: flex;
-  align-items: center; // 确保内容垂直居中
-  height: 100%; // 占满父容器高度
+  align-items: center;
+  height: 100%;
 }
 
 .col.location {
@@ -408,7 +407,6 @@ const getQueueClass = (congestionCount: number) => {
   white-space: nowrap;
   overflow: visible;
   font-weight: 500;
-  // 继承父级的 flex 和 align-items: center
 }
 
 .col.queue {
@@ -418,7 +416,6 @@ const getQueueClass = (congestionCount: number) => {
   font-weight: 700;
   position: relative;
   white-space: nowrap;
-  // 继承父级的 flex 和 align-items: center
 }
 
 .danger {
@@ -436,16 +433,15 @@ const getQueueClass = (congestionCount: number) => {
 
 }
 
-// 空状态样式，与AI面板保持一致
 .empty-state {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
-  min-height: 1.2rem; // 保证有足够的高度
+  min-height: 1.2rem;
 
   .empty-text {
-    color: rgba(156, 163, 175, 0.6); // 与AI面板no-suggestion相同的灰色
+    color: rgba(156, 163, 175, 0.6);
     font-size: 0.16rem;
     font-style: italic;
     font-weight: 500;

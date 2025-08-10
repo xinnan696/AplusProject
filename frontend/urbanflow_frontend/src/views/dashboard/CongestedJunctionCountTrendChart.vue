@@ -1,5 +1,10 @@
 <template>
-  <v-chart class="chart" :option="chartOption" autoresize />
+  <v-chart
+    class="chart"
+    :option="chartOption"
+    autoresize
+    renderer="svg"
+  />
 </template>
 
 <script setup lang="ts">
@@ -23,10 +28,10 @@ const props = defineProps<{
 
 const chartOption = ref({
   tooltip: {
-    trigger: 'axis',
-    axisPointer: {
-      type: 'none'
-    },
+    trigger: 'item',
+    // axisPointer: {
+    //   type: 'none'
+    // },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,
@@ -40,9 +45,10 @@ const chartOption = ref({
     },
     extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
     formatter: function (params) {
-      let point = params[0];
+      // let point = params[0]; // 旧的写法
+      const point = params; // 新的写法
       return `
-      ${point.axisValueLabel}<br/>
+      ${point.name}<br/>
       ${point.seriesName}: <strong>${point.value}</strong> junctions
     `;
     }},
@@ -61,11 +67,20 @@ const chartOption = ref({
   series: [{
     name: 'Congested',
     type: 'line',
-    smooth: true,
-    showSymbol: false,
+    smooth: 0.4,
+    showSymbol: true,
+    symbolSize: 1.5,
+    lineStyle: {
+      color: '#28a745', // 这是您原来的折线颜色
+      width: 2
+    },
+    itemStyle: {
+      color: 'transparent',
+      borderColor: 'transparent'
+    },
     emphasis: {
       focus: 'series',
-      // 在高亮（悬浮）时显示数据点
+      symbolSize: 30,
       itemStyle: {
         color: '#FFFFFF',
         borderColor: '#28a745',
@@ -73,7 +88,7 @@ const chartOption = ref({
       },
     },
     data: [],
-    itemStyle: { color: '#28a745' },
+    //itemStyle: { color: '#28a745' },
     areaStyle: { color: 'rgba(40, 167, 69, 0.2)' },
     markLine: {},
   }],
@@ -117,7 +132,10 @@ async function fetchData() {
   //         },
   //         disabled: true,
   //       },
-  //       // (c). 将标记线数据指向目标时间点
+  //       silent: true,
+  //       tooltip: {
+  //         show: false
+  //       },
   //       data: [
   //         {
   //           xAxis: targetXAxisPoint,
@@ -148,7 +166,7 @@ async function fetchData() {
     // 为"24hours"视图添加信号灯修改的假数据标记
     if (props.filters.timeRange === '24hours' && chartOption.value.xAxis.data.length >= 2) {
       // (a). 获取X轴倒数第二个时间点作为标记位置
-      const targetXAxisPoint = chartOption.value.xAxis.data[chartOption.value.xAxis.data.length - 2];
+      const targetXAxisPoint = chartOption.value.xAxis.data[chartOption.value.xAxis.data.length - 3];
 
       // (b). 配置 ECharts 标记线 (markLine)
       chartOption.value.series[0].markLine = {
@@ -174,7 +192,10 @@ async function fetchData() {
           },
           disabled: true,
         },
-        // (c). 将标记线数据指向目标时间点
+        silent: true,
+        tooltip: {
+          show: false
+        },
         data: [
           {
             xAxis: targetXAxisPoint,
