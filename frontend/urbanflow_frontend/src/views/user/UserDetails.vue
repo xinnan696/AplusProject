@@ -1,6 +1,6 @@
 <template>
   <div class="user-details-page">
-    <ControlHeader 
+    <ControlHeader
       @toggle-nav="toggleNav"
       @toggle-record="toggleRecord"
       @toggle-emergency="toggleEmergency"
@@ -27,7 +27,6 @@
                 </label>
                 <div class="form-input-wrapper">
                   <div class="id-display">
-                    <span class="id-prefix">#</span>
                     <span class="id-value">{{ userData.id }}</span>
                   </div>
                 </div>
@@ -108,7 +107,7 @@
                 </div>
               </div>
 
-              <!-- Managed Areas Field - 仅对Traffic Manager显示 -->
+              <!-- Managed Areas Field -->
               <div class="form-group" v-if="userData.role === 'Traffic Manager' || userData.role === 'ROLE_TRAFFIC_MANAGER'">
                 <label class="form-label">
                   <span class="label-text">Managed Areas</span>
@@ -179,31 +178,43 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// Header button states
 const isRecordVisible = ref(false)
 const isEmergencyVisible = ref(false)
 const isPriorityVisible = ref(false)
 
-// 页面专用的 toast 函数
-const showCenterToast = (message: string, type: 'success' | 'error' | 'info' = 'success', duration = 3000) => {
+const showCenterToast = (message: string, type: 'success' | 'error' = 'success', duration = 3000) => {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
   const vnode = createVNode(BaseToast, { message, type, duration })
   render(vnode, container)
 
-  setTimeout(() => {
-    const toastElement = container.querySelector('.toast') as HTMLElement
-    if (toastElement) {
-      toastElement.style.cssText = `
-        position: fixed !important;
-        top: .82rem !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        z-index: 9999 !important;
-      `
+  const toastElement = container.querySelector('.toast') as HTMLElement
+  if (toastElement) {
+    toastElement.style.visibility = 'hidden'
+    toastElement.style.opacity = '0'
+
+    const navWidth = 2.4
+    const topOffset = 0.82
+
+    let leftPosition: string
+    if (isNavVisible.value) {
+      const rightAreaWidth = `calc(100vw - ${navWidth}rem)`
+      leftPosition = `calc(${navWidth}rem + (${rightAreaWidth}) / 2)`
+    } else {
+      leftPosition = '50%'
     }
-  }, 10)
+
+    toastElement.style.cssText = `
+      position: fixed !important;
+      top: ${topOffset}rem !important;
+      left: ${leftPosition} !important;
+      transform: translateX(-50%) !important;
+      z-index: 9999 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `
+  }
 
   setTimeout(() => {
     render(null, container)
@@ -228,8 +239,8 @@ const userData = ref({
 const getRoleDisplay = (role: string) => {
   if (role === 'ROLE_ADMIN') return 'Admin'
   if (role === 'ROLE_USER') return 'User'
-  if (role === 'ROLE_TRAFFIC_MANAGER' || role === 'Traffic Manager') return 'Traffic Manager'
-  if (role === 'Traffic Planner') return 'Traffic Planner'
+  if (role === 'ROLE_TRAFFIC_MANAGER' || role === 'Traffic Manager') return 'Traffic Operator'
+  if (role === 'Traffic Planner') return 'Urban Planner'
   return role || 'User'
 }
 
@@ -341,8 +352,6 @@ const handleSignOut = () => {
   box-sizing: border-box;
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
-
-/* 导航栏收起时的样式 */
 .main-area.nav-collapsed {
   margin-left: 0;
   width: 100vw;
@@ -430,7 +439,7 @@ const handleSignOut = () => {
   height: 0.48rem;
   padding: 0 0.16rem;
   background: linear-gradient(135deg, #2B2C3D 0%, #32344A 100%);
-  border: 2px solid rgba(0, 180, 216, 0.3);
+  border: 2px solid rgba(105, 105, 105, 0.3);
   border-radius: 0.08rem;
   color: #FFFFFF;
   font-size: 0.16rem;
@@ -599,11 +608,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(0, 229, 255, 0.5);
 
-    &:hover {
-      background: linear-gradient(135deg, #00FFFF 0%, #00E5FF 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(0, 229, 255, 0.8);
-    }
+
   }
 
   &.back-btn {
@@ -611,11 +616,7 @@ const handleSignOut = () => {
     color: #FFFFFF;
     border-color: rgba(113, 128, 150, 0.5);
 
-    &:hover {
-      background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-      transform: translateY(-2px) scale(1.02);
-      border-color: rgba(113, 128, 150, 0.8);
-    }
+
   }
 }
 

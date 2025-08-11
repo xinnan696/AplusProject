@@ -65,7 +65,7 @@ function generateGradientColors(startColor: string, endColor: string, steps: num
 const chartOption = ref({
   tooltip: {
     trigger: 'axis',
-    axisPointer: { type: 'shadow' },
+    axisPointer: { type: 'none' },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,

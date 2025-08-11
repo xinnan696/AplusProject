@@ -1,26 +1,45 @@
 <template>
   <Transition name="toast-fade">
-
     <div v-if="visible" class="toast" :class="typeClass">
-      <div v-if="visible" class="iconfont true">
-      &#xe60c;
-    </div>
+      <div v-if="visible" class="iconfont toast-icon" :class="iconClass">
+        {{ iconSymbol }}
+      </div>
       {{ message }}
     </div>
   </Transition>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps<{
   message: string
-  type?: 'success' | 'error' | 'info'
+  type?: 'success' | 'error'
   duration?: number
 }>()
 
 const visible = ref(true)
-const typeClass = props.type || 'success'
+const typeClass = computed(() => props.type || 'success')
+
+const iconSymbol = computed(() => {
+  switch (props.type) {
+    case 'error':
+      return '×'
+    case 'success':
+    default:
+      return '✓'
+  }
+})
+
+const iconClass = computed(() => {
+  switch (props.type) {
+    case 'error':
+      return 'error-icon'
+    case 'success':
+    default:
+      return 'success-icon'
+  }
+})
 
 setTimeout(() => {
   visible.value = false
@@ -28,11 +47,19 @@ setTimeout(() => {
 </script>
 
 <style scoped lang="scss">
-.true {
-  color: #2ECC71;
+.toast-icon {
   font-size: 0.14rem;
   padding-right: 0.08rem;
   display: inline-block;
+  font-weight: bold;
+}
+
+.success-icon {
+  color: #2ECC71;
+}
+
+.error-icon {
+  color: #FF6B6B;
 }
 
 .toast {
@@ -49,12 +76,19 @@ setTimeout(() => {
   gap: 0.08rem;
 
   background-color: #2B2C3D;
-  color: #2ECC71;
   font-size: 14px;
   border-radius: 8px;
 
   box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.3);
   z-index: 999;
+}
+
+.toast.success {
+  color: #2ECC71;
+}
+
+.toast.error {
+  color: #FF6B6B;
 }
 
 

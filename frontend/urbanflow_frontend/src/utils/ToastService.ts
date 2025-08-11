@@ -8,15 +8,9 @@ export const toast = {
   error(message: string, duration = 3000) {
     showToast(message, 'error', duration)
   },
-  info(message: string, duration = 3000) {
-    showToast(message, 'info', duration)
-  },
-  warning(message: string, duration = 3000) {
-    showToast(message, 'warning', duration)
-  },
 }
 
-function showToast(message: string, type: 'success' | 'error' | 'info' | 'warning', duration: number) {
+function showToast(message: string, type: 'success' | 'error', duration: number) {
   const container = document.createElement('div')
   document.body.appendChild(container)
 

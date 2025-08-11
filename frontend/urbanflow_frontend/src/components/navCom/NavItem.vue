@@ -36,27 +36,6 @@ defineEmits<{
   position: relative;
   overflow: hidden;
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    transition: left 0.5s ease;
-  }
-
-  &:hover {
-    background-color: #2E2F41;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    
-    &::before {
-      left: 100%;
-    }
-  }
-
   &.active {
     background: linear-gradient(135deg, #00B4D8, #0096C7);
     color: white;
