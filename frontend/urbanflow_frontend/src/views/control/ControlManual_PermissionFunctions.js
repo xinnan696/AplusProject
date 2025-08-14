@@ -23,7 +23,7 @@ const fetchMapCenter = async () => {
 
 const fetchJunctions = async () => {
   try {
-    console.log('📡 [Manual] Fetching junctions...')
+    console.log('[Manual] Fetching junctions...')
 
     const response = await axios.get('/api-status/junctions')
     const junctionData = Object.values(response.data)
@@ -40,7 +40,7 @@ const fetchJunctions = async () => {
       })
     })
 
-    console.log('📊 [Manual] Raw junction data count:', junctionData.length)
+    console.log('[Manual] Raw junction data count:', junctionData.length)
 
     junctionDataList.value = junctionData.map((junction: any) => {
       const coords = coordMap.get(junction.junction_id) || { junctionX: 0, junctionY: 0 }
@@ -54,11 +54,10 @@ const fetchJunctions = async () => {
       }
     })
 
-    console.log('✅ [Manual] Processed junctions:', junctionDataList.value.length)
-    console.log('🔍 [Manual] Sample junction:', junctionDataList.value[0])
+
 
   } catch (error) {
-    console.error('❌ [Manual] Failed to fetch junctions:', error)
+    console.error('[Manual] Failed to fetch junctions:', error)
   }
 }
 
@@ -116,7 +115,7 @@ const onApply = async () => {
 
     partialResetForm()
   } catch (error) {
-    console.error('发送控制请求失败:', error)
+    console.error( error)
     operationStore.updateRecordStatus(recordId, 'failed', 'Failed to send data to backend')
     toast.error('Failed to send data to backend.')
   } finally {

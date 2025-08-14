@@ -7,11 +7,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 /**
- * 前端追踪数据WebSocket端点的处理器。
- * <p>
- * 它的职责非常单一：管理前端WebSocket连接的生命周期，
- * 并将建立的连接会话(session)注册到TrackingDataPublisher中，
- * 或在连接关闭时将其移除。
+ * Handler for the frontend tracking data WebSocket endpoint
  */
 @Component
 @RequiredArgsConstructor
@@ -20,7 +16,7 @@ public class TrackingWebSocketHandler extends TextWebSocketHandler {
     private final TrackingDataPublisher publisher;
 
     /**
-     * 当一个新的WebSocket连接成功建立后，此方法被调用。
+     * This method is called after a new WebSocket connection has been successfully established.
      */
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -28,7 +24,7 @@ public class TrackingWebSocketHandler extends TextWebSocketHandler {
     }
 
     /**
-     * 当一个WebSocket连接关闭后，此方法被调用。
+     * This method is called after a WebSocket connection has been closed.
      */
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {

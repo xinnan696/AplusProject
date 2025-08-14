@@ -1,5 +1,5 @@
 <template>
-  <div class="suggested-actions">
+  <div class="suggested-actions" :class="{ 'ai-mode-container': isAIMode }">
     <div class="panel-title">
       <span>AI Suggestions</span>
     </div>
@@ -139,20 +139,13 @@ const isLoading = ref(false)
 const countdownProgress = ref(100)
 const remainingTime = ref(5000)
 
-// 轮询相关状态
 const pollingTimer = ref<ReturnType<typeof setTimeout> | null>(null)
 const batchRefreshTimer = ref<ReturnType<typeof setTimeout> | null>(null)
-const BATCH_REFRESH_INTERVAL = 10000 // 10秒主动刷新批次数据
-
-// 已处理的建议记录
+const BATCH_REFRESH_INTERVAL = 10000
 const processedSuggestions = ref<Set<string>>(new Set())
-// 当前批量建议索引
 const currentBatchIndex = ref(0)
-// 当前批量建议数据
 const currentBatchSuggestions = ref<AISuggestion[]>([])
-// 上次获取的批次数据哈希，用于去重
 const lastBatchHash = ref<string>('')
-// 当前循环显示的索引（独立于处理索引）
 const currentDisplayIndex = ref(0)
 
 const junctionsCache = ref<Map<string, Junction>>(new Map())
@@ -194,7 +187,6 @@ const findLightIndex = (junction: Junction | undefined, fromlaneid: string, tola
     for (let j = 0; j < connectionGroup.length; j++) {
       const conn = connectionGroup[j]
       if (conn.length >= 2 && conn[0] === fromlaneid && conn[1] === tolaneid) {
-        console.log(`找到匹配的lightIndex: ${i}, 方向: ${fromlaneid} -> ${tolaneid}`)
         return i
       }
     }
@@ -205,16 +197,12 @@ const findLightIndex = (junction: Junction | undefined, fromlaneid: string, tola
 
 const initializeCache = async (): Promise<boolean> => {
   try {
-
-    // 按照您其他模块的成功方式，使用直接的axios
     const [junctionsRes, edgesRes, laneMappingsRes] = await Promise.all([
       axios.get('/api-status/junctions'),
       axios.get('/api-status/edges'),
       axios.get('/api-status/lane-mappings')
     ])
 
-
-    // 处理 junctions 数据
     if (junctionsRes.data) {
       if (Array.isArray(junctionsRes.data)) {
         junctionsRes.data.forEach((junction: any) => {
@@ -227,7 +215,6 @@ const initializeCache = async (): Promise<boolean> => {
       }
     }
 
-    // 处理 edges 数据
     if (edgesRes.data) {
       if (Array.isArray(edgesRes.data)) {
         edgesRes.data.forEach((edge: any) => {
@@ -240,7 +227,6 @@ const initializeCache = async (): Promise<boolean> => {
       }
     }
 
-    // 处理 lane mappings 数据
     if (laneMappingsRes.data && Array.isArray(laneMappingsRes.data)) {
       laneMappingsRes.data.forEach((mapping: LaneMapping) => {
         laneMappingsCache.value.set(mapping.laneId, mapping.edgeId)
@@ -253,7 +239,7 @@ const initializeCache = async (): Promise<boolean> => {
       laneMappings: laneMappingsCache.value.size
     }
 
-    console.log('✅ 缓存初始化完成:', finalStats)
+
 
 
 
@@ -268,10 +254,7 @@ const initializeCache = async (): Promise<boolean> => {
 const convertSuggestionToDisplay = async (suggestion: AISuggestion): Promise<DisplayData & { lightIndex: number }> => {
   try {
 
-
-    // Junction名称转换
     const junction = junctionsCache.value.get(suggestion.junction)
-    console.log('🏛️ Junction查找:', suggestion.junction, '->', junction?.junction_name)
     const junctionName = junction?.junction_name || `Junction_${suggestion.junction}`
 
 
@@ -330,19 +313,15 @@ const generateBatchHash = (suggestions: AISuggestion[]): string => {
 }
 
 const fetchBatchSuggestions = async (): Promise<AISuggestion[]> => {
-    console.log('📨 发起请求到后端: /api/traffic/suggestion')
     const response = await axios.get('/api/traffic/suggestion')
-    console.log('📨 收到后端响应:', response.status)
     const data = response.data
     const validSuggestions: AISuggestion[] = []
 
-    // 提取所有有效建议（suggestion_label > 0）
     if (data.batch_suggestions && Array.isArray(data.batch_suggestions)) {
       for (const batch of data.batch_suggestions) {
         if (Array.isArray(batch) && batch.length > 0) {
           const suggestion = batch[0]
 
-          // 🔥 关键修复：检查 suggestion_label > 0 才是有效建议
           if (suggestion.suggestion_label > 0 &&
               suggestion.junction &&
               suggestion.target_light_from &&
@@ -356,8 +335,6 @@ const fetchBatchSuggestions = async (): Promise<AISuggestion[]> => {
               target_state: suggestion.target_state || 'G',
               duration: suggestion.duration
             }
-
-            // 过滤掉已处理的建议
             const suggestionId = getSuggestionId(validSuggestion)
             if (!processedSuggestions.value.has(suggestionId)) {
               validSuggestions.push(validSuggestion)
@@ -367,7 +344,7 @@ const fetchBatchSuggestions = async (): Promise<AISuggestion[]> => {
       }
     }
 
-    console.log(`📥 从${data.batch_suggestions?.length || 0}个建议中提取到${validSuggestions.length}个有效建议`)
+
     return validSuggestions
   }
 
@@ -378,23 +355,20 @@ const getNextSuggestion = async (): Promise<AISuggestion | null> => {
 
 
     if (currentBatchSuggestions.value.length === 0 || currentBatchIndex.value >= currentBatchSuggestions.value.length) {
-      console.log('📥 重新获取批量建议数据')
       const newBatchSuggestions = await fetchBatchSuggestions()
       currentBatchSuggestions.value = newBatchSuggestions
       currentBatchIndex.value = 0
 
-      // 记录首次获取的哈希值
       if (newBatchSuggestions.length > 0) {
         lastBatchHash.value = generateBatchHash(newBatchSuggestions)
       }
 
       if (currentBatchSuggestions.value.length === 0) {
-        console.log('⚠️ 没有可用的建议')
+
         return null
       }
     }
 
-    // 从当前索引开始，寻找未处理的建议
     for (let i = currentBatchIndex.value; i < currentBatchSuggestions.value.length; i++) {
       const suggestion = currentBatchSuggestions.value[i]
       const suggestionId = getSuggestionId(suggestion)
@@ -405,11 +379,10 @@ const getNextSuggestion = async (): Promise<AISuggestion | null> => {
       }
     }
 
-    // 如果所有建议都已处理，重新获取新的批量数据
-    console.log('🔄 所有建议已处理，获取新批量数据')
+
     currentBatchSuggestions.value = await fetchBatchSuggestions()
     currentBatchIndex.value = 0
-    processedSuggestions.value.clear() // 清空已处理记录
+    processedSuggestions.value.clear()
 
     if (currentBatchSuggestions.value.length > 0) {
       const suggestion = currentBatchSuggestions.value[0]
@@ -424,15 +397,12 @@ const getNextSuggestion = async (): Promise<AISuggestion | null> => {
   }
 }
 
-// 循环播放模式：从当前批次中循环获取建议
 const getNextSuggestionInCycle = async (): Promise<AISuggestion | null> => {
   try {
-    console.log('🔄 getNextSuggestionInCycle 开始，当前池大小:', currentBatchSuggestions.value.length)
-    console.log('🔄 已处理建议数量:', processedSuggestions.value.size)
-    
-    // 如果当前批次为空，获取新批次
+
+
     if (currentBatchSuggestions.value.length === 0) {
-      console.log('📥 当前批次为空，获取新批次建议')
+
       const newBatchSuggestions = await fetchBatchSuggestions()
       currentBatchSuggestions.value = newBatchSuggestions
       currentDisplayIndex.value = 0
@@ -443,55 +413,45 @@ const getNextSuggestionInCycle = async (): Promise<AISuggestion | null> => {
       }
 
       if (currentBatchSuggestions.value.length === 0) {
-        console.log('⚠️ 没有可用的建议')
+
         return null
       }
     }
 
-    // 🔄 循环查找下一个未处理的建议
     let attempts = 0
     const maxAttempts = currentBatchSuggestions.value.length
-    
+
     while (attempts < maxAttempts) {
       const suggestion = currentBatchSuggestions.value[currentDisplayIndex.value]
       const suggestionId = getSuggestionId(suggestion)
-      
-      // 移动到下一个显示索引（循环）
+
       currentDisplayIndex.value = (currentDisplayIndex.value + 1) % currentBatchSuggestions.value.length
-      
-      // 如果这个建议未被处理，返回它
+
       if (!processedSuggestions.value.has(suggestionId)) {
-        console.log(`🔄 循环显示: 找到未处理建议 ${attempts + 1}/${currentBatchSuggestions.value.length}, 下次索引${currentDisplayIndex.value}`)
         return suggestion
       }
-      
+
       attempts++
     }
-    
-    // 🔥 关键修复：如果所有建议都已处理，尝试获取新建议
-    console.log('🔄 当前批次所有建议已处理，尝试获取新建议')
+
     const newBatchSuggestions = await fetchBatchSuggestions()
-    
+
     if (newBatchSuggestions.length > 0) {
-      // 有新建议，更新建议池
+
       currentBatchSuggestions.value = newBatchSuggestions
       currentDisplayIndex.value = 0
       lastBatchHash.value = generateBatchHash(newBatchSuggestions)
-      
+
       const firstSuggestion = newBatchSuggestions[0]
       currentDisplayIndex.value = 1
-      console.log('🆕 获取到新建议，显示第一个')
       return firstSuggestion
     } else {
-      // 🔥 后端返回空建议，且所有建议已处理，返回null显示"No Available Suggestion"
-      console.log('🔄 后端无新建议且所有建议已处理，显示"No Available Suggestion"')
+
       return null
     }
-    
-    console.log('⚠️ 真的没有任何建议可用')
-    return null
+
   } catch (error) {
-    console.error('循环获取建议失败:', error)
+    console.error(error)
     return null
   }
 }
@@ -526,19 +486,15 @@ const clearAllTimers = () => {
 
 const startBatchRefreshTimer = () => {
   batchRefreshTimer.value = setTimeout(async () => {
-    console.log('🔄 定时检查（每10秒）：获取新批次建议数据')
     try {
       await refreshBatchSuggestions()
     } catch (error) {
-      console.error('🔄 批次刷新失败:', error)
+      console.error( error)
     } finally {
-      // 🔥 关键：无论成功还是失败，都要重新启动定时器
-      console.log('🔄 重新启动批次刷新定时器')
       startBatchRefreshTimer()
     }
   }, BATCH_REFRESH_INTERVAL)
-  
-  console.log('🔄 批次刷新定时器已启动，间隔:', BATCH_REFRESH_INTERVAL, 'ms')
+
 }
 
 const refreshBatchSuggestions = async () => {
@@ -549,39 +505,29 @@ const refreshBatchSuggestions = async () => {
 
       const newBatchHash = generateBatchHash(newBatchSuggestions)
 
-      // 如果和上次数据相同，直接返回，不更新队列
       if (newBatchHash === lastBatchHash.value) {
-        console.log('🔄 批次数据未变化，跳过更新')
         return
       }
 
-      // 更新哈希值
       lastBatchHash.value = newBatchHash
 
-      // 🔥 关键修正：合并新建议到现有建议池，但不影响当前显示
       const uniqueNewSuggestions = newBatchSuggestions.filter(newSuggestion => {
         const newId = getSuggestionId(newSuggestion)
-        return !currentBatchSuggestions.value.some(existingSuggestion => 
+        return !currentBatchSuggestions.value.some(existingSuggestion =>
           getSuggestionId(existingSuggestion) === newId
         )
       })
 
       if (uniqueNewSuggestions.length > 0) {
-        // 将新建议添加到现有建议池中
         currentBatchSuggestions.value = [...currentBatchSuggestions.value, ...uniqueNewSuggestions]
-        
-        console.log(`🆕 新增${uniqueNewSuggestions.length}个建议到建议池，总计${currentBatchSuggestions.value.length}个建议`)
-        
-        // 🔥 不立即打断当前显示，让用户继续看当前建议
-        // 新建议将在循环中自然显示
-      } else {
-        console.log('🔄 没有新的唯一建议，保持现有池')
+
+
+
       }
-    } else {
-      console.log('⚠️ 后端返回空建议列表')
-    }
+      }
+
   } catch (error) {
-    console.error('批次刷新失败:', error)
+    console.error(error)
   }
 }
 
@@ -608,12 +554,11 @@ const startAutoApplyCountdown = () => {
 }
 
 const showSuggestion = async (forceRefresh = false) => {
-  // 🔥 不再清理所有定时器，只清理显示相关的定时器
   if (pollingTimer.value) {
     clearTimeout(pollingTimer.value)
     pollingTimer.value = null
   }
-  
+
   isChanging.value = true
   isLoading.value = true
 
@@ -621,22 +566,20 @@ const showSuggestion = async (forceRefresh = false) => {
 
   try {
     let next: AISuggestion | null = null
-    
+
     if (forceRefresh) {
-      // 🔄 强制刷新：重新获取数据（初始化时）
-      console.log('🔄 强制刷新：重新获取数据')
+
       next = await getNextSuggestion()
     } else {
-      // 🔄 循环模式：从当前池中循环显示建议
-      console.log('🔄 循环模式：显示下一个建议')
+
       next = await getNextSuggestionInCycle()
     }
-    
+
     suggestionData.value = next
 
     if (next) {
       displayData.value = await convertSuggestionToDisplay(next)
-      console.log('✅ 建议已加载:', {
+      console.log({
         junction: displayData.value.junctionName,
         from: displayData.value.fromEdgeName,
         to: displayData.value.toEdgeName,
@@ -651,10 +594,10 @@ const showSuggestion = async (forceRefresh = false) => {
         stateName: '',
         lightIndex: 0
       }
-      console.log('⚠️ 没有可用的建议')
+
     }
   } catch (error) {
-    console.error('获取建议失败:', error)
+    console.error(error)
     suggestionData.value = null
     displayData.value = {
       junctionName: '',
@@ -670,22 +613,20 @@ const showSuggestion = async (forceRefresh = false) => {
     }, 300)
   }
 
-  // 🔄 只启动显示循环定时器，不管理批次刷新定时器
+
   if (suggestionData.value) {
     if (props.isAIMode) {
       startAutoApplyCountdown()
     } else {
-      // 🔄 手动模式：每10秒循环显示下一个建议
       pollingTimer.value = setTimeout(() => {
-        console.log('🔄 10秒循环：显示下一个建议')
-        showSuggestion(false) // 继续循环模式
+
+        showSuggestion(false)
       }, 10000)
     }
   } else {
-    // 没有建议时，5秒后强制刷新
+
     pollingTimer.value = setTimeout(() => {
-      console.log('🔄 无建议，5秒后强制刷新')
-      showSuggestion(true) // 强制获取新建议
+      showSuggestion(true)
     }, 5000)
   }
 }
@@ -694,13 +635,10 @@ watch(() => props.isAIMode, (newValue, oldValue) => {
   console.log('AI mode changed:', oldValue, '->', newValue)
 
   if (newValue) {
-    console.log('Switching to AI mode - Auto-apply enabled')
     if (suggestionData.value) {
       startAutoApplyCountdown()
     }
   } else {
-    console.log('Switching to Manual mode - Auto-apply disabled')
-    // 🔥 只清理显示相关的定时器，不清理批次刷新定时器
     if (pollingTimer.value) {
       clearTimeout(pollingTimer.value)
       pollingTimer.value = null
@@ -713,11 +651,10 @@ watch(() => props.isAIMode, (newValue, oldValue) => {
       clearInterval(countdownTimer)
       countdownTimer = null
     }
-    
+
     if (suggestionData.value) {
-      // 手动模式下使用循环模式
       pollingTimer.value = setTimeout(() => {
-        showSuggestion(false) // 继续循环模式
+        showSuggestion(false)
       }, 10000)
     }
   }
@@ -755,6 +692,7 @@ const handleApply = async (isAutoApply = false) => {
 
     if (isAutoApply) {
       console.log('AI suggestion auto-applied successfully')
+      toast.success('AI suggestion applied successfully!')
     } else {
       toast.success('Traffic light settings updated successfully!')
     }
@@ -763,6 +701,7 @@ const handleApply = async (isAutoApply = false) => {
 
     if (isAutoApply) {
       console.error('AI suggestion auto-apply failed')
+      toast.error('AI suggestion failed to apply!')
     } else {
       toast.error('Failed to send data to backend.')
     }
@@ -770,42 +709,31 @@ const handleApply = async (isAutoApply = false) => {
     isApplying.value = false
   }
 
-  // 标记当前建议为已处理
   if (suggestion) {
     const suggestionId = getSuggestionId(suggestion)
     processedSuggestions.value.add(suggestionId)
-    console.log('✅ 建议已应用并标记为已处理:', suggestionId)
-    console.log('✅ 当前已处理建议数量:', processedSuggestions.value.size)
   }
 
-  // 🔄 用户处理后立即显示下一个建议
-  showSuggestion(false) // 不强制刷新，继续循环
+  showSuggestion(false)
 }
 
 const handleIgnore = () => {
-  // 标记当前建议为已处理（忽略）
   if (suggestionData.value) {
     const suggestionId = getSuggestionId(suggestionData.value)
     processedSuggestions.value.add(suggestionId)
-    console.log('❌ 建议已忽略并标记为已处理:', suggestionId)
-    console.log('❌ 当前已处理建议数量:', processedSuggestions.value.size)
   }
 
-  // 🔄 用户处理后立即显示下一个建议
-  showSuggestion(false) // 不强制刷新，继续循环
+
+  showSuggestion(false)
 }
 
 onMounted(async () => {
-  console.log('🚀 组件初始化开始')
   const cacheInitialized = await initializeCache()
   if (cacheInitialized) {
-    console.log('🚀 缓存初始化完成，开始获取建议')
-    
-    // 首次获取建议
-    showSuggestion(true) // 初始化时强制刷新获取数据
-    
-    // 🔥 立即启动定时器
-    console.log('🚀 立即启动批次刷新定时器')
+
+
+    showSuggestion(true)
+
     startBatchRefreshTimer()
   }
 })
@@ -829,6 +757,18 @@ onBeforeUnmount(() => {
   flex-direction: column;
   position: relative;
   overflow: hidden;
+
+  &.ai-mode-container {
+    display: flex;
+    flex-direction: column;
+
+    .action-box {
+      margin-top: 0.9rem;
+      margin-bottom: 0.2rem;
+      margin-left: 0.24rem;
+      margin-right: 0.24rem;
+    }
+  }
 
   &::before {
     content: '';
@@ -888,20 +828,10 @@ onBeforeUnmount(() => {
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%);
+    background: transparent;
     opacity: 0;
     transition: opacity 0.3s ease;
     pointer-events: none;
-  }
-
-  &:hover {
-    border-color: rgba(113, 128, 150, 0.6);
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-    background: linear-gradient(135deg, #2A2D4A 0%, #1E2139 100%);
-
-    &::before {
-      opacity: 1;
-    }
   }
 
 
@@ -933,28 +863,39 @@ onBeforeUnmount(() => {
     border-color: rgba(113, 128, 150, 0.3);
 
     &::before {
-      background: linear-gradient(45deg, transparent 48%, rgba(113, 128, 150, 0.1) 49%, rgba(113, 128, 150, 0.1) 51%, transparent 52%);
+      background: transparent;
     }
   }
 
 
   &.ai-mode {
-    height: 2.2rem; // AI模式下增加高度
-    border-color: rgba(74, 85, 104, 0.4); // 使用普通的边框颜色，去掉紫色
-    background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%); // 使用普通的背景，去掉紫色
-    box-shadow: none; // 移除紫色荧光效果
+    height: 2.2rem;
+    border-color: rgba(74, 85, 104, 0.4);
+    background: linear-gradient(135deg, #1E2139 0%, #2A2D4A 100%);
+    box-shadow: none;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.2rem 0.24rem;
 
     &::before {
-      background: linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.1) 49%, rgba(74, 85, 104, 0.1) 51%, transparent 52%); // 使用普通的渐变
-      opacity: 0.3; // 降低透明度
+      background: transparent;
+      opacity: 0.3;
     }
 
     .placeholder-text {
-      color: #E3F2FD; // 使用普通的文字颜色
+      color: #E3F2FD;
+      width: 100%;
+      height: 100%;
+
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
 
       strong {
         color:#00E5FF;
-        // color: #6366F1; // 保持蓝色强调，但去掉text-shadow
       }
     }
   }
@@ -983,7 +924,6 @@ onBeforeUnmount(() => {
   transform: translateY(0);
   opacity: 1;
 
-  // 确保在容器中垂直居中
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1011,13 +951,23 @@ onBeforeUnmount(() => {
     display: inline;
   }
 
-  // AI模式下的特殊样式
   .action-box.ai-mode & {
-    font-size: 0.18rem; // AI模式下字体稍大一些
-    
+    font-size: 0.18rem;
+
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+
     .suggestion-line {
-      margin: 0.06rem 0;
-      line-height: 1.3;
+      margin: 0.08rem 0;
+      line-height: 1.4;
+      text-align: center;
     }
 
     strong {
@@ -1125,14 +1075,10 @@ onBeforeUnmount(() => {
   span {
     position: relative;
     z-index: 2;
-    font-weight: 700; // 加粗APPLY文字
+    font-weight: 700;
   }
 
   &:not(:disabled):hover {
-    background: linear-gradient(135deg, #00d4f8 0%, #00B4D8 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 8px 25px rgba(0, 180, 216, 0.4);
-    border-color: rgba(0, 180, 216, 0.8);
   }
 }
 
@@ -1157,10 +1103,6 @@ onBeforeUnmount(() => {
   border-color: rgba(113, 128, 150, 0.5);
 
   &:hover {
-    background: linear-gradient(135deg, #A0AEC0 0%, #718096 100%);
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(113, 128, 150, 0.8);
   }
 
   &:disabled {

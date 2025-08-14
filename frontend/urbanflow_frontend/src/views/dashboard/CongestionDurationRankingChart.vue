@@ -9,13 +9,17 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+// import { getCongestionDurationRanking } from '@/mocks/mockDashboardData'
 import { graphic } from 'echarts'
 import { getCongestionDurationRanking } from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
 const props = defineProps<{
-  filters: { timeRange: string }
+  filters: {
+    timeRange: string
+    managedAreas?: string | null
+  }
 }>()
 
 /**
@@ -48,7 +52,7 @@ function interpolateColor(color1: number[], color2: number[], factor: number) {
 const chartOption = ref({
   tooltip: {
     trigger: 'axis',
-    axisPointer: { type: 'shadow' },
+    axisPointer: { type: 'none' },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,
@@ -61,7 +65,17 @@ const chartOption = ref({
       lineHeight: 16,
     },
     extraCssText: 'box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); border-radius: 4px;',
-    formatter: (params: any) => `${params[0].name}<br/>${params[0].seriesName}: ${params[0].value.toFixed(1)} minutes`
+    //formatter: (params: any) => `${params[0].name}<br/>${params[0].seriesName}: ${params[0].value.toFixed(1)} minutes`
+    formatter: (params: any) => {
+      // 从参数中获取 ECharts 自动生成的颜色标记
+      const marker = params[0].marker;
+      const categoryName = params[0].name;
+      const seriesName = params[0].seriesName;
+      const value = params[0].value;
+
+      // 组合成新的提示框内容，在系列名前面加上 marker
+      return `${categoryName}<br/>${marker}${seriesName}: ${value.toFixed(1)} minutes`;
+    }
   },
   grid: { top: '20px', left: '3%', right: '7%', bottom: '3%', containLabel: true },
   xAxis: {
@@ -101,7 +115,10 @@ const chartOption = ref({
 })
 
 async function fetchData() {
-  const response = await getCongestionDurationRanking({ time_range: props.filters.timeRange });
+  const response = await getCongestionDurationRanking({
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
+  });
 
   // if (response && response.data && response.labels) {
   //   // For horizontal bar chart, reverse the data so the highest value is at the top
@@ -155,9 +172,9 @@ async function fetchData() {
   //   chartOption.value.series[0].data = [];
   // }
 
-  if (response && response.data && response.labels) {
+  if (response && response.data && response.yAxisLabels && response.xAxisConfig) {
     // 对于横向条形图，反转数据使最大值显示在顶部
-    chartOption.value.yAxis.data = [...response.labels].reverse();
+    chartOption.value.yAxis.data = [...response.yAxisLabels].reverse();
     // 假设 API 返回 'total_congestion_duration_seconds'，将其转换为分钟。
     const dataInMinutes = response.data.map((d: any) => d.total_congestion_duration_seconds);
     const reversedData = [...dataInMinutes].reverse();

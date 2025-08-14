@@ -34,7 +34,7 @@ export const getTrafficFlow = async (params: { junction_id?: string, time_range:
 };
 
 
-export const getTopCongestedSegments = async (params: { time_range: string }) => {
+export const getCongestedJunctionCountTrend = async (params: { time_range: string }) => {
   console.log(`MOCK API: Fetching top congested segments for [${params.time_range}]...`);
   await sleep(350);
 
@@ -47,7 +47,7 @@ export const getTopCongestedSegments = async (params: { time_range: string }) =>
   return { data, labels };
 };
 
-export const getCongestedJunctionCountTrend = async (params: { time_range: string }) => {
+export const getTopCongestedSegments = async (params: { time_range: string }) => {
   console.log(`MOCK API: Fetching congested road count trend for [${params.time_range}]...`);
   await sleep(500);
 

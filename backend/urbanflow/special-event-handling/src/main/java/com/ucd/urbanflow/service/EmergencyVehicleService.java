@@ -29,17 +29,17 @@ public class EmergencyVehicleService {
     public List<EmergencyVehicleEvent> getPendingEmergencyEvents() {
         String simTimeStr = redisTemplate.opsForValue().get(SIMULATION_TIME_KEY);
         if (simTimeStr == null) {
-            return List.of(); // 返回空列表，避免NullPointerException
+            return List.of(); // Return an empty list to avoid NullPointerException
         }
         long currentTime = (long) Double.parseDouble(simTimeStr);
-        log.info("[Service] 从Redis获取到当前仿真时间: {}", currentTime);
+        log.info("[Service] Retrieved current simulation time from Redis: {}", currentTime);
         return emergencyVehicleMapper.findPendingEventsByTriggerTime(currentTime);
     }
 
     public String processAllEmergencyEvents() {
-        log.info("[Service] 开始处理紧急车辆事件...");
+        log.info("[Service] Starting to process emergency vehicle events...");
         List<EmergencyVehicleEvent> pendingEvents = getPendingEmergencyEvents();
-        log.info("[Service] 查询数据库，找到 {} 个状态为'pending'的待处理事件。", pendingEvents.size());
+        log.info("[Service] Queried the database and found {} pending events with 'pending' status.", pendingEvents.size());
 
         if (pendingEvents.isEmpty()) {
             return "No pending events to process";
@@ -49,23 +49,25 @@ public class EmergencyVehicleService {
         int failCount = 0;
 
         for (EmergencyVehicleEvent event : pendingEvents) {
-            log.info("[Service] 正在处理事件ID: {}, 触发时间: {}", event.getEventId(), event.getTriggerTime());
+            log.info("[Service] Processing event ID: {}, Trigger time: {}", event.getEventId(), event.getTriggerTime());
             try {
-                // 1. 将数据库实体转换为用于发送的DTO
                 EmergencyVehicleEventDto eventDTO = convertToDto(event);
+                boolean sentSuccessfully = eventService.triggerEmergencyVehicleEvent(eventDTO);
 
-                // 2. 调用 EventService 委托发送指令
-                eventService.triggerEmergencyVehicleEvent(eventDTO);
-
-                // 3. 乐观地更新数据库状态为 "triggered"，防止重复发送
-                //    注意：这里不等待WebSocket回执，与EventProcessingService的行为保持一致
-                emergencyVehicleMapper.updateEventStatus(event.getEventId(), "triggered");
-                successCount++;
-                log.info("Emergency vehicle event {} processed successfully", event.getEventId());
+                if (sentSuccessfully) {
+                    // Only update the status to "triggering" after the command has been sent successfully.
+                    updateEventStatus(event.getEventId(), "triggering");
+                    successCount++;
+                    log.info("Successfully requested processing for emergency vehicle event {}", event.getEventId());
+                } else {
+                    // If sending fails, do not update the status; the task will be automatically retried in the next cycle.
+                    failCount++;
+                    log.warn("Failed to send command for event {}, will retry in the next cycle", event.getEventId());
+                }
 
             } catch (Exception e) {
                 log.error("Failed to process emergency vehicle event {}: {}", event.getEventId(), e.getMessage(), e);
-                // 如果在转换或发送前就发生异常，也可以更新为failed
+                // If an exception occurs before conversion or sending, update the status to "failed".
                 emergencyVehicleMapper.updateEventStatus(event.getEventId(), "failed");
                 failCount++;
             }
@@ -76,33 +78,21 @@ public class EmergencyVehicleService {
     }
 
     /**
-     * 【新增方法，支持Controller】
-     * 通用的事件状态更新方法。
-     * @param eventId 要更新的事件ID
-     * @param status 新的状态字符串 (e.g., "ignored", "completed")
-     * @return 如果更新成功返回 true，否则返回 false
+     * A method to update the status of an event.
+     * @param eventId The ID of the event to update.
+     * @param status The new status string (e.g., "ignored", "completed").
+     * @return true if the update was successful, false otherwise.
      */
-//    public boolean updateEventStatus(String eventId, String status) {
-//        int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
-//        if (updatedRows > 0) {
-//            log.info("已将事件 {} 的状态更新为: {}", eventId, status);
-//            return true;
-//        } else {
-//            log.warn("尝试更新事件 {} 状态失败，可能事件ID不存在。", eventId);
-//            return false;
-//        }
-//    }
-
     public boolean updateEventStatus(String eventId, String status) {
         int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, status);
         if (updatedRows > 0) {
-            log.info("已将事件 {} 的数据库状态更新为: {}", eventId, status);
-            // 同步更新缓存
+            log.info("Updated database status for event {} to: {}", eventId, status);
+            // Synchronously update the cache
             eventStatusCache.setStatus(eventId, status);
-            log.info("已将事件 {} 的缓存状态更新为: {}", eventId, status);
+            log.info("Updated cache status for event {} to: {}", eventId, status);
             return true;
         } else {
-            log.warn("尝试更新事件 {} 状态失败，可能事件ID不存在。", eventId);
+            log.warn("Failed to update status for event {}, it might not exist", eventId);
             return false;
         }
     }
@@ -111,9 +101,9 @@ public class EmergencyVehicleService {
         String newStatus = success ? "triggered" : "failed";
         int updatedRows = emergencyVehicleMapper.updateEventStatus(eventId, newStatus);
         if (updatedRows > 0) {
-            log.info("已根据Traci回执更新紧急事件 {} 的状态为: {}", eventId, newStatus);
+            log.info("Updated status for emergency event {} to: {} based on Traci receipt", eventId, newStatus);
         } else {
-            log.warn("尝试更新紧急事件 {} 状态失败，可能事件ID不存在。", eventId);
+            log.warn("Failed to update status for emergency event {}, it might not exist", eventId);
         }
     }
 
@@ -131,10 +121,9 @@ public class EmergencyVehicleService {
     }
 
     /**
-     * ### 修改：现在返回只包含静态数据的DTO ###
-     * 根据事件ID获取事件的静态详细信息 (机构和路径)。
-     * @param eventId 事件的唯一ID
-     * @return 包含事件静态详情的Optional对象
+     * Retrieves the static details (agency and path) for an event by its ID.
+     * @param eventId The unique ID of the event.
+     * @return an Optional containing the event's static details.
      */
     public Optional<EmergencyVehicleStaticDataDto> getEventDetails(String eventId) {
         return emergencyVehicleMapper.findByEventId(eventId);

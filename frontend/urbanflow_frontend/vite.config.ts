@@ -1,4 +1,3 @@
-// vite.config.ts
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
@@ -9,13 +8,28 @@ const HTTP_LOCALHOST = 'http://localhost'
 const WS_LOCALHOST = 'ws://localhost'
 
 export default defineConfig({
+  base: '/',
   plugins: [vue(), vueJsx(), vueDevTools()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  assetsInclude: ['**/*.md'],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['vue', 'vue-router', 'pinia'],
+          echarts: ['echarts', 'vue-echarts'],
+          utils: ['axios', '@vueuse/core', 'date-fns']
+        }
+      }
+    }
+  },
   server: {
+    host: '0.0.0.0',
+    port: 5173,
     proxy: {
       '/api/traffic/suggestion': {
         target: 'http://localhost:8084',

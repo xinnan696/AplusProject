@@ -25,11 +25,33 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue';
+import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
 import apiClient from '@/utils/api';
+
+const adjustToastPosition = () => {
+  const toastElements = document.querySelectorAll('.toast');
+  toastElements.forEach(toast => {
+    if (document.querySelector('.auth-page')) {
+      toast.style.visibility = 'hidden';
+      toast.style.opacity = '0';
+      toast.style.position = 'fixed';
+      toast.style.top = '1rem';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.zIndex = '9999';
+
+      requestAnimationFrame(() => {
+        toast.style.visibility = 'visible';
+        toast.style.opacity = '1';
+      });
+    }
+  });
+};
+
+let observer: MutationObserver | null = null;
 
 const route = useRoute();
 const router = useRouter();
@@ -38,15 +60,6 @@ const authStore = useAuthStore();
 const form = reactive({ token: '', newPassword: '', confirmPassword: '' });
 const errors = reactive({ newPassword: '', confirmPassword: '' });
 const loading = ref(false);
-
-onMounted(() => {
-  form.token = route.query.token as string;
-  console.log('🔐 [ResetPassword] Token from URL:', form.token);
-
-  if (!form.token) {
-    toast.error('Invalid or missing reset token link.');
-  }
-});
 
 const clearError = (field: 'newPassword' | 'confirmPassword') => { errors[field] = ''; };
 
@@ -96,7 +109,7 @@ const handleResetPassword = async () => {
     }, 2000);
 
   } catch (error: any) {
-    console.error('❌ [ResetPassword] Reset failed:', {
+    console.error('[ResetPassword] Reset failed:', {
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
@@ -112,6 +125,43 @@ const handleResetPassword = async () => {
     loading.value = false;
   }
 };
+
+onMounted(() => {
+  form.token = route.query.token as string;
+  console.log('🔐 [ResetPassword] Token from URL:', form.token);
+
+  if (!form.token) {
+    toast.error('Invalid or missing reset token link.');
+  }
+
+  observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            const element = node as Element;
+            if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
+              adjustToastPosition();
+            }
+          }
+        });
+      }
+    });
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+
+  setTimeout(adjustToastPosition, 100);
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+});
 </script>
 
 <style scoped>
@@ -126,4 +176,59 @@ const handleResetPassword = async () => {
 .input-group input { width: 100%; padding: 14px 15px 14px 50px; border-radius: 8px; border: 1px solid #00b4d8; background-color: transparent; color: #FFFFFF; font-size: 16px; outline: none; }
 .submit-button { width: 100%; padding: 14px; background-color: #00b4d8; color: #FFFFFF; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s; font-size: 16px; }
 .error-text { position: absolute; left: 0; bottom: -22px; color: #FF4D4F; font-size: 12px; text-align: left; }
+</style>
+
+<!-- Override toast position for reset password page -->
+<style>
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+body .auth-page .toast,
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+body .auth-page .toast-fade-enter-active,
+body .auth-page .toast-fade-leave-active,
+.auth-page .toast-fade-enter-active,
+.auth-page .toast-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease !important;
+}
+
+body .auth-page .toast-fade-enter-from,
+.auth-page .toast-fade-enter-from {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-1rem) scale(0.8) !important;
+}
+
+body .auth-page .toast-fade-enter-to,
+.auth-page .toast-fade-enter-to {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-from,
+.auth-page .toast-fade-leave-from {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) scale(1) !important;
+}
+
+body .auth-page .toast-fade-leave-to,
+.auth-page .toast-fade-leave-to {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(-0.3rem) scale(0.95) !important;
+}
 </style>

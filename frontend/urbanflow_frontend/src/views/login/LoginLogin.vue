@@ -46,24 +46,27 @@ import { reactive, ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { toast } from '@/utils/ToastService';
-
-// 动态调整弹窗位置的函数
 const adjustToastPosition = () => {
-  // 查找页面上的 toast 元素
   const toastElements = document.querySelectorAll('.toast');
   toastElements.forEach(toast => {
-    // 检查是否在登录页面（通过检查是否存在 .auth-page 元素）
     if (document.querySelector('.auth-page')) {
+      toast.style.visibility = 'hidden';
+      toast.style.opacity = '0';
+
       toast.style.position = 'fixed';
-      toast.style.top = '1.44rem'; // 保持原来的高度位置
-      toast.style.left = '50%'; // 水平居中
-      toast.style.transform = 'translateX(-50%)'; // 只进行水平偏移
+      toast.style.top = '1rem';
+      toast.style.left = '50%';
+      toast.style.transform = 'translateX(-50%)';
       toast.style.zIndex = '9999';
+
+      requestAnimationFrame(() => {
+        toast.style.visibility = 'visible';
+        toast.style.opacity = '1';
+      });
     }
   });
 };
 
-// 使用 MutationObserver 监听 DOM 变化
 let observer: MutationObserver | null = null;
 
 
@@ -122,19 +125,15 @@ const goToForgot = () => {
   router.push({ name: 'ForgetPassword' });
 };
 
-// 设置 DOM 监听器
 onMounted(() => {
-  // 创建 MutationObserver 来监听 DOM 变化
   observer = new MutationObserver((mutations) => {
     mutations.forEach((mutation) => {
       if (mutation.type === 'childList') {
-        // 检查是否有新增的 toast 元素
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.ELEMENT_NODE) {
             const element = node as Element;
             if (element.classList?.contains('toast') || element.querySelector?.('.toast')) {
-              // 延迟调整位置，确保元素已经渲染
-              setTimeout(adjustToastPosition, 50);
+              adjustToastPosition();
             }
           }
         });
@@ -142,17 +141,14 @@ onMounted(() => {
     });
   });
 
-  // 开始监听整个文档的变化
   observer.observe(document.body, {
     childList: true,
     subtree: true
   });
 
-  // 初始检查是否已经有 toast 元素
   setTimeout(adjustToastPosition, 100);
 });
 
-// 清理监听器
 onUnmounted(() => {
   if (observer) {
     observer.disconnect();
@@ -194,19 +190,29 @@ onUnmounted(() => {
 
 <!-- Override toast position for login page only -->
 <style>
-/* 更强的选择器优先级，确保在登录页面覆盖弹窗位置 */
-body .auth-page .toast,
+
 .auth-page .toast {
   position: fixed !important;
-  top: 1.44rem !important; /* 保持原来的高度位置 */
-  left: 50% !important; /* 水平居中 */
-  transform: translateX(-50%) !important; /* 只进行水平偏移 */
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
   z-index: 9999 !important;
   width: 455px !important;
   height: 40px !important;
 }
 
-/* 重写动画效果以配合新的定位 */
+body .auth-page .toast,
+.auth-page .toast {
+  position: fixed !important;
+  top: 1rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  width: 455px !important;
+  height: 40px !important;
+}
+
+
 body .auth-page .toast-fade-enter-active,
 body .auth-page .toast-fade-leave-active,
 .auth-page .toast-fade-enter-active,

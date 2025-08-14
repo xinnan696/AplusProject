@@ -9,12 +9,16 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { BarChart } from 'echarts/charts'
 import { TitleComponent, TooltipComponent, GridComponent } from 'echarts/components'
 import VChart from 'vue-echarts'
+//import { getTopCongestedTimes } from '@/mocks/mockDashboardData'
 import {getTopCongestedTimes} from '@/services/dashboard_api'
 
 use([CanvasRenderer, BarChart, TitleComponent, TooltipComponent, GridComponent]);
 
 const props = defineProps<{
-  filters: { timeRange: string }
+  filters: {
+    timeRange: string
+    managedAreas?: string | null
+  }
 }>()
 
 const gradientColors = ref<string[]>([]);
@@ -61,7 +65,7 @@ function generateGradientColors(startColor: string, endColor: string, steps: num
 const chartOption = ref({
   tooltip: {
     trigger: 'axis',
-    axisPointer: { type: 'shadow' },
+    axisPointer: { type: 'none' },
     backgroundColor: 'rgba(20, 22, 40, 0.92)',
     borderColor: '#4a4a70',
     borderWidth: 1,
@@ -113,7 +117,10 @@ const chartOption = ref({
 const allLabels = ref<string[]>([]);
 
 async function fetchData() {
-  const response = await getTopCongestedTimes({ time_range: props.filters.timeRange });
+  const response = await getTopCongestedTimes({
+    time_range: props.filters.timeRange,
+    managedAreas: props.filters.managedAreas
+  });
 
   // if (response && response.data && response.labels) {
   //   const startColor = '#6a11cb';

@@ -1,11 +1,6 @@
 <template>
   <div class="dashboard-page">
-    <ControlHeader 
-      :isRecordPanelVisible="isRecordVisible"
-      @toggle-nav="toggleNav" 
-      @toggle-record="toggleRecord"
-      @sign-out="handleSignOut"
-    />
+    <ControlHeader @toggle-nav="toggleNav" @sign-out="handleSignOut"/>
     <ControlNav :isVisible="isNavVisible" />
 
     <div class="main-area" :class="{ 'nav-expanded': isNavVisible }">
@@ -13,13 +8,14 @@
         <DashboardCard
           title="Congested Junction Count Trend"
           titleTooltip="This chart shows the trend in the number of congested junctions over time for the selected time range."
-          class="card-third-height"
+          class="card-full-width"
         >
           <template #filters>
             <CustomSelect
               :options="timeRangeOptions"
               v-model="topSegmentsFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -30,13 +26,14 @@
         <DashboardCard
           title="Junction Congestion Duration Ranking"
           titleTooltip="This chart ranks junctions by total congestion duration, showing the junctions with the most persistent congestion."
-          class="card-third-height"
+          class="card-full-width"
         >
           <template #filters>
             <CustomSelect
               :options="durationRankingTimeRangeOptions"
               v-model="durationRankingFilters.timeRange"
               class="filter-select"
+              :show-search="false"
             />
           </template>
           <template #default>
@@ -60,6 +57,7 @@
                 :options="timeRangeOptions"
                 v-model="trafficFlowFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -79,6 +77,7 @@
                 :options="timeRangeOptions"
                 v-model="junctionCountFilters.timeRange"
                 class="filter-select"
+                :show-search="false"
               />
             </template>
             <template #default>
@@ -88,19 +87,13 @@
         </div>
       </div>
     </div>
-
-    <!-- Record Panel -->
-    <ControlRecord :isVisible="isRecordVisible" @close="toggleRecord" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref, reactive, onMounted, computed } from 'vue'
 import ControlHeader from '@/views/control/ControlHeader.vue'
 import ControlNav from '@/views/control/ControlNav.vue'
-import ControlRecord from '@/views/control/ControlRecord.vue'
 import DashboardCard from '@/views/dashboard/DashboardCard.vue'
 import CustomSelect from '@/views/dashboard/CustomSelect.vue'
 import TrafficFlowChart from '@/views/dashboard/TrafficFlowChart.vue'
@@ -109,31 +102,44 @@ import CongestedJunctionCountTrendChart from '@/views/dashboard/CongestedJunctio
 import CongestionDurationRankingChart from '@/views/dashboard/CongestionDurationRankingChart.vue'
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
+import { useAuthStore } from '@/stores/auth'
+//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
 import { getJunctions } from '@/services/dashboard_api'
 
-const router = useRouter()
+// 修改点：初始化 Store 并获取 managedAreas
 const authStore = useAuthStore()
+// 使用 computed 确保当 store 中的状态变化时，这里的值也能响应式更新
+const managedAreas = computed(() => authStore.getManagedAreas())
+console.log('managedAreas:', managedAreas.value);
+//模拟测试
+//const managedAreas = ['Left']
 
-// UI State
-const isRecordVisible = ref(false)
-
+// 修改点：将 managedAreas 添加到所有 filters 对象中
 // Filters State
 const trafficFlowFilters = reactive({
   // 1. 将 junctionId 初始值设置为空
   junctionId: null,
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0], // 模拟测试代码
 })
 
 const topSegmentsFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const junctionCountFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 const durationRankingFilters = reactive({
   timeRange: '24hours',
+  managedAreas: managedAreas.value[0]
+  //managedAreas: managedAreas[0],
 })
 
 // Filter Options
@@ -158,7 +164,12 @@ const durationRankingTimeRangeOptions = ref([
 
 // Fetch initial data for filters
 onMounted(async () => {
-  const junctions = await getJunctions()
+  // 修改点：在获取路口列表时，传入管辖区域参数
+  //const junctions = await getJunctions()
+  //修改后代码
+  const junctions = await getJunctions({ managedAreas: managedAreas.value[0] })
+  //模拟测试代码
+  //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
   // 3. 核心逻辑：获取数据后，设置默认值并填充选项
   if (junctions && junctions.length > 0) {
@@ -171,15 +182,23 @@ onMounted(async () => {
       label: j.junctionName
     }))
   }
+
+  //模拟
+  // if (junctions && junctions.length > 0) {
+  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
+  //   trafficFlowFilters.junctionId = junctions[0].junction_id
+  //
+  //   // 使用获取到的路口列表，完整地构建下拉框的选项
+  //   junctionOptions.value = junctions.map(j => ({
+  //     value: j.junction_id,
+  //     label: j.junction_name
+  //   }))
+  // }
 })
 
-// Event Handlers
-const toggleRecord = () => {
-  isRecordVisible.value = !isRecordVisible.value
-}
-
-const handleSignOut = () => {
-  console.log('🚪 [Dashboard] Signing out...')
+// 处理登出功能
+function handleSignOut() {
+  console.log('Dashboard: Handling sign out')
   authStore.logout()
 }
 </script>
@@ -188,14 +207,13 @@ const handleSignOut = () => {
 // 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
 // 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
-  //position: fixed;
-  position: relative;
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -204,65 +222,68 @@ const handleSignOut = () => {
 }
 
 .main-area {
-  //height: calc(100% - 64px); // 假设Header高度为64px
-  //display: flex;
-  //overflow-y: auto;
-  //overflow-x: hidden;
-  //padding: 0 1.01rem; // 对应左右间隙 101px
-  //justify-content: center;
-
   position: absolute;
-  top: 40px; // 假设Header高度为64px
+  top: 0.64rem; // Header 高度
   bottom: 0;
-  overflow: hidden; // 改为hidden，不允许滚动
+  overflow: hidden; // 取消滚动条
   display: flex;
   justify-content: center;
+  align-items: flex-start;
+  right: 0;
+
 
   // 定义两个变量，用于导航栏的宽度
   $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
-  $nav-expanded-width: 1.0rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
+  $nav-expanded-width: 2.2rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
 
   // 为位移和宽度变化添加平滑的过渡动画
-  transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+  transition: width 0.3s ease-out;
 
   // 默认状态（导航栏收起时）
-  left: $nav-collapsed-width;
-  width: calc(100% - #{$nav-collapsed-width});
+  left: 0;
+  //width: calc(100% - #{$nav-collapsed-width});
 
   // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
   &.nav-expanded {
     left: $nav-expanded-width;
     width: calc(100% - #{$nav-expanded-width});
+
   }
 }
 
+
 .dashboard-container {
-  width: 14.80rem; // 对应 1680px
-  height: 100%; // 占满父容器高度
+  width: 90%; // 使用百分比宽度
+  max-width: 14.80rem; // 最大宽度限制
+  height: 100%; // 使用 100% 高度
   display: flex;
   flex-direction: column;
-  gap: 0.15rem; // 中间上下间隙 15px
-  padding: 0.22rem 0; // 对应上下间隙 22px
-  box-sizing: border-box; // 确保padding不会撑大容器
+  gap: 0.8%; // 稍微减少间隙
+  padding: 0.3% 0 0.8% 0; // 顶部0.3% 底部0.8%间距
+  margin: 0;
+  overflow: hidden; // 防止子元素溢出
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
-  gap: 0.18rem; // 中间左右间隙 18px
-  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
+  gap: 1.2%; // 使用百分比间隙
+  flex-shrink: 0;
+  min-height: 0;
+  height: 33%; // 下半部分占用 33% 高度
 }
 
-// 替换原来的 .card-full-width
-.card-third-height {
-  height: calc(33.33% - 0.1rem); // 三分之一高度，减去gap的影响
+.card-full-width {
+  height: 33%; // 每个全宽卡片占用 33% 高度
   flex-shrink: 0;
+  min-height: 0;
 }
 
 .card-half-width {
-  width: 50%; // Will be calculated by flex
-  flex-grow: 1;
-  height: 100%; // 占满父容器(.card-row)的高度
+  width: 49.4%; // 稍微减少宽度以适应间隙
+  height: 100%; // 使用 100% 高度
+  flex-grow: 0;
+  flex-shrink: 0;
 }
 
 .filter-select {

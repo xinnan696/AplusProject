@@ -73,8 +73,8 @@ export const useUserStore = defineStore('user', () => {
         throw new Error(response.message)
       }
     } catch (err: any) {
-      error.value = err.message || '获取用户列表失败'
-      console.error('获取用户列表失败:', err)
+      error.value = err.message || 'error'
+      console.error(error)
       console.error('Error details:', {
         message: err.message,
         response: err.response?.data,
@@ -83,8 +83,7 @@ export const useUserStore = defineStore('user', () => {
       })
 
       if (err.response?.status === 403) {
-        console.error('权限不足 - 当前用户可能不是管理员')
-        throw new Error('权限不足：您没有访问用户列表的权限')
+        throw new Error('No Right to access')
       }
     } finally {
       loading.value = false

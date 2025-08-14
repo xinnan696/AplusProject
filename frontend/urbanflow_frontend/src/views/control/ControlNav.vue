@@ -51,6 +51,8 @@ const userRole = computed(() => authStore.userRole)
 
 const rolePermissions = {
   'ADMIN': ['Control', 'Dashboard', 'Administration', 'Help'],
+  'Admin': ['Control', 'Dashboard', 'Administration', 'Help'],
+  'admin': ['Control', 'Dashboard', 'Administration', 'Help'],
   'Traffic Manager': ['Control', 'Dashboard', 'Help'],
   'Traffic Planner': ['Dashboard', 'Help']
 }
@@ -73,12 +75,11 @@ const getAdminItems = (): string[] => {
 }
 
 const navigateTo = (routeName: string) => {
+  console.log(`Navigating to: ${routeName} for role: ${userRole.value}`)
 
-  if (authStore.hasPageAccess(routeName)) {
-    router.push({ name: routeName })
-  } else {
-    console.warn(`Access denied to ${routeName} for role ${userRole.value}`)
-  }
+  router.push({ name: routeName }).catch(err => {
+    console.error(`Navigation error to ${routeName}:`, err)
+  })
 }
 
 const handleAdminClick = (item: string) => {

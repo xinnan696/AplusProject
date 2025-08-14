@@ -11,6 +11,6 @@ import java.util.Optional;
 public interface EmergencyVehicleMapper {
     List<EmergencyVehicleEvent> findPendingEventsByTriggerTime(@Param("currentTime") long currentTime);
     int updateEventStatus(@Param("eventId") String eventId, @Param("status") String status);
-    // 根据事件ID查找单个紧急车辆事件的静态信息
+    // Find the static information of a single emergency vehicle event by its event ID
     Optional<EmergencyVehicleStaticDataDto> findByEventId(@Param("eventId") String eventId);
 }
