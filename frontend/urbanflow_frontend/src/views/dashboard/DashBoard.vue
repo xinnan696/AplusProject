@@ -103,47 +103,33 @@ import CongestionDurationRankingChart from '@/views/dashboard/CongestionDuration
 
 import { isNavVisible, toggleNav } from '@/utils/navState'
 import { useAuthStore } from '@/stores/auth'
-//import { getJunctions } from '@/mocks/mockDashboardData' // 模拟API
 import { getJunctions } from '@/services/dashboard_api'
 
-// 修改点：初始化 Store 并获取 managedAreas
 const authStore = useAuthStore()
-// 使用 computed 确保当 store 中的状态变化时，这里的值也能响应式更新
 const managedAreas = computed(() => authStore.getManagedAreas())
 console.log('managedAreas:', managedAreas.value);
-//模拟测试
-//const managedAreas = ['Left']
 
-// 修改点：将 managedAreas 添加到所有 filters 对象中
-// Filters State
 const trafficFlowFilters = reactive({
-  // 1. 将 junctionId 初始值设置为空
   junctionId: null,
   timeRange: '24hours',
   managedAreas: managedAreas.value[0]
-  //managedAreas: managedAreas[0], // 模拟测试代码
 })
 
 const topSegmentsFilters = reactive({
   timeRange: '24hours',
   managedAreas: managedAreas.value[0]
-  //managedAreas: managedAreas[0],
 })
 
 const junctionCountFilters = reactive({
   timeRange: '24hours',
   managedAreas: managedAreas.value[0]
-  //managedAreas: managedAreas[0],
 })
 
 const durationRankingFilters = reactive({
   timeRange: '24hours',
   managedAreas: managedAreas.value[0]
-  //managedAreas: managedAreas[0],
 })
 
-// Filter Options
-// 2. 将 junctionOptions 初始值设置为空数组
 const junctionOptions = ref([])
 
 const timeRangeOptions = ref([
@@ -162,41 +148,19 @@ const durationRankingTimeRangeOptions = ref([
   { value: 'oneyear', label: 'One year' },
 ])
 
-// Fetch initial data for filters
+
 onMounted(async () => {
-  // 修改点：在获取路口列表时，传入管辖区域参数
-  //const junctions = await getJunctions()
-  //修改后代码
   const junctions = await getJunctions({ managedAreas: managedAreas.value[0] })
-  //模拟测试代码
-  //const junctions = await getJunctions({ managedAreas: managedAreas[0] })
 
-  // 3. 核心逻辑：获取数据后，设置默认值并填充选项
   if (junctions && junctions.length > 0) {
-    // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
     trafficFlowFilters.junctionId = junctions[0].junctionId
-
-    // 使用获取到的路口列表，完整地构建下拉框的选项
     junctionOptions.value = junctions.map(j => ({
       value: j.junctionId,
       label: j.junctionName
     }))
   }
-
-  //模拟
-  // if (junctions && junctions.length > 0) {
-  //   // 将返回列表中的第一个路口ID，设置为 trafficFlowFilters 的默认值
-  //   trafficFlowFilters.junctionId = junctions[0].junction_id
-  //
-  //   // 使用获取到的路口列表，完整地构建下拉框的选项
-  //   junctionOptions.value = junctions.map(j => ({
-  //     value: j.junction_id,
-  //     label: j.junction_name
-  //   }))
-  // }
 })
 
-// 处理登出功能
 function handleSignOut() {
   console.log('Dashboard: Handling sign out')
   authStore.logout()
@@ -204,8 +168,6 @@ function handleSignOut() {
 </script>
 
 <style scoped lang="scss">
-// 确保在全局CSS中设置了合适的根字体大小，以便rem单位生效
-// 例如: html { font-size: 100px; } 这样 1rem = 100px
 .dashboard-page {
   position: fixed;
   top: 0;
@@ -223,71 +185,60 @@ function handleSignOut() {
 
 .main-area {
   position: absolute;
-  top: 0.64rem; // Header 高度
+  top: 0.64rem;
   bottom: 0;
-  overflow: hidden; // 取消滚动条
+  overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   right: 0;
-
-
-  // 定义两个变量，用于导航栏的宽度
-  $nav-collapsed-width: 0.8rem; // 导航栏【收起时】的宽度，请根据您的实际情况修改
-  $nav-expanded-width: 2.2rem; // 导航栏【展开时】的宽度，请根据您的实际情况修改
-
-  // 为位移和宽度变化添加平滑的过渡动画
+  $nav-collapsed-width: 0.8rem;
+  $nav-expanded-width: 2.2rem;
   transition: width 0.3s ease-out;
-
-  // 默认状态（导航栏收起时）
   left: 0;
-  //width: calc(100% - #{$nav-collapsed-width});
-
-  // 当 `nav-expanded` 这个 class 被添加时，应用以下样式
   &.nav-expanded {
     left: $nav-expanded-width;
     width: calc(100% - #{$nav-expanded-width});
-
   }
 }
 
 
 .dashboard-container {
-  width: 90%; // 使用百分比宽度
-  max-width: 14.80rem; // 最大宽度限制
-  height: 100%; // 使用 100% 高度
+  width: 90%;
+  max-width: 14.80rem;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 0.8%; // 稍微减少间隙
-  padding: 0.3% 0 0.8% 0; // 顶部0.3% 底部0.8%间距
+  gap: 0.8%;
+  padding: 0.3% 0 0.8% 0;
   margin: 0;
-  overflow: hidden; // 防止子元素溢出
+  overflow: hidden;
 }
 
 .card-row {
   display: flex;
   flex-direction: row;
-  gap: 1.2%; // 使用百分比间隙
+  gap: 1.2%;
   flex-shrink: 0;
   min-height: 0;
-  height: 33%; // 下半部分占用 33% 高度
+  height: 33%;
 }
 
 .card-full-width {
-  height: 33%; // 每个全宽卡片占用 33% 高度
+  height: 33%;
   flex-shrink: 0;
   min-height: 0;
 }
 
 .card-half-width {
-  width: 49.4%; // 稍微减少宽度以适应间隙
-  height: 100%; // 使用 100% 高度
+  width: 49.4%;
+  height: 100%;
   flex-grow: 0;
   flex-shrink: 0;
 }
 
 .filter-select {
-  width: 1.40rem; // 下拉栏宽度 140px
-  height: 0.32rem; // 下拉栏高度 32px
+  width: 1.40rem;
+  height: 0.32rem;
 }
 </style>

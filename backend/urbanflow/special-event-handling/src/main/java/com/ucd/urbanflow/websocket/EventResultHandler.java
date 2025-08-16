@@ -60,11 +60,9 @@ public class EventResultHandler extends TextWebSocketHandler {
 
             boolean isSuccess = "success".equalsIgnoreCase(status);
 
-            // 根据事件类型分发给不同的服务处理
             if ("emergency_event".equalsIgnoreCase(eventType)) {
                 emergencyVehicleService.handleTriggerResult(eventId, isSuccess);
             } else {
-                // 对于其他特殊事件，调用EventService
                 eventService.handleEventResult(status, eventType, msg, vehicleIds, laneIds, json);
             }
 
