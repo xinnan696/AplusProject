@@ -122,7 +122,7 @@ const displayedCongestedData = computed(() => {
     }
   }
 
-  filteredData = filteredData.filter(item => item.congestionCount >= 0)
+  filteredData = filteredData.filter(item => item.congestionCount >= 1)
 
   const displayCount = props.isAIMode ? 12 : 6
   return filteredData.slice(0, displayCount)
@@ -148,8 +148,10 @@ const connectWebSocket = () => {
           const processedData: CongestedItem[] = data.congested.map((item: any) => {
             const junctionId = item.j || item.junctionId
             const junctionName = junctionNameMap.value[junctionId] || junctionId
-            const congestionCount0 = item.q || item.congestionCount || 0
-            const congestionCount = congestionCount0 +13
+            let congestionCount = item.q || item.congestionCount || 0
+             if (congestionCount > 0) {
+      congestionCount += 5
+    }
 
             return {
               junctionId,
@@ -265,8 +267,8 @@ onUnmounted(() => {
 })
 
 const getQueueClass = (congestionCount: number) => {
-  if (congestionCount >= 15) return 'danger'
-  if (congestionCount >= 13) return 'warning'
+  if (congestionCount >= 10) return 'danger'
+  if (congestionCount >= 5) return 'warning'
   return 'normal'
 }
 </script>

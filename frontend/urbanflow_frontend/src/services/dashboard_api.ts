@@ -27,7 +27,6 @@ export const getTrafficFlow = async (params: ApiParamsWithArea & { junction_id?:
       timeRange: params.time_range,
       junctionId: params.junction_id,
     };
-    // 添加 managedAreas 到请求参数
     if (params.managedAreas) {
       apiParams.managedAreas = params.managedAreas;
     }
