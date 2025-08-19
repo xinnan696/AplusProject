@@ -62,7 +62,7 @@
       :junctionName="selectedJunctionForStatus?.junction_name"
       :directionIndex="selectedDirectionIndex"
       :trafficLightData="getTrafficLightDataForStatusBar()"
-      :lastManualControl="lastManualControl"
+      :lastManualControl="lastManualControl
       :manualOverride="manualOverride"
       :style="getStatusBarPosition()"
       class="map-traffic-status"

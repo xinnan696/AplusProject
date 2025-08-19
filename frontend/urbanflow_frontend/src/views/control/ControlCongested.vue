@@ -122,6 +122,7 @@ const displayedCongestedData = computed(() => {
     }
   }
 
+
   filteredData = filteredData.filter(item => item.congestionCount >= 1)
 
   const displayCount = props.isAIMode ? 12 : 6

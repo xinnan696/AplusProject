@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-08-11 14:53:47 by Eclipse SUMO sumo Version 1.23.1
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.net.final.xml"/>
+        <route-files value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.bus.trips.xml,E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.passenger.trips.xml,E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.truck.trips.xml"/>
+        <additional-files value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.poly.xml.gz,E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/output.add.xml,E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/types.add.xml"/>
+    </input>
+
+    <output>
+        <tripinfo-output value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/tripinfos.xml"/>
+        <statistic-output value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/stats.xml"/>
+    </output>
+
+    <processing>
+        <ignore-route-errors value="true"/>
+        <tls.actuated.jam-threshold value="30"/>
+    </processing>
+
+    <routing>
+        <device.rerouting.adaptation-steps value="18"/>
+        <device.rerouting.adaptation-interval value="10"/>
+    </routing>
+
+    <report>
+        <verbose value="true"/>
+        <duration-log.statistics value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <traci_server>
+        <remote-port value="8813"/>
+    </traci_server>
+
+    <gui_only>
+        <gui-settings-file value="E:/sumo/sumo-1.23.1/tools/2025-06-22-11-26-25/osm.view.xml"/>
+        <start value="true"/>
+    </gui_only>
+
+</sumoConfiguration>
+-->
+
+<tripinfos xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/tripinfo_file.xsd">

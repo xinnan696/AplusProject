@@ -148,9 +148,9 @@ const currentBatchSuggestions = ref<AISuggestion[]>([])
 const lastBatchHash = ref<string>('')
 const currentDisplayIndex = ref(0)
 
+
 // 状态持久化相关
 const STORAGE_KEY = 'ai_suggestions_state'
-
 const junctionsCache = ref<Map<string, Junction>>(new Map())
 const edgesCache = ref<Map<string, Edge>>(new Map())
 const laneMappingsCache = ref<Map<string, string>>(new Map())
@@ -216,7 +216,6 @@ const clearStoredState = () => {
     console.error('Failed to clear stored state:', error)
   }
 }
-
 const hasValidSuggestion = computed(() => {
   return !!(suggestionData.value &&
     displayData.value.junctionName &&
@@ -777,6 +776,7 @@ const handleApply = async (isAutoApply = false) => {
   if (suggestion) {
     const suggestionId = getSuggestionId(suggestion)
     processedSuggestions.value.add(suggestionId)
+
     // 保存状态
     saveStateToStorage()
   }
@@ -788,6 +788,7 @@ const handleIgnore = () => {
   if (suggestionData.value) {
     const suggestionId = getSuggestionId(suggestionData.value)
     processedSuggestions.value.add(suggestionId)
+
     // 保存状态
     saveStateToStorage()
   }
