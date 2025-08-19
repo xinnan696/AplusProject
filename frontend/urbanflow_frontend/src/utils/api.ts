@@ -23,10 +23,10 @@ apiClient.interceptors.request.use(
         // add the Authorization header to the request.
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('✅ [API Interceptor] Authorization header added');
+            console.log('[API Interceptor] Authorization header added');
         } else {
             if (config.url && !config.url.includes('/api-status/')) {
-                console.warn('⚠️ [API Interceptor] No token found for authenticated endpoint:', config.url);
+                console.warn('[API Interceptor] No token found for authenticated endpoint:', config.url);
             }
         }
 
