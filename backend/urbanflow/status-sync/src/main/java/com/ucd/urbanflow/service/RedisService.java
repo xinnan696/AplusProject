@@ -19,7 +19,6 @@ public class RedisService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // ✅ 读取 Redis 中所有 edge（Hash 存储）
     public Map<String, Edge> getAllEdgesFromHash() {
         Map<Object, Object> rawMap = redisTemplate.opsForHash().entries("sumo:edge");
         Map<String, Edge> result = new HashMap<>();
@@ -31,7 +30,7 @@ public class RedisService {
                 Edge edge = objectMapper.readValue(json, Edge.class);
                 result.put(key, edge);
             } catch (Exception e) {
-                System.err.println("❌ [RedisService] Failed to parse edge JSON for key: " + entry.getKey());
+                System.err.println("[RedisService] Failed to parse edge JSON for key: " + entry.getKey());
                 e.printStackTrace();
             }
         }
@@ -39,7 +38,7 @@ public class RedisService {
         return result;
     }
 
-    // ✅ 读取 Redis 中所有 junction（Hash 存储）
+
     public Map<String, Junction> getAllJunctionsFromHash() {
         Map<Object, Object> rawMap = redisTemplate.opsForHash().entries("sumo:tls");
         Map<String, Junction> result = new HashMap<>();
@@ -51,8 +50,8 @@ public class RedisService {
                 Junction junction = objectMapper.readValue(json, Junction.class);
                 result.put(key, junction);
             } catch (Exception e) {
-                System.err.println("❌ [RedisService] Failed to parse junction JSON for key: " + entry.getKey());
-                System.err.println("🔍 Value: " + entry.getValue());  // 加上这行打印原始 Redis 字符串
+                System.err.println("[RedisService] Failed to parse junction JSON for key: " + entry.getKey());
+                System.err.println(" Value: " + entry.getValue());
                 e.printStackTrace();
             }
         }

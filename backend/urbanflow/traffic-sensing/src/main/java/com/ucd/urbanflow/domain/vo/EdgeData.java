@@ -14,4 +14,7 @@ public class EdgeData {
     @JsonProperty("vehicleCount")
     private int vehicleCount;
 
+    @JsonProperty("occupancy")
+    private float occupancy;
+
 }

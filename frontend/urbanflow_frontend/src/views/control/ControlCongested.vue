@@ -1,6 +1,8 @@
 <template>
   <div class="congested-box">
-    <div class="title">Congested Roads</div>
+    <div class="title">
+      <span>Congested Junctions</span>
+    </div>
 
     <div class="table-header">
       <span class="col location">Location</span>
@@ -10,117 +12,264 @@
     <div class="table-body">
       <div
         class="table-row"
-        v-for="(item, index) in congestedData"
-        :key="index"
+        v-for="(item, index) in displayedCongestedData"
+        :key="`${item.junctionId}-${index}`"
+        v-if="displayedCongestedData.length > 0"
       >
         <span
             class="col location"
-            :class="getLocationClass(index)"
-            @click="handleLocationClick(item.j)"
+            :class="getQueueClass(item.congestionCount)"
+            @click="handleLocationClick(item.junctionId)"
             style="cursor: pointer;"
 >
-            {{ junctionNameMap[item.j] || item.j }}
+            {{ item.junctionName }}
         </span>
-        <span class="col queue" :class="getQueueClass(item.q)">
-          {{ item.q }}
+        <span class="col queue" :class="getQueueClass(item.congestionCount)">
+          {{ animatedValues[item.junctionId] || item.congestionCount }}
         </span>
+      </div>
+
+      <div v-if="displayedCongestedData.length === 0" class="empty-state">
+        <div class="empty-text">No Congested Roads</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+interface Props {
+  isAIMode?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  isAIMode: false
+})
+
 const emit = defineEmits<{
   (e: 'select-junction-by-name', name: string): void
 }>()
 
-const handleLocationClick = (junctionId: string) => {
-  const name = junctionNameMap.value[junctionId] || junctionId
-  emit('select-junction-by-name', name)
-}
+const authStore = useAuthStore()
+
 interface CongestedItem {
-  j: string
-  q: number
+  junctionId: string
+  junctionName: string
+  congestionCount: number
+  area?: string
 }
 
-const congestedData = ref<CongestedItem[]>([])
+const allCongestedData = ref<CongestedItem[]>([])
 const junctionNameMap = ref<Record<string, string>>({})
+const junctionAreaMap = ref<Record<string, string>>({})
+const animatedValues = ref<Record<string, number>>({})
 
 let socket: WebSocket | null = null
+let reconnectAttempts = 0
+const maxReconnectAttempts = 5
+let reconnectTimer: NodeJS.Timeout | null = null
+
+const fetchJunctionMappings = async () => {
+  try {
+    const laneResponse = await fetch('/api-status/lane-mappings')
+    const laneData = await laneResponse.json()
+
+    let minX = Infinity, maxX = -Infinity
+    laneData.forEach((lane: any) => {
+      const coordinates = lane.laneShape.trim().split(' ').map((p: string) => p.split(',').map(Number))
+      coordinates.forEach((coord: number[]) => {
+        minX = Math.min(minX, coord[0])
+        maxX = Math.max(maxX, coord[0])
+      })
+    })
+
+    const mapCenterX = (minX + maxX) / 2
+
+    const tlsResponse = await fetch('/api-status/tls-junctions')
+    const tlsData = await tlsResponse.json()
+
+    const junctionCoordMap: Record<string, { x: number, y: number }> = {}
+    tlsData.forEach((tls: any) => {
+      if (tls.junctionId && tls.junctionX !== undefined && tls.junctionY !== undefined) {
+        junctionCoordMap[tls.junctionId] = {
+          x: tls.junctionX,
+          y: tls.junctionY
+        }
+      }
+    })
+
+    return { mapCenterX, junctionCoordMap }
+  } catch (error) {
+    console.error('Failed to fetch junction mappings:', error)
+    return { mapCenterX: 0, junctionCoordMap: {} }
+  }
+}
+
+const displayedCongestedData = computed(() => {
+  let filteredData = [...allCongestedData.value]
+
+  if (authStore.isTrafficManager()) {
+    const managedAreas = authStore.getManagedAreas()
+
+    if (managedAreas.length > 0) {
+      filteredData = filteredData.filter(item => {
+        const area = junctionAreaMap.value[item.junctionId]
+        const hasAccess = area && managedAreas.includes(area)
+        return hasAccess
+      })
+    }
+  }
+
+  filteredData = filteredData.filter(item => item.congestionCount >= 0)
+
+  const displayCount = props.isAIMode ? 12 : 6
+  return filteredData.slice(0, displayCount)
+})
+
+const handleLocationClick = (junctionId: string) => {
+  emit('select-junction-by-name', junctionId)
+}
+
+const connectWebSocket = () => {
+  try {
+    socket = new WebSocket('ws://localhost:8087/api/status/ws')
+
+    socket.onopen = () => {
+      reconnectAttempts = 0
+    }
+
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+
+        if (data.congested && Array.isArray(data.congested)) {
+          const processedData: CongestedItem[] = data.congested.map((item: any) => {
+            const junctionId = item.j || item.junctionId
+            const junctionName = junctionNameMap.value[junctionId] || junctionId
+            const congestionCount0 = item.q || item.congestionCount || 0
+            const congestionCount = congestionCount0 +13
+
+            return {
+              junctionId,
+              junctionName,
+              congestionCount,
+              area: junctionAreaMap.value[junctionId]
+            }
+          })
+
+          processedData.forEach((item: CongestedItem) => {
+            const oldValue = animatedValues.value[item.junctionId] || 0
+            const newValue = item.congestionCount
+            if (oldValue !== newValue) {
+              animateNumber(item.junctionId, oldValue, newValue)
+            }
+          })
+
+          allCongestedData.value = processedData
+        }
+      } catch (e) {
+        console.error('WebSocket JSON parse error:', e)
+      }
+    }
+
+
+
+    socket.onclose = () => {
+      if (reconnectAttempts < maxReconnectAttempts) {
+        reconnectAttempts++
+        reconnectTimer = setTimeout(connectWebSocket, 3000)
+      }
+    }
+  } catch (error) {
+    if (reconnectAttempts < maxReconnectAttempts) {
+      reconnectAttempts++
+      reconnectTimer = setTimeout(connectWebSocket, 3000)
+    }
+  }
+}
 
 onMounted(async () => {
-
   try {
+    const { mapCenterX, junctionCoordMap } = await fetchJunctionMappings()
+
     const response = await fetch('/api-status/junctions')
     const data = await response.json()
 
-    const map: Record<string, string> = {}
+    const nameMap: Record<string, string> = {}
+    const areaMap: Record<string, string> = {}
+
     for (const key in data) {
       const j = data[key]
-      map[j.junction_id] = j.junction_name
+      nameMap[j.junction_id] = j.junction_name
+
+      if (j.area) {
+        areaMap[j.junction_id] = j.area
+      } else {
+        const coords = junctionCoordMap[j.junction_id]
+        if (coords) {
+          if (coords.x < mapCenterX) {
+            areaMap[j.junction_id] = 'Left'
+          } else {
+            areaMap[j.junction_id] = 'Right'
+          }
+        } else {
+          const junctionName = j.junction_name
+          if (junctionName.includes('Left') || junctionName.includes('左')) {
+            areaMap[j.junction_id] = 'Left'
+          } else if (junctionName.includes('Right') || junctionName.includes('右')) {
+            areaMap[j.junction_id] = 'Right'
+          } else {
+            areaMap[j.junction_id] = 'Left'
+          }
+        }
+      }
     }
 
-    junctionNameMap.value = map
+    junctionNameMap.value = nameMap
+    junctionAreaMap.value = areaMap
+
+
   } catch (err) {
-    console.error(err)
+    console.error('Failed to fetch junction data:', err)
   }
 
-  // 启动 WebSocket
-  socket = new WebSocket('ws://localhost:8087/api/status/ws')
-
-  socket.onopen = () => {
-    console.log('WebSocket connected.')
-  }
-
-  socket.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data)
-    if (data.congested) {
-      // 用假数据替换 q 值
-      const fakeQs = [15, 11, 10, 8, 6, 6]
-
-      const modified = data.congested.map((item: { j: string }, idx: number) => ({
-        j: item.j,
-        q: fakeQs[idx % fakeQs.length] // 循环分配假数据
-      }))
-
-      congestedData.value = modified
-    }
-  } catch (e) {
-    console.error('WebSocket JSON parse error:', e)
-  }
-}
-
-  socket.onerror = (err) => {
-    console.error('WebSocket error:', err)
-  }
-
-  socket.onclose = () => {
-    console.log('WebSocket disconnected.')
-  }
+  // 连接 WebSocket
+  connectWebSocket()
 })
 
+const animateNumber = (key: string, from: number, to: number) => {
+  const duration = 800
+  const start = Date.now()
+  const animate = () => {
+    const now = Date.now()
+    const progress = Math.min((now - start) / duration, 1)
+    const easeOut = 1 - Math.pow(1 - progress, 3)
+    animatedValues.value[key] = Math.round(from + (to - from) * easeOut)
+
+    if (progress < 1) {
+      requestAnimationFrame(animate)
+    }
+  }
+  requestAnimationFrame(animate)
+}
+
 onUnmounted(() => {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+  }
   if (socket && socket.readyState === WebSocket.OPEN) {
     socket.close()
   }
 })
 
-const getQueueClass = (q: number) => {
-  if (q >= 13) return 'danger'
-  if (q >= 10) return 'warning'
+const getQueueClass = (congestionCount: number) => {
+  if (congestionCount >= 15) return 'danger'
+  if (congestionCount >= 13) return 'warning'
   return 'normal'
 }
-
-const getLocationClass = (index: number) => {
-  if (index === 0) return 'location-danger'
-  if (index === 1 || index === 2) return 'location-warning'
-  return 'location-normal'
-}
 </script>
-
-
 
 <style scoped lang="scss">
 .congested-box {
@@ -132,84 +281,173 @@ const getLocationClass = (index: number) => {
   flex-shrink: 0;
   position: relative;
   padding: 0.2rem 0.24rem 0rem 0.24rem;
-  overflow: hidden;
+  overflow: visible;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(74, 85, 104, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(113, 128, 150, 0.03) 0%, transparent 50%),
+      linear-gradient(45deg, transparent 48%, rgba(74, 85, 104, 0.02) 49%, rgba(74, 85, 104, 0.02) 51%, transparent 52%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  > * {
+    position: relative;
+    z-index: 1;
+  }
 }
 
-// 标题
 .title {
   font-size: 0.2rem;
-  font-weight: bold;
-  color: #ff4c4c;
+  font-weight: 700;
+  color: #00E5FF;
   line-height: 0.2rem;
   padding-bottom: 0.16rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  position: relative;
+
+  span {
+    position: relative;
+  }
 }
 
-// 表头
 .table-header {
   display: flex;
   justify-content: space-between;
   font-size: 0.16rem;
-  font-weight: bold;
+  font-weight: 600;
   color: #FFFFFF;
-  font-family: Arial, Helvetica, sans-serif;
   line-height: 0.16rem;
-  padding-bottom: 0.16rem;
+  padding-bottom: 0.08rem;
+
+  letter-spacing: 0.02rem;
+
+  .col {
+    display: flex;
+    align-items: center;
+  }
+
+  .col:first-child {
+    width: 75%;
+  }
+
+  .col:last-child {
+    width: 25%;
+    justify-content: center;
+    white-space: nowrap;
+  }
 }
 
-// 表体
 .table-body {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
+  gap: 0;
 }
 
-// 每一行
 .table-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   flex-shrink: 0;
   height: 0.28rem;
-  line-height: 0.28rem;
-  padding-bottom: 0.12rem;
+  margin: 0 -0.05rem;
+  padding-left: 0.05rem;
+  padding-right: 0.05rem;
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  border-radius: 0.06rem;
+  position: relative;
+  overflow: visible;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  &:hover {
+    background: rgba(74, 85, 104, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    position: relative;
+
+    &::before {
+      opacity: 1;
+    }
+  }
 }
 
-// 列
 .col {
   display: flex;
   align-items: center;
+  height: 100%;
 }
 
 .col.location {
   width: 75%;
   font-size: 0.14rem;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  overflow: visible;
+  font-weight: 500;
 }
 
 .col.queue {
-  width: 0.9rem;
+  width: 25%;
   font-size: 0.14rem;
+  justify-content: center;
+  font-weight: 700;
+  position: relative;
+  white-space: nowrap;
+}
+
+.danger {
+  color: #FF4569;
+
+}
+
+.warning {
+  color: #FFC107;
+
+}
+
+.normal {
+  color: #00E676;
+
+}
+
+.empty-state {
   display: flex;
   justify-content: center;
   align-items: center;
+  height: 100%;
+  min-height: 1.2rem;
+
+  .empty-text {
+    color: rgba(156, 163, 175, 0.6);
+    font-size: 0.16rem;
+    font-style: italic;
+    font-weight: 500;
+    text-align: center;
+  }
 }
 
-// 颜色类
-.danger {
-  color: #ff4c4c;
-}
-.warning {
-  color: #ffc107;
-}
-.normal {
-  color: #ffff00;
-}
 
-.location-danger {
-  color: #D9001B;
-}
-.location-warning {
-  color: #F59A23;
-}
-.location-normal {
-  color: #FFFF00;
-}
 </style>

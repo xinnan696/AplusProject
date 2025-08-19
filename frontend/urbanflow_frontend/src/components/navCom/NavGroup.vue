@@ -7,7 +7,6 @@
       </div>
     </div>
 
-   
     <TransitionGroup
       v-if="itemsToShow.length"
       name="submenu"
@@ -20,7 +19,7 @@
         :class="[
           'sub-menu-item',
           {
-            'active': (item === 'User Management' && props.currentRoute === 'UserList') ||
+            'active': (item === 'Users' && ['UserList', 'AddUser', 'UserDetails', 'EditUser'].includes(props.currentRoute || '')) ||
                      (item === 'User Logs' && props.currentRoute === 'UserLog')
           }
         ]"
@@ -49,9 +48,11 @@ const expanded = ref(false)
 const itemsToShow = ref<string[]>([])
 
 const hasActiveItem = computed(() => {
-  return (props.currentRoute === 'UserList') || (props.currentRoute === 'UserLog')
-})
+  const userRoutes = ['UserList', 'AddUser', 'UserDetails', 'EditUser']
+  const userLogRoutes = ['UserLog']
 
+  return userRoutes.includes(props.currentRoute || '') || userLogRoutes.includes(props.currentRoute || '')
+})
 
 watch(hasActiveItem, (newValue) => {
   if (newValue && !expanded.value) {
@@ -62,9 +63,9 @@ watch(hasActiveItem, (newValue) => {
 
 function toggleMenu() {
   if (hasActiveItem.value && expanded.value) {
-    return 
+    return
   }
-  
+
   expanded.value = !expanded.value
 
   if (expanded.value) {
@@ -104,31 +105,6 @@ function toggleMenu() {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
-      transition: left 0.4s ease;
-    }
-
-    &:hover {
-      background-color: #2E2F41;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
-      
-      &::before {
-        left: 100%;
-      }
-      
-      .arrow-icon {
-        transform: translateY(-50%) scale(1.1);
-        color: #00E3FF;
-      }
-    }
   }
 
   .arrow-icon {
@@ -164,61 +140,14 @@ function toggleMenu() {
     position: relative;
     overflow: hidden;
 
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-      transition: left 0.4s ease;
-    }
-
-    &:hover {
-      background-color: #2E2F41;
-      transform: translateY(-1px) translateX(2px);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-      color: #fff;
-      
-      &::before {
-        left: 100%;
-      }
-    }
 
     &.active {
       background: linear-gradient(135deg, #00B4D8, #0096C7);
       color: white;
       box-shadow: 0 3px 8px rgba(0, 180, 216, 0.25);
-      border-left: 2px solid #00E3FF;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        right: 6px;
-        width: 3px;
-        height: 3px;
-        background-color: #00E3FF;
-        border-radius: 50%;
-        transform: translateY(-50%);
-        animation: pulse-small 2s infinite;
-      }
     }
   }
 
-  @keyframes pulse-small {
-    0%, 100% {
-      opacity: 1;
-      transform: translateY(-50%) scale(1);
-    }
-    50% {
-      opacity: 0.6;
-      transform: translateY(-50%) scale(1.3);
-    }
-  }
-
-  /* 进入动画 */
   .submenu-enter-from {
     opacity: 0;
     transform: translateY(-6px);
@@ -227,7 +156,6 @@ function toggleMenu() {
     transition: all 0.25s ease;
   }
 
-  /* 离开动画 */
   .submenu-leave-to {
     opacity: 0;
     transform: translateY(-6px);

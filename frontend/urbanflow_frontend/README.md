@@ -4,7 +4,9 @@ Complete frontend implementation for the UrbanFlow traffic management system, pr
 
 ### ***The project opens to the login page by default. You can log in with any username and password to pass authentication.
 
-### ***To clear current login session: Open browser developer tools (F12), go to Console and run: `localStorage.removeItem('authToken')`, then refresh the page.
+### ***To clear current login session: Open browser developer tools (F12), go to Console and run: `localStorage.removeItem('authToken')`, then refresh(F5) the page.
+
+<img src="C:\Users\x2357\AppData\Roaming\Typora\typora-user-images\image-20250701143222547.png" alt="image-20250701143222547" style="zoom: 50%;" />
 
 ## Project Features
 
@@ -91,15 +93,7 @@ npm run dev
 ```
 Runs on http://localhost:5173/ by default
 
-### Build for Production
-```bash
-npm run build
-```
 
-### Lint Code
-```bash
-npm run lint
-```
 
 ##  **Technical Features**
 
@@ -213,6 +207,7 @@ onMounted(async () => {
   try {
     const res = await axios.get('/api-status/junctions')
     const rawData = Object.values(res.data)
+    
     junctionOptions.value = rawData.map(j => ({
       label: j.junction_name || j.junction_id,
       value: j.junction_id
@@ -355,6 +350,42 @@ Navigation-related components are mainly used internally by the system and gener
 **NavItem** - Navigation menu item
 **NavGroup** - Expandable navigation menu group
 
+
+
+#### Tooltip Usage Summary
+
+#### Required Files
+
+1. `src/style/button-hover.scss` - tooltip styles
+2. `src/main.ts` - styles already imported (no changes needed)
+
+#### Usage
+
+#### HTML Structure
+
+```html
+<div class="your-element">
+  Content
+  <div class="simple-tooltip">Tooltip text</div>
+</div>
+```
+
+#### CSS Configuration
+
+```scss
+.your-element {
+  position: relative; 
+  
+  &:hover .simple-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%);
+  }
+}
+```
+
+#### 
+
 ## **Project Structure**
 ```
 src/
@@ -399,3 +430,5 @@ For more configuration options, please refer to [Vite Configuration Reference](h
 ---
 
 ## **Technical Support**
+
+For technical support or feature suggestions, please contact the development team through project Issues or relevant channels.

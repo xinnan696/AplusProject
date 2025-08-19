@@ -15,6 +15,15 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(statusHandler, "/api/status/ws").setAllowedOrigins("*");
+        // Native WebSocket connection
+        registry.addHandler(statusHandler, "/api/status/ws")
+                .setAllowedOrigins("*")
+                .setAllowedOriginPatterns("*");
+
+        registry.addHandler(statusHandler, "/api/status/sockjs")
+                .setAllowedOrigins("*")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }
+

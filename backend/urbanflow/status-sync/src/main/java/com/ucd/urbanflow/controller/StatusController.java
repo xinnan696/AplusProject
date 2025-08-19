@@ -27,20 +27,13 @@ public class StatusController {
     @Autowired
     private TlsJunctionService tlsJunctionService;
 
-    // 测试接口
-    @GetMapping("/test")
-    public String test() {
-        return "✅ StatusController is working.";
-    }
 
-    // ✅ 获取所有 Edge 数据
     @GetMapping("/edges")
     public ResponseEntity<Map<String, Edge>> getAllEdges() {
         Map<String, Edge> edgeMap = redisService.getAllEdgesFromHash();
         return ResponseEntity.ok(edgeMap);
     }
 
-    // ✅ 获取所有 Junction 数据
     @GetMapping("/junctions")
     public ResponseEntity<Map<String, Junction>> getAllJunctions() {
         Map<String, Junction> junctionMap = redisService.getAllJunctionsFromHash();

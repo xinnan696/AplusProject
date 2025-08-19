@@ -8,12 +8,9 @@ export const toast = {
   error(message: string, duration = 3000) {
     showToast(message, 'error', duration)
   },
-  info(message: string, duration = 3000) {
-    showToast(message, 'info', duration)
-  },
 }
 
-function showToast(message: string, type: 'success' | 'error' | 'info', duration: number) {
+function showToast(message: string, type: 'success' | 'error', duration: number) {
   const container = document.createElement('div')
   document.body.appendChild(container)
 
@@ -25,5 +22,3 @@ function showToast(message: string, type: 'success' | 'error' | 'info', duration
     document.body.removeChild(container)
   }, duration + 500)
 }
-
-

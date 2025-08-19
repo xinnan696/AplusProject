@@ -15,18 +15,221 @@ services:
       - db_data:/var/lib/mysql    # Persist MySQL data
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   redis:
     image: redis:latest          # Use the latest Redis image
-    container_name: redis        # Name of the container
+    container_name: urbanflow-redis        # Name of the container
     ports:
       - "6379:6379"              # Expose Redis on the default port
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      timeout: 20s
+      retries: 10
+
+  influxdb:
+    image: influxdb:latest
+    container_name: urbanflow-influxdb
+    ports:
+      - "9999:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=Urb@nFl0w_Dev-Pass!
+      - DOCKER_INFLUXDB_INIT_ORG=urbanflow-project
+      - DOCKER_INFLUXDB_INIT_BUCKET=traffic_staging_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=ThIs_Is_My_S3cr3t_D3v_T0ken_F0r_UrbanFl0w
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      timeout: 20s
+      retries: 10
+
+  user-authentication:
+    build:
+      context: .
+      dockerfile: user-authentication/Dockerfile
+    container_name: urbanflow-user-auth
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  signal-control:
+    build:
+      context: .
+      dockerfile: signal-control/Dockerfile
+    container_name: urbanflow-signal-control
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  traffic-sensing:
+    build:
+      context: .
+      dockerfile: traffic-sensing/Dockerfile
+    container_name: urbanflow-traffic-sensing
+    ports:
+      - "8083:8083"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=ThIs_Is_My_S3cr3t_D3v_T0ken_F0r_UrbanFl0w
+      - INFLUXDB_ORG=urbanflow-project
+      - INFLUXDB_BUCKET=traffic_staging_bucket
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  ai-intelligence:
+    build:
+      context: .
+      dockerfile: ai-intelligence/Dockerfile
+    container_name: urbanflow-ai-intelligence
+    ports:
+      - "8084:8084"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_TOKEN=ThIs_Is_My_S3cr3t_D3v_T0ken_F0r_UrbanFl0w
+      - INFLUXDB_ORG=urbanflow-project
+      - INFLUXDB_BUCKET=traffic_staging_bucket
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      influxdb:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  special-event-handling:
+    build:
+      context: .
+      dockerfile: special-event-handling/Dockerfile
+    container_name: urbanflow-special-event
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  logging-and-audit:
+    build:
+      context: .
+      dockerfile: logging-and-audit/Dockerfile
+    container_name: urbanflow-logging-audit
+    ports:
+      - "8086:8086"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
+
+  status-sync:
+    build:
+      context: .
+      dockerfile: status-sync/Dockerfile
+    container_name: urbanflow-status-sync
+    ports:
+      - "8087:8087"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/urbanflow
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend
+    restart: unless-stopped
 
 networks:
   backend:
     driver: bridge
 
 volumes:
-  db_data:                        # Volume to persist database files
+  db_data:
+  influxdb_data:
