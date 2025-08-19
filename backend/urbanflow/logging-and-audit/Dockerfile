@@ -1,25 +1,8 @@
-FROM openjdk:17-jdk-slim
-
+FROM eclipse-temurin:17-jre-jammy
+ARG JAR_FILE=target/logging-and-audit-*.jar
 WORKDIR /app
-
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
-
-COPY pom.xml .
-COPY ../pom.xml ../pom.xml
-COPY ../common/pom.xml ../common/pom.xml
-
-COPY src ./src
-COPY ../common/src ../common/src
-
-RUN apt-get update && apt-get install -y maven && rm -rf /var/lib/apt/lists/*
-
-RUN mvn clean package -DskipTests
-
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-RUN chown -R appuser:appuser /app
-USER appuser
-
+COPY ${JAR_FILE} app.jar
 EXPOSE 8086
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 
-CMD ["java", "-jar", "target/logging-and-audit-0.0.1-SNAPSHOT.jar"]

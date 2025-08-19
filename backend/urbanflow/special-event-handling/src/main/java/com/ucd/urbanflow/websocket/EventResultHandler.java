@@ -60,6 +60,7 @@ public class EventResultHandler extends TextWebSocketHandler {
 
             boolean isSuccess = "success".equalsIgnoreCase(status);
 
+
             if ("emergency_event".equalsIgnoreCase(eventType)) {
                 emergencyVehicleService.handleTriggerResult(eventId, isSuccess);
             } else {
