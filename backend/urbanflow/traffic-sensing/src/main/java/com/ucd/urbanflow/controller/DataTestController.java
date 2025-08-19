@@ -28,10 +28,10 @@ public class DataTestController {
                 .build();
 
         redisPollingService.getEventStream().subscribe(e -> {
-            System.out.println("❗️Received event in stream: " + e);
+            System.out.println("Received event in stream: " + e);
         });
 
-        redisPollingService.getSink().tryEmitNext(event); // 注意需要你对外暴露 getSink()
+        redisPollingService.getSink().tryEmitNext(event);
         return "Emitted test event";
     }
 }

@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/emergency-vehicles") // 使用专属的API路径
+@RequestMapping("/api/emergency-vehicles")
 @RequiredArgsConstructor
 public class EmergencyVehicleController {
 

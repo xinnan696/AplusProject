@@ -69,9 +69,21 @@ public class TrafficFlowService {
         int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 
         if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
+            // START OF NEW BLOCK
             Map<Integer, Integer> flowByHour = new LinkedHashMap<>();
-            for (int i = 0; i < 24; i += 2) {
-                flowByHour.put(i, 0);
+            Calendar tempCal = Calendar.getInstance();
+            tempCal.setTime(start);
+
+            for (int i = 0; i < 12; i++) {
+                int hourBucket = tempCal.get(Calendar.HOUR_OF_DAY);
+                int alignedHour = (hourBucket / 2) * 2;
+
+                if (!flowByHour.containsKey(alignedHour)) {
+                    xAxisLabels.add(String.valueOf(alignedHour + 2));
+                    flowByHour.put(alignedHour, 0);
+                }
+
+                tempCal.add(Calendar.HOUR_OF_DAY, 2);
             }
 
             for (TrafficFlow s : stats) {
@@ -79,17 +91,20 @@ public class TrafficFlowService {
                 c.setTime(s.getTimeBucket());
                 int hour = c.get(Calendar.HOUR_OF_DAY);
                 int hourBucket = (hour / 2) * 2;
-                flowByHour.put(hourBucket, flowByHour.getOrDefault(hourBucket, 0)
-                        + (s.getFlowRateHourly() == null ? 0 : s.getFlowRateHourly()));
+                if (flowByHour.containsKey(hourBucket)) {
+                    flowByHour.put(hourBucket, flowByHour.getOrDefault(hourBucket, 0)
+                            + (s.getFlowRateHourly() == null ? 0 : s.getFlowRateHourly()));
+                }
             }
 
-            for (int i = 0; i < 24; i += 2) {
-                xAxisLabels.add(String.valueOf(i));
-                int v = flowByHour.getOrDefault(i, 0);
+            for (String label : xAxisLabels) {
+                int hourKey = Integer.parseInt(label);
+                int v = flowByHour.getOrDefault(hourKey, 0);
                 data.add(v);
                 min = Math.min(min, v);
                 max = Math.max(max, v);
             }
+            // END OF NEW BLOCK
         } else if ("oneweek".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> flowByDay = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");

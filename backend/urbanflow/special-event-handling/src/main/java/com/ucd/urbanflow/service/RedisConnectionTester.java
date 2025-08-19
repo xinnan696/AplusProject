@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * 这个组件会在应用启动后自动运行一次，用于测试与Redis的连接。
+ * This component runs automatically once after application startup to test the Redis connection
  */
 @Component
 @RequiredArgsConstructor
@@ -17,23 +17,23 @@ public class RedisConnectionTester implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         try {
-            // 1. 尝试向Redis发送一个 PING 命令
+            // 1. Attempt to send a PING command to Redis
             String pong = redisTemplate.getConnectionFactory().getConnection().ping();
 
-            // 2. 检查响应
+            // 2. Check the response
             if ("PONG".equalsIgnoreCase(pong)) {
                 System.out.println("==========================================================");
-                System.out.println("✅ Redis 连接测试成功！ PING -> PONG");
+                System.out.println("Redis Connection test successful！ PING -> PONG");
                 System.out.println("==========================================================");
             } else {
                 System.err.println("==========================================================");
-                System.err.println("❌ Redis 连接测试异常，收到的响应不是 PONG: " + pong);
+                System.err.println("Connection test failed: received a response other than PONG: " + pong);
                 System.err.println("==========================================================");
             }
         } catch (Exception e) {
             System.err.println("==========================================================");
-            System.err.println("❌ Redis 连接测试失败！无法连接到Redis服务器。");
-            System.err.println("错误信息: " + e.getMessage());
+            System.err.println("Redis connection test failed: unable to connect to the Redis server。");
+            System.err.println("Error message: " + e.getMessage());
             System.err.println("==========================================================");
         }
     }

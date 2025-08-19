@@ -16,7 +16,7 @@ import java.net.http.WebSocket;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component // 将其声明为Spring组件
+@Component
 @RequiredArgsConstructor
 public class EventResultHandler extends TextWebSocketHandler {
     private static final Logger logger = LoggerFactory.getLogger(EventResultHandler.class);
