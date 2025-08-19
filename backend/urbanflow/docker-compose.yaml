@@ -2,17 +2,17 @@ version: '3.8'
 
 services:
   mysql:
-    image: mysql:latest          # Pulls the latest MySQL image
-    container_name: urbanflow-mysql     # Name of the container
+    image: mysql:latest
+    container_name: urbanflow-mysql
     ports:
-      - "3306:3306"              # Expose MySQL on port 3306
+      - "3306:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword  # Root user password
-      MYSQL_DATABASE: urbanflow         # Name of the database to be created
-      MYSQL_USER: user                 # Application username
-      MYSQL_PASSWORD: password         # Application password
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: urbanflow
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     volumes:
-      - db_data:/var/lib/mysql    # Persist MySQL data
+      - db_data:/var/lib/mysql
     networks:
       - backend
     healthcheck:
@@ -21,10 +21,10 @@ services:
       retries: 10
 
   redis:
-    image: redis:latest          # Use the latest Redis image
-    container_name: urbanflow-redis        # Name of the container
+    image: redis:latest
+    container_name: urbanflow-redis
     ports:
-      - "6379:6379"              # Expose Redis on the default port
+      - "6379:6379"
     networks:
       - backend
     healthcheck:
@@ -55,8 +55,7 @@ services:
 
   user-authentication:
     build:
-      context: .
-      dockerfile: user-authentication/Dockerfile
+      context: ./user-authentication
     container_name: urbanflow-user-auth
     ports:
       - "8081:8081"
@@ -75,11 +74,16 @@ services:
     networks:
       - backend
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8081/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   signal-control:
     build:
-      context: .
-      dockerfile: signal-control/Dockerfile
+      context: ./signal-control
     container_name: urbanflow-signal-control
     ports:
       - "8082:8082"
@@ -95,14 +99,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      user-authentication:
+          condition: service_healthy
     networks:
       - backend
     restart: unless-stopped
 
   traffic-sensing:
     build:
-      context: .
-      dockerfile: traffic-sensing/Dockerfile
+      context: ./traffic-sensing
     container_name: urbanflow-traffic-sensing
     ports:
       - "8083:8083"
@@ -124,14 +129,15 @@ services:
         condition: service_healthy
       influxdb:
         condition: service_healthy
+      user-authentication:
+        condition: service_healthy
     networks:
       - backend
     restart: unless-stopped
 
   ai-intelligence:
     build:
-      context: .
-      dockerfile: ai-intelligence/Dockerfile
+      context: ./ai-intelligence
     container_name: urbanflow-ai-intelligence
     ports:
       - "8084:8084"
@@ -151,7 +157,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      influxdb:
+      user-authentication:
         condition: service_healthy
     networks:
       - backend
@@ -159,8 +165,7 @@ services:
 
   special-event-handling:
     build:
-      context: .
-      dockerfile: special-event-handling/Dockerfile
+      context: ./special-event-handling
     container_name: urbanflow-special-event
     ports:
       - "8085:8085"
@@ -176,14 +181,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      user-authentication:
+        condition: service_healthy
     networks:
       - backend
     restart: unless-stopped
 
   logging-and-audit:
     build:
-      context: .
-      dockerfile: logging-and-audit/Dockerfile
+      context: ./logging-and-audit
     container_name: urbanflow-logging-audit
     ports:
       - "8086:8086"
@@ -199,14 +205,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      user-authentication:
+        condition: service_healthy
     networks:
       - backend
     restart: unless-stopped
 
   status-sync:
     build:
-      context: .
-      dockerfile: status-sync/Dockerfile
+      context: ./status-sync
     container_name: urbanflow-status-sync
     ports:
       - "8087:8087"
@@ -221,6 +228,8 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      user-authentication:
         condition: service_healthy
     networks:
       - backend

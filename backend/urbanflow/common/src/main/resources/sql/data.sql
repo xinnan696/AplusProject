@@ -1,3 +1,8 @@
+-- user
+INSERT INTO urbanflow.users
+(id, account_number, user_name, department, email, phone_number, password, `role`, enabled, locked, is_deleted, created_at, updated_at)
+VALUES(1, 'admin01', 'Administrator', 'System', 'admin@ucd.com', NULL, '$2a$10$naFY1Z/9G5g7nUWquwB3ueKuv6o1luW7nEl71OSIxbeNOn3QVSGwW', 'ADMIN', 1, 0, 0, '2025-07-04 23:42:23', '2025-08-19 14:13:25');
+
 --  trafficLogic
 INSERT INTO trafficLogic VALUES ('GS_181747232', '181747232', 2263.12, 617.35, '2250.52,623.50 2257.43,630.16 2254.87,632.92 2253.12,635.09 2251.86,637.03 2250.82,639.12 2249.69,641.71 2248.18,645.17 2245.48,643.39 2244.32,642.59 2237.60,635.73');
 INSERT INTO trafficLogic VALUES ('GS_2455689105', '2455689105', 2143.00, 2118.60, '2152.05,2107.64 2154.27,2109.95 2154.58,2110.42 2157.00,2116.35 2146.39,2120.64 2143.91,2114.74 2145.97,2113.75 2147.37,2112.81 2148.39,2111.81 2149.32,2110.68 2150.44,2109.32');

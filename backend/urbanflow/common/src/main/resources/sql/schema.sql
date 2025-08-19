@@ -1,4 +1,5 @@
 --  users
+DROP TABLE IF EXISTS `user_area_mapping`;
 DROP TABLE IF EXISTS `users`;
 
 CREATE TABLE `users` (
@@ -71,7 +72,6 @@ CREATE TABLE congestion_duration_ranking (
 );
 
 -- user_area_mapping
-DROP TABLE IF EXISTS `user_area_mapping`;
 
 CREATE TABLE user_area_mapping (
 	id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -80,17 +80,15 @@ CREATE TABLE user_area_mapping (
 	enabled BOOLEAN NOT NULL DEFAULT TRUE,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	created_by BIGINT
+	created_by BIGINT,
+	UNIQUE KEY uk_area_name_enabled (area_name, enabled),
+
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+    INDEX idx_user_id (user_id),
+    INDEX idx_area_name (area_name),
+    INDEX idx_enabled (enabled)
 );
-
-
-UNIQUE KEY uk_area_name_enabled (area_name, enabled),
-
-FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-
-INDEX idx_user_id (user_id),
-INDEX idx_area_name (area_name),
-INDEX idx_enabled (enabled)
 
 -- signal_control_logs
 DROP TABLE IF EXISTS `signal_control_logs`;
