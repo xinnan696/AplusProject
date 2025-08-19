@@ -62,7 +62,8 @@
       :junctionName="selectedJunctionForStatus?.junction_name"
       :directionIndex="selectedDirectionIndex"
       :trafficLightData="getTrafficLightDataForStatusBar()"
-      :lastManualControl="lastManualControl"
+      :lastManualControl="lastManualControl
+      :manualOverride="manualOverride"
       :style="getStatusBarPosition()"
       class="map-traffic-status"
     />
@@ -373,6 +374,13 @@ const lastManualControl = ref<{
   lightColor: string
   duration: number
   appliedTime: Date
+} | null>(null)
+
+const manualOverride = ref<{
+  lightColor: string
+  duration: number
+  appliedTime: Date
+  junctionName: string
 } | null>(null)
 
 let ws: WebSocket | null = null
@@ -915,13 +923,13 @@ const loadLaneData = async () => {
           isAnimated = false
         }
         else {
-          if (count >= 7) {
+          if (count >= 13) {
             color = '#D9001B'
             width = 3.5
-          } else if (count >= 4) {
+          } else if (count >= 9) {
             color = '#F59A23'
             width = 3
-          } else if (count > 0) {
+          } else if (count > 2) {
             color = '#FFFF00'
             width = 2.5
           }
@@ -1257,6 +1265,19 @@ const getCurrentTrafficLight = (junctionId: string): string => {
   if (selectedJunctionForStatus.value?.junction_id === junctionId &&
       selectedDirectionIndex.value !== null) {
 
+    // 优先检查手动控制覆盖数据
+    if (manualOverride.value && 
+        manualOverride.value.junctionName === selectedJunctionForStatus.value.junction_name) {
+      const manualLightColor = manualOverride.value.lightColor.toLowerCase()
+      console.log('[Map] Using manual override light color for road animation:', manualLightColor)
+      
+      if (manualLightColor === 'green') return 'green'
+      if (manualLightColor === 'red') return 'red'
+      if (manualLightColor === 'yellow') return 'yellow'
+      return ''
+    }
+
+    // 正常情况：使用当前交通灯数据
     if (currentTrafficLightData.value) {
       const state = currentTrafficLightData.value.state
       if (typeof state === 'string' && selectedDirectionIndex.value < state.length) {
@@ -1270,6 +1291,7 @@ const getCurrentTrafficLight = (junctionId: string): string => {
       }
     }
 
+    // 备用：从全局交通灯数据获取
     const tlsId = junctionIdToTlsIdMap.value.get(junctionId)
     if (tlsId && allTrafficLightData.value.has(tlsId)) {
       const data = allTrafficLightData.value.get(tlsId)
@@ -2446,6 +2468,37 @@ defineExpose({
         currentLocation.value = `${junctionName}${controllableText}`
       }
     }
+  },
+
+  // 新增：应用手动控制覆盖
+  applyManualControlOverride: (data: {
+    lightColor: string
+    duration: number
+    appliedTime: Date
+    junctionName: string
+  }) => {
+    console.log('[Map] Applying manual control override:', data)
+    manualOverride.value = data
+    
+    // 立即触发道路重新渲染，应用新的灯色动画
+    if (vectorLayer) {
+      console.log('[Map] Triggering road re-render for manual override')
+      vectorLayer.changed()
+    }
+    
+    // 清除覆盖的定时器
+    setTimeout(() => {
+      if (manualOverride.value === data) {
+        console.log('[Map] Clearing manual override after timeout')
+        manualOverride.value = null
+        
+        // 清除后也要重新渲染道路，恢复正常的WebSocket数据显示
+        if (vectorLayer) {
+          console.log('[Map] Triggering road re-render after manual override cleared')
+          vectorLayer.changed()
+        }
+      }
+    }, data.duration * 1000 + 1000) // duration + 1秒缓冲
   }
 })
 </script>
