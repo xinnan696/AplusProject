@@ -167,7 +167,15 @@ const handleJunctionSelected = (junctionName: string, junctionId: string) => {
 }
 
 const handleManualControlApplied = (data: { junctionName: string, directionInfo: string, lightColor: string, duration: number }) => {
-
+  console.log('[Home] Manual control applied:', data)
+  
+  // 触发地图组件应用手动控制模拟
+  mapRef.value?.applyManualControlOverride?.({
+    lightColor: data.lightColor,
+    duration: data.duration,
+    appliedTime: new Date(),
+    junctionName: data.junctionName
+  })
 }
 
 const toggleRecord = () => {

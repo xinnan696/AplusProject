@@ -1,0 +1,14 @@
+<additional>
+    <vType id="emergency" 
+           vClass="emergency" 
+           accel="2.6" 
+           decel="4.5" 
+           sigma="0.5" 
+           length="6.5" 
+           minGap="2.5" 
+           maxSpeed="200"
+           guiShape="emergency"
+           color="red">
+    </vType>
+
+</additional>

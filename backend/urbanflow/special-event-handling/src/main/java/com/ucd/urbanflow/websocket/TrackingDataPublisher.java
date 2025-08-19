@@ -35,7 +35,7 @@ public class TrackingDataPublisher {
 
     public void removeSession(WebSocketSession session) {
         sessions.remove(session.getId());
-        log.info("🔌 [WebSocket Publisher] Frontend connection closed: session ID = {}, current total connections: {}", session.getId(), sessions.size());
+        log.info("[WebSocket Publisher] Frontend connection closed: session ID = {}, current total connections: {}", session.getId(), sessions.size());
     }
 
     @Scheduled(fixedRate = 5000)
