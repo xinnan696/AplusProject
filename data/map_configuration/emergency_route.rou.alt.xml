@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2025-07-17 23:54:22 by Eclipse SUMO duarouter Version 1.23.1
+<duarouterConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/duarouterConfiguration.xsd">
+
+    <input>
+        <net-file value="osm.net.final.xml"/>
+        <additional-files value="types.add.xml"/>
+        <route-files value="emergency_trip.xml"/>
+    </input>
+
+    <output>
+        <output-file value="emergency_route.rou.xml"/>
+    </output>
+
+</duarouterConfiguration>
+-->
+
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+    <vType id="emergency" length="6.50" minGap="2.50" maxSpeed="200.00" vClass="emergency" guiShape="emergency" color="red" accel="2.6" decel="4.5" sigma="0.5"/>
+    <vehicle id="e1_trip" type="emergency" depart="0.00">
+        <routeDistribution last="0">
+            <route cost="151.54" probability="1.00000000" edges="327046540 1314474849 143299839 592071140#1 25094842 327046546 1314507320 1314507321#1 25094845#1 25094845#3 25094845#4 25094845#5 25094845#6 25094845#7 25094845#8 25094845#9 1314507326 1314507325#1 38023762#1 38023762#2 38023762#3 38023762#4 38023762#5 1314507334#1 405573977#0 405573977#1 405573977#2 405573977#3 750298029#1 750298029#3 750298029#4 750298029#5 750298029#7 33924202"/>
+        </routeDistribution>
+    </vehicle>
+</routes>

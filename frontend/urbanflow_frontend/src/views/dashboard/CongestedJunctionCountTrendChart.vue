@@ -66,7 +66,7 @@ const chartOption = ref({
     showSymbol: true,
     symbolSize: 1.5,
     lineStyle: {
-      color: '#28a745', // 这是您原来的折线颜色
+      color: '#28a745',
       width: 2
     },
     itemStyle: {
