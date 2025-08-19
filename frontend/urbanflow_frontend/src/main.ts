@@ -13,7 +13,6 @@ import { autoCleanupOnStart } from '@/utils/clearMockData'
 // import CommonInput from './components/common/CommonInput.vue'
 // import CommonSelect from './components/common/CommonSelect.vue'
 
-// 清理开发环境遗留的Mock数据
 autoCleanupOnStart()
 
 const app = createApp(App)
@@ -24,4 +23,4 @@ app.use(createPinia())
 app.use(router)
 
 app.mount('#app')
-console.log('✅ UrbanFlow App mounted successfully')
+console.log('UrbanFlow App mounted successfully')
