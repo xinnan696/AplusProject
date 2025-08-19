@@ -148,6 +148,9 @@ const currentBatchSuggestions = ref<AISuggestion[]>([])
 const lastBatchHash = ref<string>('')
 const currentDisplayIndex = ref(0)
 
+// 状态持久化相关
+const STORAGE_KEY = 'ai_suggestions_state'
+
 const junctionsCache = ref<Map<string, Junction>>(new Map())
 const edgesCache = ref<Map<string, Edge>>(new Map())
 const laneMappingsCache = ref<Map<string, string>>(new Map())
@@ -156,6 +159,63 @@ let timer: ReturnType<typeof setTimeout> | null = null
 let countdownTimer: ReturnType<typeof setInterval> | null = null
 let autoApplyTimer: ReturnType<typeof setTimeout> | null = null
 let batchRefreshCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+// 保存状态到localStorage
+const saveStateToStorage = () => {
+  try {
+    const state = {
+      suggestionData: suggestionData.value,
+      displayData: displayData.value,
+      currentBatchSuggestions: currentBatchSuggestions.value,
+      processedSuggestions: Array.from(processedSuggestions.value),
+      currentBatchIndex: currentBatchIndex.value,
+      currentDisplayIndex: currentDisplayIndex.value,
+      lastBatchHash: lastBatchHash.value
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch (error) {
+    console.error('Failed to save state to storage:', error)
+  }
+}
+
+// 从localStorage恢复状态
+const loadStateFromStorage = (): boolean => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      const state = JSON.parse(saved)
+      
+      suggestionData.value = state.suggestionData
+      displayData.value = state.displayData || {
+        junctionName: '',
+        fromEdgeName: '',
+        toEdgeName: '',
+        stateName: '',
+        lightIndex: 0
+      }
+      currentBatchSuggestions.value = state.currentBatchSuggestions || []
+      processedSuggestions.value = new Set(state.processedSuggestions || [])
+      currentBatchIndex.value = state.currentBatchIndex || 0
+      currentDisplayIndex.value = state.currentDisplayIndex || 0
+      lastBatchHash.value = state.lastBatchHash || ''
+      console.log('AI suggestions state restored from storage')
+      return true
+    }
+  } catch (error) {
+    console.error('Failed to load state from storage:', error)
+    localStorage.removeItem(STORAGE_KEY)
+  }
+  return false
+}
+
+// 清除保存的状态
+const clearStoredState = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY)
+  } catch (error) {
+    console.error('Failed to clear stored state:', error)
+  }
+}
 
 const hasValidSuggestion = computed(() => {
   return !!(suggestionData.value &&
@@ -631,6 +691,11 @@ const showSuggestion = async (forceRefresh = false) => {
   }
 }
 
+// 监听状态变化并自动保存
+watch([suggestionData, displayData, currentBatchSuggestions, currentBatchIndex, currentDisplayIndex], () => {
+  saveStateToStorage()
+}, { deep: true })
+
 watch(() => props.isAIMode, (newValue, oldValue) => {
   console.log('AI mode changed:', oldValue, '->', newValue)
 
@@ -712,6 +777,8 @@ const handleApply = async (isAutoApply = false) => {
   if (suggestion) {
     const suggestionId = getSuggestionId(suggestion)
     processedSuggestions.value.add(suggestionId)
+    // 保存状态
+    saveStateToStorage()
   }
 
   showSuggestion(false)
@@ -721,18 +788,33 @@ const handleIgnore = () => {
   if (suggestionData.value) {
     const suggestionId = getSuggestionId(suggestionData.value)
     processedSuggestions.value.add(suggestionId)
+    // 保存状态
+    saveStateToStorage()
   }
-
 
   showSuggestion(false)
 }
 
 onMounted(async () => {
+  // 尝试恢复状态
+  const hasRestoredState = loadStateFromStorage()
+  
   const cacheInitialized = await initializeCache()
   if (cacheInitialized) {
-
-
-    showSuggestion(true)
+    if (hasRestoredState && hasValidSuggestion.value) {
+      // 有保存的有效状态，继续从上次位置开始
+      console.log('Continuing from restored state')
+      if (props.isAIMode) {
+        startAutoApplyCountdown()
+      } else {
+        pollingTimer.value = setTimeout(() => {
+          showSuggestion(false)
+        }, 10000)
+      }
+    } else {
+      // 没有保存的状态或状态无效，正常初始化
+      showSuggestion(true)
+    }
 
     startBatchRefreshTimer()
   }
@@ -740,7 +822,34 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   clearAllTimers()
+  // 组件卸载时保存当前状态
+  saveStateToStorage()
 })
+
+// 暴露清除状态的方法（可选，用于调试或重置）
+const resetAndClearState = () => {
+  clearAllTimers()
+  suggestionData.value = null
+  displayData.value = {
+    junctionName: '',
+    fromEdgeName: '',
+    toEdgeName: '',
+    stateName: '',
+    lightIndex: 0
+  }
+  currentBatchSuggestions.value = []
+  processedSuggestions.value.clear()
+  currentBatchIndex.value = 0
+  currentDisplayIndex.value = 0
+  lastBatchHash.value = ''
+  clearStoredState()
+  console.log('AI suggestions state reset and cleared')
+}
+
+// 在开发环境中暴露到window对象（便于调试）
+if (import.meta.env.DEV) {
+  (window as any).resetAISuggestions = resetAndClearState
+}
 
 
 </script>
