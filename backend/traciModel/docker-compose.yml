@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 定义你的FastAPI应用服务
+  fastapi:
+    build:
+      context: .            # 当前目录为上下文
+      dockerfile: Dockerfile
+    container_name: traci-fastapi
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    networks:
+      - backend
+    volumes:
+      - .:/app              # 映射代码目录，方便开发调试
+
+  # 定义Redis服务
+  redis:
+    image: redis:latest          # Use the latest Redis image
+    container_name: redis        # Name of the container
+    ports:
+      - "6379:6379"              # Expose Redis on the default port
+    networks:
+      - backend
+
+# 定义网络
+networks:
+  backend:
+    driver: bridge
+
+
