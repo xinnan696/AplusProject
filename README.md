@@ -84,7 +84,7 @@ This section guides you through configuring and launching the SUMO traffic simul
 ### **1. Module Structure**
 
 ```
-traciModel/
+traciModule/
 ├── venv/                           # Virtual environment
 ├── config.json                     # SUMO executable and map file paths
 ├── event_manager.py                # Manages special simulation events
@@ -106,7 +106,7 @@ traciModel/
 
 You must configure file paths to connect the project with the SUMO executable.
 
-1. **Navigate to the TraCI Module**: Go to the module path in your project directory: `AplusProject/backend/traciModel`.
+1. **Navigate to the TraCI Module**: Go to the module path in your project directory: `AplusProject/backend/traciModule`.
 2. **Modify `config.json`**: Open the `config.json` file and update the values for two keys:
 
    * `"binary_path"`: This must be the **absolute path** to the `sumo` executable in your SUMO `bin` folder.
@@ -130,7 +130,7 @@ You must configure file paths to connect the project with the SUMO executable.
 1. **Start Redis Container**: Ensure your Docker environment is running and the `redis` container has been started using the instructions in the first section.
 2. **Launch TraCI Service**: Open your terminal, navigate to the TraCI module directory, and run the server.
    ```bash
-   cd /path/to/your/AplusProject/backend/traciModel
+   cd /path/to/your/AplusProject/backend/traciModule
    uvicorn withRedis:app --host="0.0.0.0" --port=8000
    ```
 3. **Stop the Simulation**: Press `Ctrl + C` in the terminal to stop the service

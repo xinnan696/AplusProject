@@ -9,11 +9,9 @@ CREATE TABLE junction_flow_relations (
     from_edge_id_2 VARCHAR(255),
     to_edge_id_2 VARCHAR(255),
     linkindex_2 VARCHAR(255),
-    relationship_type VARCHAR(50)  -- 'Non-Conflicting' 或 'Conflicting'
+    relationship_type VARCHAR(50)  -- 'Non-Conflicting' or 'Conflicting'
 );
 
--- 为 junction_flow_relations 表生成的 INSERT 语句
--- relationship_type 初始值均为 NULL，以便后续分析和更新
 
 INSERT INTO junction_flow_relations (junction_id, from_edge_id_1, to_edge_id_1, linkindex_1, from_edge_id_2, to_edge_id_2, linkindex_2, relationship_type) VALUES
 -- junction_id: cluster_669501977_9051819726_947981611
@@ -121,7 +119,7 @@ INSERT INTO junction_flow_relations (junction_id, from_edge_id_1, to_edge_id_1, 
 -- tl_id: GS_47217361
 ('47217361', '51444161', '1314507318', '1', '937860545', '-115099072#1', '7', 'Conflicting'),
 
--- junction_id: 47217357 只有一条直行方向
+-- junction_id: 47217357
 ('47217357', '899632449', '5856723', '0', '899632449', '5856723', '0', 'Non-Conflicting');
 
 
