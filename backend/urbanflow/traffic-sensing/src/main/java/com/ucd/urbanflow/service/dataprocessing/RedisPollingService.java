@@ -224,7 +224,7 @@ public class RedisPollingService {
     }
 
     /**
-     * 对外暴露 Sink，用于测试时手动推送数据。
+     * test method
      */
     public Sinks.Many<EnrichedTrafficEvent> getSink() {
         return this.sink;

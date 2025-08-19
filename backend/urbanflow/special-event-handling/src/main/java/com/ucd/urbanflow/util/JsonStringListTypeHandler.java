@@ -22,7 +22,7 @@ public class JsonStringListTypeHandler extends BaseTypeHandler<List<String>> {
         try {
             ps.setString(i, objectMapper.writeValueAsString(parameter));
         } catch (Exception e) {
-            throw new SQLException("序列化List到JSON字符串时出错", e);
+            throw new SQLException("Error occurred while serializing List to JSON string", e);
         }
     }
 
@@ -48,7 +48,6 @@ public class JsonStringListTypeHandler extends BaseTypeHandler<List<String>> {
         try {
             return objectMapper.readValue(json, new TypeReference<List<String>>() {});
         } catch (Exception e) {
-            // 在实际项目中，这里应该记录错误日志
             return Collections.emptyList();
         }
     }

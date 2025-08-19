@@ -58,13 +58,13 @@ public class StatusWebSocketHandler extends TextWebSocketHandler {
                 tlsData.put(entry.getKey().toString(), entry.getValue().toString());
             }
 
-            // === 构建 junctionId → junctionName 映射（保留原始 ID） ===
+            // === Build junctionId → junctionName mapping (retain original ID) ===
             Map<String, String> junctionIdToName = new HashMap<>();
             for (Map.Entry<Object, Object> entry : tlsMap.entrySet()) {
                 String jsonStr = entry.getValue().toString();
                 try {
                     JsonNode node = objectMapper.readTree(jsonStr);
-                    String junctionId = node.get("junction_id").asText();     // 原样保留
+                    String junctionId = node.get("junction_id").asText();
                     String junctionName = node.get("junction_name").asText();
                     junctionIdToName.put(junctionId, junctionName);
                 } catch (Exception e) {

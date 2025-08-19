@@ -15,7 +15,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        // 原生 WebSocket 连接
+        // Native WebSocket connection
         registry.addHandler(statusHandler, "/api/status/ws")
                 .setAllowedOrigins("*")
                 .setAllowedOriginPatterns("*");

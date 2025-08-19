@@ -54,27 +54,44 @@ public class CongestedRoadCountService {
         int min = Integer.MAX_VALUE, max = Integer.MIN_VALUE;
 
         if ("24hours".equalsIgnoreCase(timeRange) || timeRange == null) {
+            // START OF NEW BLOCK
             Map<Integer, Integer> bucket = new LinkedHashMap<>();
-            for (int i = 0; i < 24; i += 2) bucket.put(i, 0);
+            Calendar tempCal = Calendar.getInstance();
+            tempCal.setTime(start);
+
+            for (int i = 0; i < 12; i++) {
+                int hourBucket = tempCal.get(Calendar.HOUR_OF_DAY);
+                int alignedHour = (hourBucket / 2) * 2;
+
+                if (!bucket.containsKey(alignedHour)) {
+                    xAxisLabels.add(String.valueOf(alignedHour + 2));
+                    bucket.put(alignedHour, 0);
+                }
+
+                tempCal.add(Calendar.HOUR_OF_DAY, 2);
+            }
+
             for (CongestedRoadCount s : stats) {
                 Calendar c = Calendar.getInstance();
                 c.setTime(s.getTimeBucket());
                 int hour = c.get(Calendar.HOUR_OF_DAY);
                 int hourBucket = (hour / 2) * 2;
-                bucket.put(hourBucket, bucket.getOrDefault(hourBucket, 0)
-                        + (s.getCongestedJunctionCount() == null ? 0 : s.getCongestedJunctionCount()));
+                if (bucket.containsKey(hourBucket)) {
+                    bucket.put(hourBucket, bucket.getOrDefault(hourBucket, 0)
+                            + (s.getCongestedJunctionCount() == null ? 0 : s.getCongestedJunctionCount()));
+                }
             }
-            xAxisLabels = new ArrayList<>();
-            data = new ArrayList<>();
-            for (int i = 0; i < 24; i += 2) {
-                xAxisLabels.add(String.valueOf(i));
-                int val = bucket.get(i);
+
+            for (String label : xAxisLabels) {
+                int hourKey = Integer.parseInt(label);
+                int val = bucket.getOrDefault(hourKey, 0);
                 Map<String, Object> m = new HashMap<>();
                 m.put("congested_junction_count", val);
                 data.add(m);
                 min = Math.min(min, val);
                 max = Math.max(max, val);
             }
+            // END OF NEW BLOCK
         } else if ("oneweek".equalsIgnoreCase(timeRange)) {
             Map<String, Integer> bucket = new LinkedHashMap<>();
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");

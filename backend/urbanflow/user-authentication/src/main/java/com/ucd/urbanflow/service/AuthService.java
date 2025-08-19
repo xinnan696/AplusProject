@@ -182,7 +182,7 @@ public class AuthService {
     }
 
     /**
-     * 临时调试方法
+     * Temporary debugging method
      */
     public ApiResponse<Object> debugUserAreas(Long userId) {
         Object result = areaManagementService.debugUserAreas(userId);

@@ -7,43 +7,43 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 用户区域映射数据访问层
+ * Data access layer for user-area mapping
  */
 @Mapper
 public interface UserAreaMapper {
     
     /**
-     * 批量保存用户区域映射
+     * Batch save user-area mappings
      */
     void saveBatch(@Param("mappings") List<UserAreaMapping> mappings);
     
     /**
-     * 根据用户ID查找所有映射
+     * Find all mappings by user ID
      */
     List<UserAreaMapping> findByUserId(@Param("userId") Long userId);
     
     /**
-     * 根据区域名称查找映射（用于检查唯一性）
+     * Find mappings by area name (used to check uniqueness)
      */
     Optional<UserAreaMapping> findByAreaName(@Param("areaName") String areaName);
     
     /**
-     * 查找所有已占用的区域及其管理者信息
+     * Find all assigned areas and their manager information
      */
     List<java.util.Map<String, Object>> findOccupiedAreasWithUserInfo();
     
     /**
-     * 删除用户的所有区域映射
+     * Delete all area mappings of the user
      */
     void deleteByUserId(@Param("userId") Long userId);
     
     /**
-     * 检查区域是否已被占用
+     * Check if the area is already occupied
      */
     boolean isAreaOccupied(@Param("areaName") String areaName);
     
     /**
-     * 获取可用的区域列表（Left, Right中未被占用的）
+     * Get the list of available areas (Left and Right that are not occupied)
      */
     List<String> getAvailableAreas();
 }

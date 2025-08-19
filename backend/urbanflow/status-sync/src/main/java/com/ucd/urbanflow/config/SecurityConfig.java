@@ -15,7 +15,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/api-status/**").permitAll()
-                .requestMatchers("/api/status/**").permitAll()  // WebSocket 路径
+                .requestMatchers("/api/status/**").permitAll()  // WebSocket
                 .requestMatchers("/api/dashboard/**").permitAll()  // Dashboard API
                 .anyRequest().authenticated()
             )

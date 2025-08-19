@@ -26,7 +26,6 @@ public class Junction {
     @JsonProperty("duration")
     private double duration;
 
-    // Redis中字段是 "connection"，每个连接是 List<List<String>>
     @JsonProperty("connection")
     private List<List<List<String>>> connections;
 

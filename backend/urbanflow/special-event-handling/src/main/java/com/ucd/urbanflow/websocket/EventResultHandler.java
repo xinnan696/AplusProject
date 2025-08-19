@@ -16,7 +16,7 @@ import java.net.http.WebSocket;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component // 将其声明为Spring组件
+@Component
 @RequiredArgsConstructor
 public class EventResultHandler extends TextWebSocketHandler {
     private static final Logger logger = LoggerFactory.getLogger(EventResultHandler.class);
@@ -60,11 +60,11 @@ public class EventResultHandler extends TextWebSocketHandler {
 
             boolean isSuccess = "success".equalsIgnoreCase(status);
 
-            // 根据事件类型分发给不同的服务处理
+            // Dispatch to different services based on event type
             if ("emergency_event".equalsIgnoreCase(eventType)) {
                 emergencyVehicleService.handleTriggerResult(eventId, isSuccess);
             } else {
-                // 对于其他特殊事件，调用EventService
+                // For other special events, call EventService
                 eventService.handleEventResult(status, eventType, msg, vehicleIds, laneIds, json);
             }
 

@@ -47,7 +47,6 @@ class UserServiceTest {
         createUserRequest.setAccountNumber("newuser");
         createUserRequest.setUserName("New User");
         createUserRequest.setEmail("new@example.com");
-        createUserRequest.setPassword("password123");
         createUserRequest.setRole("ROLE_USER");
     }
 
